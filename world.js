@@ -32,7 +32,7 @@ scene.fog = new THREE.Fog(PALETTE.cream, 18, 38);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
 const OUTSIDE_CAM_OFFSET = new THREE.Vector3(0, 7.5, 9);
-const INSIDE_CAM_OFFSET = new THREE.Vector3(0, 5.2, 6.4);
+const INSIDE_CAM_OFFSET = new THREE.Vector3(0, 6.8, 8.2);
 let cameraOffset = OUTSIDE_CAM_OFFSET.clone();
 const cameraLookOffset = new THREE.Vector3(0, 1, 0);
 camera.position.copy(cameraOffset);
@@ -86,11 +86,11 @@ scene.add(outsideGroup, insideGroup);
 
 // ================= OUTSIDE =================
 
-const OUTSIDE_BOUND_X = 13;
-const OUTSIDE_BOUND_Z = 13;
+const OUTSIDE_BOUND_X = 9;
+const OUTSIDE_BOUND_Z = 9;
 const SPAWN_OUTSIDE = new THREE.Vector3(0, 0, 6);
 
-const groundSize = 30;
+const groundSize = 22;
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(groundSize, groundSize),
   new THREE.MeshLambertMaterial({ color: PALETTE.tan })
@@ -106,10 +106,10 @@ outsideGroup.add(grid);
 
 // A couple of decorative bushes so the lawn doesn't feel empty
 [
-  [-9, -2],
-  [9, -2],
-  [-6, 8],
-  [6, 8],
+  [-7.5, -1.5],
+  [7.5, -1.5],
+  [-5, 7.5],
+  [5, 7.5],
 ].forEach(([x, z]) => {
   const bush = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.7, 0),
@@ -120,8 +120,10 @@ outsideGroup.add(grid);
 });
 
 // House exterior
-const HOUSE_POS = new THREE.Vector3(0, 0, -9);
-const DOOR_POS = new THREE.Vector3(0, 0, -6.3);
+const HOUSE_POS = new THREE.Vector3(0, 0, -7);
+const DOOR_POS = new THREE.Vector3(0, 0, -4.3);
+const HOUSE_HALF_X = 3.5 + 0.55; // wall half-width + character buffer
+const HOUSE_HALF_Z = 3 + 0.55; // wall half-depth + character buffer
 const houseGroup = new THREE.Group();
 houseGroup.position.copy(HOUSE_POS);
 outsideGroup.add(houseGroup);
@@ -163,26 +165,26 @@ makeLabel(outsideGroup, "Patrick's Studio", HOUSE_POS.x, 5.3, HOUSE_POS.z + 3.3)
 // ================= INSIDE =================
 // Cozy music room — lamp-lit, dark surround.
 
-const ROOM_HALF_X = 4.2;
-const ROOM_HALF_Z = 4.2;
-const SPAWN_INSIDE = new THREE.Vector3(0, 0, 3.2);
+const ROOM_HALF_X = 6.2;
+const ROOM_HALF_Z = 6.2;
+const SPAWN_INSIDE = new THREE.Vector3(0, 0, 4.6);
 
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(10, 10),
+  new THREE.PlaneGeometry(15, 15),
   new THREE.MeshLambertMaterial({ color: 0x6b4a2c })
 );
 floor.rotation.x = -Math.PI / 2;
 insideGroup.add(floor);
 
 const rug = new THREE.Mesh(
-  new THREE.CircleGeometry(2.6, 24),
+  new THREE.CircleGeometry(3.4, 28),
   new THREE.MeshLambertMaterial({ color: PALETTE.rust })
 );
 rug.rotation.x = -Math.PI / 2;
 rug.position.y = 0.01;
 insideGroup.add(rug);
 const rugInner = new THREE.Mesh(
-  new THREE.CircleGeometry(1.9, 24),
+  new THREE.CircleGeometry(2.5, 28),
   new THREE.MeshLambertMaterial({ color: PALETTE.tan })
 );
 rugInner.rotation.x = -Math.PI / 2;
@@ -190,20 +192,20 @@ rugInner.position.y = 0.02;
 insideGroup.add(rugInner);
 
 const wallMat = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
-const backWall = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.2), wallMat);
-backWall.position.set(0, 2.1, -4.5);
+const backWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallMat);
+backWall.position.set(0, 2.3, -6.5);
 insideGroup.add(backWall);
-const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.2), wallMat);
-leftWall.position.set(-4.5, 2.1, 0);
+const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallMat);
+leftWall.position.set(-6.5, 2.3, 0);
 leftWall.rotation.y = Math.PI / 2;
 insideGroup.add(leftWall);
 const rightWall = leftWall.clone();
-rightWall.position.x = 4.5;
+rightWall.position.x = 6.5;
 insideGroup.add(rightWall);
 
 // Turntable — centerpiece against the back wall
 const turntableGroup = new THREE.Group();
-turntableGroup.position.set(0, 0, -3.6);
+turntableGroup.position.set(0, 0, -5.4);
 const ttBase = new THREE.Mesh(
   new THREE.BoxGeometry(1.4, 0.35, 1.1),
   new THREE.MeshLambertMaterial({ color: PALETTE.ink })
@@ -224,11 +226,11 @@ ttArm.position.set(0.5, 0.8, -0.3);
 ttArm.rotation.y = 0.4;
 turntableGroup.add(ttArm);
 insideGroup.add(turntableGroup);
-makeLabel(insideGroup, "Music & Production", 0, 1.6, -3.6);
+makeLabel(insideGroup, "Music & Production", 0, 1.8, -5.4);
 
 // Guitar — leaning near the west wall
 const guitarGroup = new THREE.Group();
-guitarGroup.position.set(-3.7, 0, 1.6);
+guitarGroup.position.set(-5.6, 0, 2.4);
 guitarGroup.rotation.z = -0.18;
 const guitarBody = new THREE.Mesh(
   new THREE.CylinderGeometry(0.55, 0.65, 0.18, 16),
@@ -244,11 +246,11 @@ const guitarNeck = new THREE.Mesh(
 guitarNeck.position.set(0, 2, 0.05);
 guitarGroup.add(guitarNeck);
 insideGroup.add(guitarGroup);
-makeLabel(insideGroup, "About", -3.7, 2.9, 1.6);
+makeLabel(insideGroup, "About", -5.6, 3.1, 2.4);
 
 // Retro TV / arcade corner — west wall
 const tvGroup = new THREE.Group();
-tvGroup.position.set(-3.6, 0, -1.6);
+tvGroup.position.set(-5.4, 0, -2.4);
 const tvBody = new THREE.Mesh(
   new THREE.BoxGeometry(1.3, 1, 0.8),
   new THREE.MeshLambertMaterial({ color: PALETTE.olive })
@@ -268,11 +270,11 @@ const tvStand = new THREE.Mesh(
 tvStand.position.y = 0.25;
 tvGroup.add(tvStand);
 insideGroup.add(tvGroup);
-makeLabel(insideGroup, "Featured Work", -3.6, 1.7, -1.6);
+makeLabel(insideGroup, "Featured Work", -5.4, 1.9, -2.4);
 
 // Desk with laptop — east wall
 const deskGroup = new THREE.Group();
-deskGroup.position.set(3.6, 0, -1.6);
+deskGroup.position.set(5.4, 0, -2.4);
 const deskTop = new THREE.Mesh(
   new THREE.BoxGeometry(1.4, 0.1, 0.7),
   new THREE.MeshLambertMaterial({ color: 0x8a5a34 })
@@ -299,11 +301,11 @@ laptopScreen.position.set(0, 1, -0.16);
 laptopScreen.rotation.x = -0.3;
 deskGroup.add(laptopScreen);
 insideGroup.add(deskGroup);
-makeLabel(insideGroup, "Coursework", 3.6, 1.7, -1.6);
+makeLabel(insideGroup, "Coursework", 5.4, 1.9, -2.4);
 
 // Side table with rotary phone — east wall, near entrance
 const phoneGroup = new THREE.Group();
-phoneGroup.position.set(3.7, 0, 1.8);
+phoneGroup.position.set(5.6, 0, 2.7);
 const phoneTable = new THREE.Mesh(
   new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12),
   new THREE.MeshLambertMaterial({ color: 0x8a5a34 })
@@ -317,7 +319,7 @@ const phoneBody = new THREE.Mesh(
 phoneBody.position.y = 0.7;
 phoneGroup.add(phoneBody);
 insideGroup.add(phoneGroup);
-makeLabel(insideGroup, "Contact", 3.7, 1.3, 1.8);
+makeLabel(insideGroup, "Contact", 5.6, 1.5, 2.7);
 
 // Doormat marking the exit back outside
 const exitMat = new THREE.Mesh(
@@ -325,7 +327,7 @@ const exitMat = new THREE.Mesh(
   new THREE.MeshLambertMaterial({ color: PALETTE.tan })
 );
 exitMat.rotation.x = -Math.PI / 2;
-exitMat.position.set(0, 0.015, 3.6);
+exitMat.position.set(0, 0.015, 5.4);
 insideGroup.add(exitMat);
 
 // ---------- Interactables ----------
@@ -334,7 +336,7 @@ const ROOM_ITEMS = [
   {
     key: "work",
     label: "Featured Work",
-    position: new THREE.Vector3(-3.6, 0, -1.6),
+    position: new THREE.Vector3(-5.4, 0, -2.4),
     eyebrow: "Selected work",
     title: "Marvel Champions: Spider-Man vs. Rhino",
     body: "A digital solo app for Marvel Champions: The Card Game, built from scratch while learning Unity and C# — a singleton manager architecture with interrupt-driven card effects and async player choices.",
@@ -342,7 +344,7 @@ const ROOM_ITEMS = [
   {
     key: "music",
     label: "Music & Production",
-    position: new THREE.Vector3(0, 0, -3.6),
+    position: new THREE.Vector3(0, 0, -5.4),
     eyebrow: "Independent work",
     title: "Music & Production",
     body: "Writing, producing, and mixing my own music, with releases on Spotify. Current work runs through Reaper using FabFilter, Valhalla, and Serum 2.",
@@ -350,7 +352,7 @@ const ROOM_ITEMS = [
   {
     key: "coursework",
     label: "Coursework",
-    position: new THREE.Vector3(3.6, 0, -1.6),
+    position: new THREE.Vector3(5.4, 0, -2.4),
     eyebrow: "Fundamentals",
     title: "Coursework Projects",
     body: "Eight focused builds covering layout, responsive design, CSS Grid, and animation — each one targeting a specific front-end skill from the ground up.",
@@ -358,7 +360,7 @@ const ROOM_ITEMS = [
   {
     key: "about",
     label: "About",
-    position: new THREE.Vector3(-3.7, 0, 1.6),
+    position: new THREE.Vector3(-5.6, 0, 2.4),
     eyebrow: "Background",
     title: "Music Educator, Now Building for the Web",
     body: "A BM in Music Education from CSULB and years of teaching and producing music shape how I approach code: break a big unfamiliar system into parts, then rebuild it into something that holds up.",
@@ -366,7 +368,7 @@ const ROOM_ITEMS = [
   {
     key: "contact",
     label: "Contact",
-    position: new THREE.Vector3(3.7, 0, 1.8),
+    position: new THREE.Vector3(5.6, 0, 2.7),
     eyebrow: "Let's talk",
     title: "Get in Touch",
     body: "patricklawrosal@gmail.com — open to entry-level front-end and full-stack roles in the LA area.",
@@ -374,12 +376,20 @@ const ROOM_ITEMS = [
 ];
 
 const DOOR_IN = { key: "door-in", label: "Enter the House", position: DOOR_POS, action: "enter" };
-const DOOR_OUT = { key: "door-out", label: "Exit", position: new THREE.Vector3(0, 0, 3.6), action: "exit" };
+const DOOR_OUT = { key: "door-out", label: "Exit", position: new THREE.Vector3(0, 0, 5.4), action: "exit" };
 
 let area = "outside";
 let boundX = OUTSIDE_BOUND_X;
 let boundZ = OUTSIDE_BOUND_Z;
 insideLabels.forEach((l) => (l.visible = false));
+
+function blockedByHouse(x, z) {
+  return (
+    area === "outside" &&
+    Math.abs(x - HOUSE_POS.x) < HOUSE_HALF_X &&
+    Math.abs(z - HOUSE_POS.z) < HOUSE_HALF_Z
+  );
+}
 
 function currentInteractables() {
   return area === "outside" ? [DOOR_IN] : [...ROOM_ITEMS, DOOR_OUT];
@@ -573,10 +583,16 @@ function animate() {
 
   if (moveDir.lengthSq() > 0) {
     moveDir.normalize();
-    character.position.x += moveDir.x * SPEED * delta;
-    character.position.z += moveDir.z * SPEED * delta;
-    character.position.x = THREE.MathUtils.clamp(character.position.x, -boundX, boundX);
-    character.position.z = THREE.MathUtils.clamp(character.position.z, -boundZ, boundZ);
+
+    const nextX = THREE.MathUtils.clamp(character.position.x + moveDir.x * SPEED * delta, -boundX, boundX);
+    if (!blockedByHouse(nextX, character.position.z)) {
+      character.position.x = nextX;
+    }
+
+    const nextZ = THREE.MathUtils.clamp(character.position.z + moveDir.z * SPEED * delta, -boundZ, boundZ);
+    if (!blockedByHouse(character.position.x, nextZ)) {
+      character.position.z = nextZ;
+    }
 
     const targetAngle = Math.atan2(moveDir.x, moveDir.z);
     let angleDiff = targetAngle - character.rotation.y;
