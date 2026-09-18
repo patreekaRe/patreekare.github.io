@@ -231,6 +231,20 @@
       .touch-pad { display: grid; }
       .controls-hint { display: none; }
     }
+
+    #fade {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: #100b06;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    #fade.visible {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -239,7 +253,8 @@
     <div class="proto-badge">Prototype &mdash; <a href="index.html">Back to site</a></div>
     <div class="controls-hint">
       <strong>WASD / Arrows</strong> to walk<br>
-      <strong>E</strong> to interact
+      <strong>E</strong> to interact<br>
+      <span id="hint-text">Walk to the house and press E</span>
     </div>
 
     <div class="prompt" id="prompt"><kbd>E</kbd><span id="prompt-text">Interact</span></div>
@@ -250,6 +265,8 @@
       <button id="btn-down">&#9660;</button>
       <button id="btn-right">&#9654;</button>
     </div>
+
+    <div id="fade"></div>
 
     <div class="panel-overlay" id="panelOverlay">
       <div class="panel">
