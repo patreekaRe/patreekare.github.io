@@ -214,7 +214,75 @@
     .panel-close:hover { background: #a35a1c; }
 
     .spotify-player {
-      margin-bottom: 1rem;
+      margin-bottom: 0;
+    }
+
+    .crate-sheet {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      width: min(460px, calc(100% - 1.5rem));
+      transform: translate(-50%, 130%);
+      background: white;
+      border-radius: 20px;
+      padding: 1rem 1.1rem 1.1rem;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+      z-index: 25;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+
+    .crate-sheet.open {
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+
+    .crate-sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.4rem;
+    }
+
+    .crate-eyebrow {
+      display: block;
+      color: var(--rust);
+      font-weight: 700;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .crate-sheet h2 {
+      font-family: "Roboto Slab", serif;
+      font-size: 1.15rem;
+    }
+
+    .crate-close {
+      background: var(--cream);
+      border: 2px solid var(--tan);
+      color: var(--ink);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .crate-hint {
+      font-size: 0.72rem;
+      color: var(--olive);
+      margin-bottom: 0.6rem;
+    }
+
+    .browsing .touch-controls,
+    .browsing .mobile-hint,
+    .browsing .controls-hint {
+      display: none;
+    }
+
+    .browsing .prompt {
+      opacity: 0 !important;
     }
 
     .spotify-player iframe {
@@ -485,25 +553,35 @@
           <div class="computer-list" id="computerList"></div>
         </div>
 
-        <div class="spotify-player" id="spotifyPlayer" hidden>
-          <iframe
-            id="spotifyFrame"
-            style="border-radius: 12px"
-            width="100%"
-            height="152"
-            frameborder="0"
-            allowfullscreen=""
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            title="Spotify player"></iframe>
-          <div class="spotify-controls">
-            <button id="spotifyPrev" type="button" aria-label="Previous song">&larr; Prev</button>
-            <span id="spotifyIndex">1 / 1</span>
-            <button id="spotifyNext" type="button" aria-label="Next song">Next &rarr;</button>
-          </div>
-        </div>
-
         <button class="panel-close" id="panelClose">Close</button>
+      </div>
+    </div>
+
+    <div class="crate-sheet" id="crateSheet">
+      <div class="crate-sheet-head">
+        <div>
+          <span class="crate-eyebrow">Independent work</span>
+          <h2>Music &amp; Production</h2>
+        </div>
+        <button class="crate-close" id="crateClose" type="button" aria-label="Close">&#10005;</button>
+      </div>
+      <p class="crate-hint">Flip through the crate &mdash; &larr; / &rarr; or the buttons.</p>
+      <div class="spotify-player" id="spotifyPlayer">
+        <iframe
+          id="spotifyFrame"
+          style="border-radius: 12px"
+          width="100%"
+          height="152"
+          frameborder="0"
+          allowfullscreen=""
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          title="Spotify player"></iframe>
+        <div class="spotify-controls">
+          <button id="spotifyPrev" type="button" aria-label="Previous song">&larr; Prev</button>
+          <span id="spotifyIndex">1 / 1</span>
+          <button id="spotifyNext" type="button" aria-label="Next song">Next &rarr;</button>
+        </div>
       </div>
     </div>
   </div>

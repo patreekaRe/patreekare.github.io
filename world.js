@@ -84,7 +84,8 @@ const fadeEl = document.getElementById("fade");
 const hintEl = document.getElementById("hint-text");
 const computerScreen = document.getElementById("computerScreen");
 const computerList = document.getElementById("computerList");
-const spotifyPlayer = document.getElementById("spotifyPlayer");
+const crateSheet = document.getElementById("crateSheet");
+const crateCloseBtn = document.getElementById("crateClose");
 const spotifyFrame = document.getElementById("spotifyFrame");
 const spotifyIndexEl = document.getElementById("spotifyIndex");
 const spotifyPrevBtn = document.getElementById("spotifyPrev");
@@ -293,39 +294,68 @@ crateWallR.rotation.z = 0.06;
 crateGroup.add(crateWallR);
 
 const VINYL_COLORS = [PALETTE.rust, PALETTE.tan, PALETTE.olive];
-const VINYL_COUNT = THREE.MathUtils.clamp(SPOTIFY_TRACKS.length, 3, 7);
+const VINYL_COUNT = THREE.MathUtils.clamp(SPOTIFY_TRACKS.length, 3, 12);
 const vinylPivots = [];
+const CRATE_POS = new THREE.Vector3(0, 0, -5.4);
+const PIVOT_Y = 0.7;
+
+const sleeveGeo = new THREE.BoxGeometry(0.9, 0.9, 0.025);
+const artGeo = new THREE.PlaneGeometry(0.66, 0.66);
+const artDotGeo = new THREE.CircleGeometry(0.17, 20);
+const discGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.02, 28);
+const discLabelGeo = new THREE.CircleGeometry(0.14, 20);
+const creamColor = new THREE.Color(PALETTE.cream);
 
 for (let i = 0; i < VINYL_COUNT; i++) {
   const t = VINYL_COUNT > 1 ? i / (VINYL_COUNT - 1) : 0.5;
-  const x = THREE.MathUtils.lerp(-0.82, 0.82, t);
+  const baseX = THREE.MathUtils.lerp(-0.82, 0.82, t);
+  const baseZ = (i - (VINYL_COUNT - 1) / 2) * 0.02;
   const baseAngle = (t - 0.5) * 0.6;
+  const color = new THREE.Color(VINYL_COLORS[i % VINYL_COLORS.length]);
 
   const pivot = new THREE.Group();
-  pivot.position.set(x, 0.68, 0);
+  pivot.position.set(baseX, PIVOT_Y, baseZ);
   pivot.rotation.y = baseAngle;
-  pivot.userData = { baseAngle, phase: i * 0.7 };
   crateGroup.add(pivot);
 
-  const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.44, 0.44, 0.03, 28),
-    new THREE.MeshLambertMaterial({ color: 0x141414 })
-  );
+  const disc = new THREE.Mesh(discGeo, new THREE.MeshLambertMaterial({ color: 0x1c1c1c }));
   disc.rotation.x = Math.PI / 2;
+  disc.position.set(0, 0.1, -0.03);
   pivot.add(disc);
 
-  const label = new THREE.Mesh(
-    new THREE.CircleGeometry(0.15, 20),
-    new THREE.MeshBasicMaterial({ color: VINYL_COLORS[i % VINYL_COLORS.length] })
-  );
-  label.position.y = 0.018;
-  label.rotation.x = -Math.PI / 2;
-  disc.add(label);
+  const discLabel = new THREE.Mesh(discLabelGeo, new THREE.MeshBasicMaterial({ color }));
+  discLabel.position.y = 0.012;
+  discLabel.rotation.x = -Math.PI / 2;
+  disc.add(discLabel);
 
+  const sleeve = new THREE.Mesh(sleeveGeo, new THREE.MeshLambertMaterial({ color }));
+  pivot.add(sleeve);
+
+  const art = new THREE.Mesh(
+    artGeo,
+    new THREE.MeshLambertMaterial({ color: color.clone().lerp(creamColor, 0.4) })
+  );
+  art.position.z = 0.014;
+  pivot.add(art);
+
+  const artDot = new THREE.Mesh(
+    artDotGeo,
+    new THREE.MeshBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.55 })
+  );
+  artDot.position.z = 0.016;
+  pivot.add(artDot);
+
+  pivot.userData = { baseX, baseZ, baseAngle, phase: i * 0.7, disc };
   vinylPivots.push(pivot);
 }
 
-makeLabel(insideGroup, "Music & Production", 0, 1.6, -5.4);
+const crateLabel = makeLabel(insideGroup, "Music & Production", 0, 1.9, -5.4);
+
+// Which crate record represents track i (catalogs larger than the crate map proportionally)
+function vinylForTrack(i) {
+  if (SPOTIFY_TRACKS.length <= VINYL_COUNT) return i;
+  return Math.round((i * (VINYL_COUNT - 1)) / (SPOTIFY_TRACKS.length - 1));
+}
 
 // Guitar — leaning near the west wall
 const guitarGroup = new THREE.Group();
@@ -595,6 +625,12 @@ const KEY_MAP = {
 };
 
 window.addEventListener("keydown", (e) => {
+  if (browsing) {
+    if (e.code === "ArrowLeft" || e.code === "KeyA") loadSpotifyTrack(spotifyIndex - 1);
+    else if (e.code === "ArrowRight" || e.code === "KeyD") loadSpotifyTrack(spotifyIndex + 1);
+    else if (e.code === "KeyE" || e.code === "Enter" || e.code === "Escape") exitBrowse();
+    return;
+  }
   if (KEY_MAP[e.code]) keys.add(KEY_MAP[e.code]);
   if (e.code === "KeyE" || e.code === "Enter") tryInteract();
   if (e.code === "Escape") closePanel();
@@ -658,8 +694,10 @@ document.getElementById("interactBtn").addEventListener("pointerdown", (e) => {
 
 let nearestItem = null;
 
+let browsing = false;
+
 function tryInteract() {
-  if (!nearestItem || transitioning) return;
+  if (!nearestItem || transitioning || browsing) return;
   if (nearestItem.action === "enter") enterHouse();
   else if (nearestItem.action === "exit") exitHouse();
   else openPanel(nearestItem);
@@ -675,6 +713,27 @@ function loadSpotifyTrack(i) {
 
 spotifyPrevBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex - 1));
 spotifyNextBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex + 1));
+
+function enterBrowse() {
+  browsing = true;
+  resetJoystick();
+  app.classList.add("browsing");
+  character.visible = false;
+  crateLabel.visible = false;
+  loadSpotifyTrack(spotifyIndex);
+  crateSheet.classList.add("open");
+}
+
+function exitBrowse() {
+  browsing = false;
+  app.classList.remove("browsing");
+  character.visible = true;
+  crateLabel.visible = true;
+  crateSheet.classList.remove("open");
+  spotifyFrame.src = "";
+}
+
+crateCloseBtn.addEventListener("click", exitBrowse);
 
 let computerBuilt = false;
 
@@ -708,19 +767,19 @@ function buildComputerList() {
 }
 
 function openPanel(item) {
+  if (item.key === "music" && SPOTIFY_TRACKS.length) {
+    enterBrowse();
+    return;
+  }
+
   panelEyebrow.textContent = item.eyebrow;
   panelTitle.textContent = item.title;
   panelBody.textContent = item.body;
 
-  spotifyPlayer.hidden = true;
-  spotifyFrame.src = "";
   computerScreen.hidden = true;
   panelBox.classList.remove("wide");
 
-  if (item.key === "music" && SPOTIFY_TRACKS.length) {
-    spotifyPlayer.hidden = false;
-    loadSpotifyTrack(spotifyIndex);
-  } else if (item.key === "coursework") {
+  if (item.key === "coursework") {
     buildComputerList();
     computerScreen.hidden = false;
     panelBox.classList.add("wide");
@@ -731,7 +790,6 @@ function openPanel(item) {
 
 function closePanel() {
   panelOverlay.classList.remove("open");
-  spotifyFrame.src = "";
 }
 
 panelClose.addEventListener("click", closePanel);
@@ -753,6 +811,8 @@ window.addEventListener("resize", () => {
 const moveDir = new THREE.Vector3();
 const targetCamPos = new THREE.Vector3();
 const targetLookAt = new THREE.Vector3();
+const currentLook = new THREE.Vector3();
+let lookInitialized = false;
 const clock = new THREE.Clock();
 const SPEED = 5.2;
 
@@ -763,7 +823,7 @@ function animate() {
 
   moveDir.set(0, 0, 0);
   let speedFactor = 1;
-  const inputAllowed = !transitioning && !panelOverlay.classList.contains("open");
+  const inputAllowed = !transitioning && !browsing && !panelOverlay.classList.contains("open");
   if (inputAllowed) {
     if (keys.has("up")) moveDir.z -= 1;
     if (keys.has("down")) moveDir.z += 1;
@@ -799,11 +859,41 @@ function animate() {
     body.position.y = 1.05;
   }
 
-  // Vinyl crate idle browsing motion
+  // Vinyl crate: idle sway, or the selected record pops out while browsing
   if (area === "inside") {
-    vinylPivots.forEach((pivot) => {
-      const sway = Math.sin(t * 0.8 + pivot.userData.phase) * 0.12;
-      pivot.rotation.y = pivot.userData.baseAngle + sway;
+    const selected = browsing ? vinylForTrack(spotifyIndex) : -1;
+    const ease = 1 - Math.pow(0.0008, delta);
+    vinylPivots.forEach((pivot, i) => {
+      const u = pivot.userData;
+      let tx = u.baseX;
+      let ty = PIVOT_Y;
+      let tz = u.baseZ;
+      let ry = u.baseAngle + Math.sin(t * 0.8 + u.phase) * 0.12;
+      let rx = 0;
+      let discY = 0.1;
+
+      if (browsing) {
+        const d = i - selected;
+        if (d === 0) {
+          tx = 0;
+          ty = 1.3;
+          tz = 0.75;
+          ry = 0;
+          rx = -0.12;
+          discY = 0.5;
+        } else {
+          tx = THREE.MathUtils.clamp(u.baseX + Math.sign(d) * 0.3, -0.92, 0.92);
+          tz = u.baseZ - 0.05;
+          ry = u.baseAngle * 0.5;
+        }
+      }
+
+      pivot.position.x += (tx - pivot.position.x) * ease;
+      pivot.position.y += (ty - pivot.position.y) * ease;
+      pivot.position.z += (tz - pivot.position.z) * ease;
+      pivot.rotation.y += (ry - pivot.rotation.y) * ease;
+      pivot.rotation.x += (rx - pivot.rotation.x) * ease;
+      u.disc.position.y += (discY - u.disc.position.y) * ease;
     });
   }
 
@@ -819,7 +909,7 @@ function animate() {
     }
   });
 
-  if (closest && closestDist < radius && !transitioning) {
+  if (closest && closestDist < radius && !transitioning && !browsing) {
     nearestItem = closest;
     promptTextEl.textContent = closest.action === "enter" ? "Enter" : closest.action === "exit" ? "Exit" : closest.label;
     promptEl.classList.add("visible");
@@ -828,20 +918,31 @@ function animate() {
     promptEl.classList.remove("visible");
   }
 
-  // Camera follow (fixed-angle, Animal Crossing style)
-  targetCamPos.set(
-    character.position.x + cameraOffset.x,
-    cameraOffset.y,
-    character.position.z + cameraOffset.z
-  );
-  camera.position.lerp(targetCamPos, 1 - Math.pow(0.001, delta));
-
-  targetLookAt.set(
-    character.position.x + cameraLookOffset.x,
-    cameraLookOffset.y,
-    character.position.z + cameraLookOffset.z
-  );
-  camera.lookAt(targetLookAt);
+  // Camera follow (fixed-angle, Animal Crossing style), or a close-up on the crate while browsing
+  if (browsing) {
+    const dist = THREE.MathUtils.clamp(3.4 / camera.aspect, 3.6, 7.5);
+    targetCamPos.set(CRATE_POS.x, 2.2 + dist * 0.25, CRATE_POS.z + dist);
+    targetLookAt.set(CRATE_POS.x, 0.35, CRATE_POS.z);
+  } else {
+    targetCamPos.set(
+      character.position.x + cameraOffset.x,
+      cameraOffset.y,
+      character.position.z + cameraOffset.z
+    );
+    targetLookAt.set(
+      character.position.x + cameraLookOffset.x,
+      cameraLookOffset.y,
+      character.position.z + cameraLookOffset.z
+    );
+  }
+  const camEase = 1 - Math.pow(0.001, delta);
+  camera.position.lerp(targetCamPos, camEase);
+  if (!lookInitialized) {
+    currentLook.copy(targetLookAt);
+    lookInitialized = true;
+  }
+  currentLook.lerp(targetLookAt, camEase);
+  camera.lookAt(currentLook);
 
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
