@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>Patrick Rosal | Walk Through My Studio</title>
   <meta name="robots" content="noindex, nofollow">
 
@@ -33,12 +33,20 @@
     html, body {
       height: 100%;
       overflow: hidden;
+      overscroll-behavior: none;
       font-family: "Poppins", sans-serif;
       background: var(--cream);
       color: var(--ink);
+      -webkit-user-select: none;
+      user-select: none;
     }
 
-    #app { position: relative; width: 100vw; height: 100vh; }
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      touch-action: none;
+    }
 
     canvas { display: block; }
 
@@ -201,35 +209,84 @@
 
     .panel-close:hover { background: #a35a1c; }
 
-    .touch-pad {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 1.5rem;
-      z-index: 20;
+    .touch-controls {
       display: none;
-      grid-template-columns: repeat(3, 52px);
-      grid-template-rows: repeat(3, 52px);
-      gap: 4px;
     }
 
-    .touch-pad button {
-      background: rgba(40, 54, 24, 0.75);
-      border: none;
-      border-radius: 10px;
-      color: var(--cream);
-      font-size: 1.1rem;
-      font-weight: 700;
+    .joystick {
+      position: fixed;
+      left: 1.5rem;
+      bottom: 1.5rem;
+      z-index: 20;
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: rgba(40, 54, 24, 0.35);
+      border: 2px solid rgba(254, 250, 224, 0.35);
       touch-action: none;
     }
 
-    #btn-up { grid-column: 2; grid-row: 1; }
-    #btn-left { grid-column: 1; grid-row: 2; }
-    #btn-down { grid-column: 2; grid-row: 2; }
-    #btn-right { grid-column: 3; grid-row: 2; }
+    .joystick-stick {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 48px;
+      height: 48px;
+      margin: -24px 0 0 -24px;
+      border-radius: 50%;
+      background: rgba(221, 161, 94, 0.9);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+      pointer-events: none;
+    }
+
+    .interact-btn {
+      position: fixed;
+      right: 1.5rem;
+      bottom: 2.1rem;
+      z-index: 20;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(188, 108, 37, 0.88);
+      border: 2px solid rgba(254, 250, 224, 0.5);
+      color: var(--cream);
+      font-family: "Roboto Slab", serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      touch-action: none;
+    }
+
+    .interact-btn:active,
+    .joystick:active {
+      filter: brightness(1.1);
+    }
+
+    .mobile-hint {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 20;
+      background: rgba(40, 54, 24, 0.85);
+      color: var(--cream);
+      font-size: 0.75rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 12px;
+      max-width: 160px;
+      text-align: right;
+      display: none;
+    }
 
     @media (max-width: 700px), (pointer: coarse) {
-      .touch-pad { display: grid; }
+      .touch-controls { display: block; }
       .controls-hint { display: none; }
+      .mobile-hint { display: block; }
+    }
+
+    @supports (bottom: env(safe-area-inset-bottom)) {
+      .joystick { bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
+      .interact-btn { bottom: calc(2.1rem + env(safe-area-inset-bottom)); }
+      .proto-badge, .controls-hint, .mobile-hint { top: calc(1rem + env(safe-area-inset-top)); }
     }
 
     #fade {
@@ -245,6 +302,22 @@
     #fade.visible {
       opacity: 1;
     }
+
+    @media (max-width: 480px) {
+      .panel {
+        padding: 1.6rem;
+        border-radius: 16px;
+      }
+
+      .panel h2 {
+        font-size: 1.3rem;
+      }
+
+      .proto-badge {
+        font-size: 0.62rem;
+        padding: 0.4rem 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -259,11 +332,13 @@
 
     <div class="prompt" id="prompt"><kbd>E</kbd><span id="prompt-text">Interact</span></div>
 
-    <div class="touch-pad" id="touchPad">
-      <button id="btn-up">&#9650;</button>
-      <button id="btn-left">&#9664;</button>
-      <button id="btn-down">&#9660;</button>
-      <button id="btn-right">&#9654;</button>
+    <div class="mobile-hint">Drag to walk<br>Tap the button to interact</div>
+
+    <div class="touch-controls">
+      <div class="joystick" id="joystick">
+        <div class="joystick-stick" id="joystickStick"></div>
+      </div>
+      <button class="interact-btn" id="interactBtn">E</button>
     </div>
 
     <div id="fade"></div>

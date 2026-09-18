@@ -505,26 +505,57 @@ window.addEventListener("keyup", (e) => {
   if (KEY_MAP[e.code]) keys.delete(KEY_MAP[e.code]);
 });
 
-const bindHold = (id, dir) => {
-  const el = document.getElementById(id);
-  const press = (e) => {
-    e.preventDefault();
-    keys.add(dir);
-  };
-  const release = (e) => {
-    e.preventDefault();
-    keys.delete(dir);
-  };
-  el.addEventListener("pointerdown", press);
-  el.addEventListener("pointerup", release);
-  el.addEventListener("pointerleave", release);
-  el.addEventListener("pointercancel", release);
-};
+// Virtual analog joystick — drag distance sets both direction and speed
+const joystickEl = document.getElementById("joystick");
+const joystickStickEl = document.getElementById("joystickStick");
+const JOY_RADIUS = 38;
+const joystick = { active: false, x: 0, z: 0 };
 
-bindHold("btn-up", "up");
-bindHold("btn-down", "down");
-bindHold("btn-left", "left");
-bindHold("btn-right", "right");
+function updateJoystick(clientX, clientY) {
+  const rect = joystickEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > JOY_RADIUS) {
+    dx = (dx / dist) * JOY_RADIUS;
+    dy = (dy / dist) * JOY_RADIUS;
+  }
+  joystickStickEl.style.transform = `translate(${dx}px, ${dy}px)`;
+  joystick.x = dx / JOY_RADIUS;
+  joystick.z = dy / JOY_RADIUS;
+}
+
+function resetJoystick() {
+  joystick.active = false;
+  joystick.x = 0;
+  joystick.z = 0;
+  joystickStickEl.style.transition = "transform 0.15s ease";
+  joystickStickEl.style.transform = "translate(0px, 0px)";
+}
+
+joystickEl.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  joystick.active = true;
+  joystickStickEl.style.transition = "none";
+  try {
+    joystickEl.setPointerCapture(e.pointerId);
+  } catch {
+    // ignore — some synthetic/edge-case pointers can't be captured
+  }
+  updateJoystick(e.clientX, e.clientY);
+});
+joystickEl.addEventListener("pointermove", (e) => {
+  if (joystick.active) updateJoystick(e.clientX, e.clientY);
+});
+joystickEl.addEventListener("pointerup", resetJoystick);
+joystickEl.addEventListener("pointercancel", resetJoystick);
+
+document.getElementById("interactBtn").addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  tryInteract();
+});
 
 let nearestItem = null;
 
@@ -574,22 +605,29 @@ function animate() {
   const t = clock.getElapsedTime();
 
   moveDir.set(0, 0, 0);
-  if (!transitioning && !panelOverlay.classList.contains("open")) {
+  let speedFactor = 1;
+  const inputAllowed = !transitioning && !panelOverlay.classList.contains("open");
+  if (inputAllowed) {
     if (keys.has("up")) moveDir.z -= 1;
     if (keys.has("down")) moveDir.z += 1;
     if (keys.has("left")) moveDir.x -= 1;
     if (keys.has("right")) moveDir.x += 1;
+
+    if (moveDir.lengthSq() === 0 && joystick.active) {
+      moveDir.set(joystick.x, 0, joystick.z);
+      speedFactor = Math.min(moveDir.length(), 1);
+    }
   }
 
-  if (moveDir.lengthSq() > 0) {
+  if (moveDir.lengthSq() > 0.0001) {
     moveDir.normalize();
 
-    const nextX = THREE.MathUtils.clamp(character.position.x + moveDir.x * SPEED * delta, -boundX, boundX);
+    const nextX = THREE.MathUtils.clamp(character.position.x + moveDir.x * SPEED * speedFactor * delta, -boundX, boundX);
     if (!blockedByHouse(nextX, character.position.z)) {
       character.position.x = nextX;
     }
 
-    const nextZ = THREE.MathUtils.clamp(character.position.z + moveDir.z * SPEED * delta, -boundZ, boundZ);
+    const nextZ = THREE.MathUtils.clamp(character.position.z + moveDir.z * SPEED * speedFactor * delta, -boundZ, boundZ);
     if (!blockedByHouse(character.position.x, nextZ)) {
       character.position.z = nextZ;
     }
