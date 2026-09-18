@@ -56,7 +56,7 @@ if (mount && window.WebGLRenderingContext) {
 
   const resize = () => {
     const size = mount.clientWidth || mount.clientHeight || 1;
-    renderer.setSize(size, size, false);
+    renderer.setSize(size, size);
   };
 
   const resizeObserver = new ResizeObserver(resize);
