@@ -306,7 +306,7 @@ const CRATE_POS = new THREE.Vector3(0, 0, -5.4);
 const PIVOT_Y = 0.7;
 
 const sleeveGeo = new THREE.BoxGeometry(0.9, 0.9, 0.025);
-const artGeo = new THREE.PlaneGeometry(0.66, 0.66);
+const artGeo = new THREE.PlaneGeometry(0.8, 0.8);
 const artDotGeo = new THREE.CircleGeometry(0.17, 20);
 const discGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.02, 28);
 const discLabelGeo = new THREE.CircleGeometry(0.14, 20);
@@ -351,7 +351,7 @@ for (let i = 0; i < VINYL_COUNT; i++) {
   artDot.position.z = 0.016;
   pivot.add(artDot);
 
-  pivot.userData = { baseX, baseZ, baseAngle, phase: i * 0.7, disc };
+  pivot.userData = { baseX, baseZ, baseAngle, phase: i * 0.7, disc, art, artDot, hasArt: false };
   vinylPivots.push(pivot);
 }
 
@@ -361,6 +361,35 @@ const crateLabel = makeLabel(insideGroup, "Music & Production", 0, 1.9, -5.4);
 function vinylForTrack(i) {
   if (SPOTIFY_TRACKS.length <= VINYL_COUNT) return i;
   return Math.round((i * (VINYL_COUNT - 1)) / (SPOTIFY_TRACKS.length - 1));
+}
+
+// Put each track's real cover on its sleeve (Spotify oEmbed returns the cover URL).
+// Sleeves keep their colored placeholder if a lookup fails.
+const coverLoader = new THREE.TextureLoader();
+coverLoader.setCrossOrigin("anonymous");
+let coversRequested = false;
+
+function loadCoverArt() {
+  if (coversRequested) return;
+  coversRequested = true;
+  SPOTIFY_TRACKS.forEach((id, i) => {
+    const u = vinylPivots[vinylForTrack(i)].userData;
+    if (u.hasArt) return;
+    u.hasArt = true;
+    fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        coverLoader.load(data.thumbnail_url, (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          u.art.material.dispose();
+          u.art.material = new THREE.MeshBasicMaterial({ map: tex, color: 0xdddddd });
+          u.artDot.visible = false;
+        });
+      })
+      .catch(() => {
+        u.hasArt = false;
+      });
+  });
 }
 
 // Guitar — leaning near the west wall
@@ -579,6 +608,7 @@ function fadeSwitch(callback) {
 function enterHouse() {
   fadeSwitch(() => {
     area = "inside";
+    loadCoverArt();
     outsideGroup.visible = false;
     insideGroup.visible = true;
     outsideLabels.forEach((l) => (l.visible = false));
