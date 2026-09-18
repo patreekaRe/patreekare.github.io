@@ -20,16 +20,70 @@ const SPOTIFY_TRACKS = [
   "6PXw0fITgSiBnRWFszSpAS",
 ];
 
+const COURSEWORK_PROJECTS = [
+  {
+    title: "Favorite City Website",
+    desc: "Downtown Chicago — layout, images, and navigation.",
+    image: "images/favorite-city.jpg",
+    url: "https://dgnhw2.csb.app/",
+  },
+  {
+    title: "Musician Webpage",
+    desc: "A favorite artist, embedded media, and custom styling.",
+    image: "images/musician.jpg",
+    url: "https://hz463v.csb.app/",
+  },
+  {
+    title: "Product Landing Page",
+    desc: "Sections, nav links, a form, and embedded video.",
+    image: "images/product-landing.jpg",
+    url: "https://2cshtl.csb.app/",
+  },
+  {
+    title: "Technical Documentation Page",
+    desc: "Single-page docs with internal navigation and code examples.",
+    image: "images/technical-doc.jpg",
+    url: "https://wjp7fz.csb.app/",
+  },
+  {
+    title: "Page Layout",
+    desc: "Structured webpage layouts with HTML and CSS.",
+    image: "images/layout.jpg",
+    url: "https://g95nxn.csb.app/",
+  },
+  {
+    title: "Responsive Web Design",
+    desc: "Media queries for phones, tablets, and desktop.",
+    image: "images/rwd.jpg",
+    url: "https://qgpygt.csb.app/",
+  },
+  {
+    title: "CSS Grid",
+    desc: "Organized, flexible layouts built with CSS Grid.",
+    image: "images/grid.jpg",
+    url: "https://jvrmjw.csb.app/",
+  },
+  {
+    title: "CSS Animations & Transitions",
+    desc: "Movement and hover effects for interactive pages.",
+    image: "images/animations.jpg",
+    url: "https://z67l6s.csb.app/",
+  },
+];
+
 const app = document.getElementById("app");
 const promptEl = document.getElementById("prompt");
 const promptTextEl = document.getElementById("prompt-text");
 const panelOverlay = document.getElementById("panelOverlay");
+const panelBox = document.getElementById("panelBox");
 const panelEyebrow = document.getElementById("panelEyebrow");
 const panelTitle = document.getElementById("panelTitle");
 const panelBody = document.getElementById("panelBody");
 const panelClose = document.getElementById("panelClose");
 const fadeEl = document.getElementById("fade");
 const hintEl = document.getElementById("hint-text");
+const computerScreen = document.getElementById("computerScreen");
+const computerList = document.getElementById("computerList");
 const spotifyPlayer = document.getElementById("spotifyPlayer");
 const spotifyFrame = document.getElementById("spotifyFrame");
 const spotifyIndexEl = document.getElementById("spotifyIndex");
@@ -589,17 +643,54 @@ function loadSpotifyTrack(i) {
 spotifyPrevBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex - 1));
 spotifyNextBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex + 1));
 
+let computerBuilt = false;
+
+function buildComputerList() {
+  if (computerBuilt) return;
+  computerBuilt = true;
+  COURSEWORK_PROJECTS.forEach((p) => {
+    const card = document.createElement("a");
+    card.className = "computer-card";
+    card.href = p.url;
+    card.target = "_blank";
+    card.rel = "noopener";
+
+    const img = document.createElement("img");
+    img.src = p.image;
+    img.alt = p.title;
+    img.loading = "lazy";
+    card.appendChild(img);
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const h4 = document.createElement("h4");
+    h4.textContent = p.title;
+    const desc = document.createElement("p");
+    desc.textContent = p.desc;
+    body.append(h4, desc);
+    card.appendChild(body);
+
+    computerList.appendChild(card);
+  });
+}
+
 function openPanel(item) {
   panelEyebrow.textContent = item.eyebrow;
   panelTitle.textContent = item.title;
   panelBody.textContent = item.body;
 
+  spotifyPlayer.hidden = true;
+  spotifyFrame.src = "";
+  computerScreen.hidden = true;
+  panelBox.classList.remove("wide");
+
   if (item.key === "music" && SPOTIFY_TRACKS.length) {
     spotifyPlayer.hidden = false;
     loadSpotifyTrack(spotifyIndex);
-  } else {
-    spotifyPlayer.hidden = true;
-    spotifyFrame.src = "";
+  } else if (item.key === "coursework") {
+    buildComputerList();
+    computerScreen.hidden = false;
+    panelBox.classList.add("wide");
   }
 
   panelOverlay.classList.add("open");
