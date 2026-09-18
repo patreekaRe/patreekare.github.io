@@ -368,6 +368,86 @@ h1 {
   50% { opacity: 1; transform: scaleY(1); }
 }
 
+/* ---------- Walkthrough CTA ---------- */
+
+.walkthrough-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 2.5rem;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+
+.walkthrough-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.walkthrough-text {
+  max-width: 46ch;
+}
+
+.walkthrough-text .eyebrow {
+  color: var(--tan);
+}
+
+.walkthrough-text h2 {
+  color: var(--cream);
+  margin-bottom: 0.6rem;
+}
+
+.walkthrough-text p:not(.eyebrow) {
+  color: rgba(254, 250, 224, 0.75);
+  margin-bottom: 1.1rem;
+}
+
+.walkthrough-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: var(--tan);
+  transition: gap .2s var(--ease);
+}
+
+.walkthrough-card:hover .walkthrough-link {
+  gap: 0.7rem;
+}
+
+.walkthrough-preview {
+  flex-shrink: 0;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgba(221, 161, 94, 0.35), transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walkthrough-lamp {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffe5b0, var(--tan) 60%, var(--rust) 100%);
+  box-shadow: 0 0 30px 10px rgba(221, 161, 94, 0.45);
+  animation: lamp-glow 3s ease-in-out infinite;
+}
+
+@keyframes lamp-glow {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
 /* ---------- Shared section layout ---------- */
 
 section {
@@ -712,6 +792,25 @@ h3 {
 
   section {
     padding: 4.5rem 1.5rem;
+  }
+
+  .walkthrough-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .walkthrough-text {
+    max-width: none;
+  }
+
+  .walkthrough-link {
+    justify-content: center;
+  }
+
+  .walkthrough-preview {
+    width: 100px;
+    height: 100px;
   }
 }
 
