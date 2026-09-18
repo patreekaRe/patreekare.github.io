@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patrick Rosal | Walkable Portfolio (Prototype)</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --cream: #fefae0;
+      --ink: #283618;
+      --olive: #606c38;
+      --rust: #bc6c25;
+      --tan: #dda15e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: "Poppins", sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+    }
+
+    #app { position: relative; width: 100vw; height: 100vh; }
+
+    canvas { display: block; }
+
+    .proto-badge {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 20;
+      background: var(--ink);
+      color: var(--cream);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .proto-badge a {
+      color: var(--tan);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .proto-badge a:hover { text-decoration: underline; }
+
+    .controls-hint {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 20;
+      background: rgba(40, 54, 24, 0.85);
+      color: var(--cream);
+      font-size: 0.78rem;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      line-height: 1.5;
+      max-width: 220px;
+    }
+
+    .controls-hint strong { color: var(--tan); }
+
+    .label {
+      font-family: "Roboto Slab", serif;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--tan);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translateY(-10px);
+    }
+
+    .prompt {
+      position: fixed;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      z-index: 20;
+      background: var(--ink);
+      color: var(--cream);
+      padding: 0.7rem 1.3rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .prompt.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .prompt kbd {
+      background: var(--tan);
+      color: var(--ink);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: inherit;
+      font-weight: 700;
+      margin-right: 0.4rem;
+    }
+
+    .panel-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(40, 54, 24, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 1.5rem;
+    }
+
+    .panel-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 20px;
+      max-width: 480px;
+      width: 100%;
+      padding: 2.25rem;
+      box-shadow: 0 20px 45px rgba(40, 54, 24, 0.35);
+      transform: translateY(16px);
+      transition: transform 0.25s ease;
+    }
+
+    .panel-overlay.open .panel {
+      transform: translateY(0);
+    }
+
+    .panel .eyebrow {
+      color: var(--rust);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .panel h2 {
+      font-family: "Roboto Slab", serif;
+      margin-bottom: 0.75rem;
+    }
+
+    .panel p {
+      color: #3a4a2a;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .panel-close {
+      display: inline-block;
+      margin-top: 0.5rem;
+      background: var(--rust);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .panel-close:hover { background: #a35a1c; }
+
+    .touch-pad {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 20;
+      display: none;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
+      gap: 4px;
+    }
+
+    .touch-pad button {
+      background: rgba(40, 54, 24, 0.75);
+      border: none;
+      border-radius: 10px;
+      color: var(--cream);
+      font-size: 1.1rem;
+      font-weight: 700;
+      touch-action: none;
+    }
+
+    #btn-up { grid-column: 2; grid-row: 1; }
+    #btn-left { grid-column: 1; grid-row: 2; }
+    #btn-down { grid-column: 2; grid-row: 2; }
+    #btn-right { grid-column: 3; grid-row: 2; }
+
+    @media (max-width: 700px), (pointer: coarse) {
+      .touch-pad { display: grid; }
+      .controls-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="proto-badge">Prototype &mdash; <a href="index.html">Back to site</a></div>
+    <div class="controls-hint">
+      <strong>WASD / Arrows</strong> to walk<br>
+      <strong>E</strong> to interact
+    </div>
+
+    <div class="prompt" id="prompt"><kbd>E</kbd><span id="prompt-text">Interact</span></div>
+
+    <div class="touch-pad" id="touchPad">
+      <button id="btn-up">&#9650;</button>
+      <button id="btn-left">&#9664;</button>
+      <button id="btn-down">&#9660;</button>
+      <button id="btn-right">&#9654;</button>
+    </div>
+
+    <div class="panel-overlay" id="panelOverlay">
+      <div class="panel">
+        <span class="eyebrow" id="panelEyebrow">Section</span>
+        <h2 id="panelTitle">Title</h2>
+        <p id="panelBody">Body copy.</p>
+        <button class="panel-close" id="panelClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="world.js"></script>
+</body>
+</html>
