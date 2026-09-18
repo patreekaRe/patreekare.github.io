@@ -209,6 +209,43 @@
 
     .panel-close:hover { background: #a35a1c; }
 
+    .spotify-player {
+      margin-bottom: 1rem;
+    }
+
+    .spotify-player iframe {
+      display: block;
+    }
+
+    .spotify-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.7rem;
+    }
+
+    .spotify-controls button {
+      background: var(--cream);
+      border: 2px solid var(--tan);
+      color: var(--ink);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .spotify-controls button:hover {
+      background: var(--tan);
+    }
+
+    .spotify-controls span {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--olive);
+    }
+
     .touch-controls {
       display: none;
     }
@@ -348,6 +385,25 @@
         <span class="eyebrow" id="panelEyebrow">Section</span>
         <h2 id="panelTitle">Title</h2>
         <p id="panelBody">Body copy.</p>
+
+        <div class="spotify-player" id="spotifyPlayer" hidden>
+          <iframe
+            id="spotifyFrame"
+            style="border-radius: 12px"
+            width="100%"
+            height="152"
+            frameborder="0"
+            allowfullscreen=""
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            title="Spotify player"></iframe>
+          <div class="spotify-controls">
+            <button id="spotifyPrev" type="button" aria-label="Previous song">&larr; Prev</button>
+            <span id="spotifyIndex">1 / 1</span>
+            <button id="spotifyNext" type="button" aria-label="Next song">Next &rarr;</button>
+          </div>
+        </div>
+
         <button class="panel-close" id="panelClose">Close</button>
       </div>
     </div>

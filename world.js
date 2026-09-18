@@ -13,6 +13,13 @@ const PALETTE = {
 const INTERACT_RADIUS = 2.6;
 const DOOR_RADIUS = 2.2;
 
+const SPOTIFY_TRACKS = [
+  "084YxThHOrmrM5YC0tyZEY",
+  "2PDIfFHHKklyycN0paspsF",
+  "0A8uNXnfohqdCVXCfKPrSA",
+  "6PXw0fITgSiBnRWFszSpAS",
+];
+
 const app = document.getElementById("app");
 const promptEl = document.getElementById("prompt");
 const promptTextEl = document.getElementById("prompt-text");
@@ -23,6 +30,11 @@ const panelBody = document.getElementById("panelBody");
 const panelClose = document.getElementById("panelClose");
 const fadeEl = document.getElementById("fade");
 const hintEl = document.getElementById("hint-text");
+const spotifyPlayer = document.getElementById("spotifyPlayer");
+const spotifyFrame = document.getElementById("spotifyFrame");
+const spotifyIndexEl = document.getElementById("spotifyIndex");
+const spotifyPrevBtn = document.getElementById("spotifyPrev");
+const spotifyNextBtn = document.getElementById("spotifyNext");
 
 // ---------- Scene setup ----------
 
@@ -566,15 +578,36 @@ function tryInteract() {
   else openPanel(nearestItem);
 }
 
+let spotifyIndex = 0;
+
+function loadSpotifyTrack(i) {
+  spotifyIndex = (i + SPOTIFY_TRACKS.length) % SPOTIFY_TRACKS.length;
+  spotifyFrame.src = `https://open.spotify.com/embed/track/${SPOTIFY_TRACKS[spotifyIndex]}?utm_source=generator&theme=0`;
+  spotifyIndexEl.textContent = `${spotifyIndex + 1} / ${SPOTIFY_TRACKS.length}`;
+}
+
+spotifyPrevBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex - 1));
+spotifyNextBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex + 1));
+
 function openPanel(item) {
   panelEyebrow.textContent = item.eyebrow;
   panelTitle.textContent = item.title;
   panelBody.textContent = item.body;
+
+  if (item.key === "music" && SPOTIFY_TRACKS.length) {
+    spotifyPlayer.hidden = false;
+    loadSpotifyTrack(spotifyIndex);
+  } else {
+    spotifyPlayer.hidden = true;
+    spotifyFrame.src = "";
+  }
+
   panelOverlay.classList.add("open");
 }
 
 function closePanel() {
   panelOverlay.classList.remove("open");
+  spotifyFrame.src = "";
 }
 
 panelClose.addEventListener("click", closePanel);
