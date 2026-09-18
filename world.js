@@ -18,6 +18,12 @@ const SPOTIFY_TRACKS = [
   "2PDIfFHHKklyycN0paspsF",
   "0A8uNXnfohqdCVXCfKPrSA",
   "6PXw0fITgSiBnRWFszSpAS",
+  "1AffuacdDfxEh0ZQWFdAfm",
+  "1xBTI8q5lTUHf3hXRg2BAp",
+  "5s71EMi5MNKD82SIBhkBC0",
+  "45hsEjHz0wsxX5t2mDXzhr",
+  "3Z6qc0I5JDUol2PGF6WAek",
+  "4o1HNJ4RTT0ZipPDGyQrTq",
 ];
 
 const COURSEWORK_PROJECTS = [
