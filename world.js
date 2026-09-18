@@ -269,30 +269,63 @@ const rightWall = leftWall.clone();
 rightWall.position.x = 6.5;
 insideGroup.add(rightWall);
 
-// Turntable — centerpiece against the back wall
-const turntableGroup = new THREE.Group();
-turntableGroup.position.set(0, 0, -5.4);
-const ttBase = new THREE.Mesh(
-  new THREE.BoxGeometry(1.4, 0.35, 1.1),
-  new THREE.MeshLambertMaterial({ color: PALETTE.ink })
+// Vinyl crate — a browsable stack of records, one per catalog track
+const crateGroup = new THREE.Group();
+crateGroup.position.set(0, 0, -5.4);
+insideGroup.add(crateGroup);
+
+const crateBase = new THREE.Mesh(
+  new THREE.BoxGeometry(2, 0.22, 0.75),
+  new THREE.MeshLambertMaterial({ color: 0x6b4a2c })
 );
-ttBase.position.y = 0.575;
-turntableGroup.add(ttBase);
-const ttRecord = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.42, 0.42, 0.03, 24),
-  new THREE.MeshLambertMaterial({ color: 0x111111 })
-);
-ttRecord.position.y = 0.77;
-turntableGroup.add(ttRecord);
-const ttArm = new THREE.Mesh(
-  new THREE.BoxGeometry(0.6, 0.05, 0.05),
-  new THREE.MeshLambertMaterial({ color: PALETTE.tan })
-);
-ttArm.position.set(0.5, 0.8, -0.3);
-ttArm.rotation.y = 0.4;
-turntableGroup.add(ttArm);
-insideGroup.add(turntableGroup);
-makeLabel(insideGroup, "Music & Production", 0, 1.8, -5.4);
+crateBase.position.y = 0.11;
+crateGroup.add(crateBase);
+
+const crateWallMat = new THREE.MeshLambertMaterial({ color: 0x8a5a34 });
+const crateWallGeo = new THREE.BoxGeometry(0.09, 0.55, 0.75);
+const crateWallL = new THREE.Mesh(crateWallGeo, crateWallMat);
+crateWallL.position.set(-1, 0.375, 0);
+crateWallL.rotation.z = -0.06;
+crateGroup.add(crateWallL);
+const crateWallR = new THREE.Mesh(crateWallGeo, crateWallMat);
+crateWallR.position.set(1, 0.375, 0);
+crateWallR.rotation.z = 0.06;
+crateGroup.add(crateWallR);
+
+const VINYL_COLORS = [PALETTE.rust, PALETTE.tan, PALETTE.olive];
+const VINYL_COUNT = THREE.MathUtils.clamp(SPOTIFY_TRACKS.length, 3, 7);
+const vinylPivots = [];
+
+for (let i = 0; i < VINYL_COUNT; i++) {
+  const t = VINYL_COUNT > 1 ? i / (VINYL_COUNT - 1) : 0.5;
+  const x = THREE.MathUtils.lerp(-0.82, 0.82, t);
+  const baseAngle = (t - 0.5) * 0.6;
+
+  const pivot = new THREE.Group();
+  pivot.position.set(x, 0.68, 0);
+  pivot.rotation.y = baseAngle;
+  pivot.userData = { baseAngle, phase: i * 0.7 };
+  crateGroup.add(pivot);
+
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.44, 0.44, 0.03, 28),
+    new THREE.MeshLambertMaterial({ color: 0x141414 })
+  );
+  disc.rotation.x = Math.PI / 2;
+  pivot.add(disc);
+
+  const label = new THREE.Mesh(
+    new THREE.CircleGeometry(0.15, 20),
+    new THREE.MeshBasicMaterial({ color: VINYL_COLORS[i % VINYL_COLORS.length] })
+  );
+  label.position.y = 0.018;
+  label.rotation.x = -Math.PI / 2;
+  disc.add(label);
+
+  vinylPivots.push(pivot);
+}
+
+makeLabel(insideGroup, "Music & Production", 0, 1.6, -5.4);
 
 // Guitar — leaning near the west wall
 const guitarGroup = new THREE.Group();
@@ -766,8 +799,13 @@ function animate() {
     body.position.y = 1.05;
   }
 
-  // Turntable spin + guitar/label idle motion
-  ttRecord.rotation.y += delta * (area === "inside" ? 2.2 : 0);
+  // Vinyl crate idle browsing motion
+  if (area === "inside") {
+    vinylPivots.forEach((pivot) => {
+      const sway = Math.sin(t * 0.8 + pivot.userData.phase) * 0.12;
+      pivot.rotation.y = pivot.userData.baseAngle + sway;
+    });
+  }
 
   // Nearest interactable / prompt
   let closest = null;
