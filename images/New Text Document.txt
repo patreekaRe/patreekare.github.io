@@ -1,0 +1,9 @@
+images/profile.jpg
+images/favorite-city.jpg
+images/musician.jpg
+images/product-landing.jpg
+images/technical-doc.jpg
+images/ferris-wheel.jpg
+images/penguin.jpg
+images/nutrition-label.jpg
+images/rothko.jpg

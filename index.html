@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patrick Rosal | Web Developer</title>
+  <meta name="description" content="Patrick Rosal — music educator and songwriter learning to build for the web. Front-end projects, a Unity game, and production work.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#welcome-section">PR</a>
+      <ul>
+        <li><a href="#welcome-section">Home</a></li>
+        <li><a href="#featured-work">Work</a></li>
+        <li><a href="#coursework">Coursework</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section id="welcome-section">
+    <div class="hero-content">
+
+      <img
+        src="images/profile.jpg"
+        alt="Patrick Rosal"
+        class="profile-image">
+
+      <h1>Patrick Rosal</h1>
+
+      <p class="subtitle">
+        Music Educator &amp; Songwriter — Building Toward Front-End Development
+      </p>
+
+      <p>
+        I'm a music instructor and independent songwriter based in the Los Angeles
+        area, currently learning full-stack web development. I like building things
+        that work cleanly and hold up under real use — whether that's a mix, a
+        lesson plan, or a page of HTML and CSS. Below is a mix of self-directed
+        projects and coursework from my web development studies.
+      </p>
+
+      <div class="hero-links">
+        <a class="btn btn-primary" href="https://github.com/patreekaRe" target="_blank" rel="noopener">
+          View GitHub
+        </a>
+        <a class="btn btn-secondary" href="#contact">
+          Get in Touch
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="featured-work">
+
+    <h2>Featured Projects</h2>
+    <p class="section-intro">
+      Self-directed builds where I picked the problem, the stack, and worked through
+      it end to end.
+    </p>
+
+    <div class="featured-grid">
+
+      <article class="featured-card">
+        <div class="featured-icon" aria-hidden="true">🕷️</div>
+        <div class="featured-body">
+          <div class="tag-row">
+            <span class="tag">Unity 6</span>
+            <span class="tag">C#</span>
+            <span class="tag">Game Architecture</span>
+          </div>
+          <h3>Marvel Champions: Spider-Man vs. Rhino</h3>
+          <p>
+            A digital solo app for Marvel Champions: The Card Game, built from scratch
+            while learning Unity and C#. I play the physical card game, and this project
+            is me translating real rules knowledge into working game logic — a singleton
+            manager architecture (CardEffectManager, PlayerDeckManager, VillainManager,
+            EncounterManager, and more) where UI views subscribe to game state, card
+            effects route through effectId keys, and interrupt cards use async callbacks
+            for player choices like targeting. Currently past a dozen implementation
+            milestones and under active development.
+          </p>
+        </div>
+      </article>
+
+      <article class="featured-card">
+        <div class="featured-icon" aria-hidden="true">🎧</div>
+        <div class="featured-body">
+          <div class="tag-row">
+            <span class="tag">Reaper</span>
+            <span class="tag">Mixing &amp; Production</span>
+            <span class="tag">Sound Design</span>
+          </div>
+          <h3>Independent Music &amp; Production</h3>
+          <p>
+            Alongside teaching, I write, produce, and mix my own music, with releases
+            on Spotify. My current work runs through Reaper using FabFilter, Valhalla,
+            and Serum 2 for mixing and sound design — the same kind of detail-oriented,
+            iterative problem-solving I bring to code: get the structure right, then
+            refine until it holds up.
+          </p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="coursework">
+
+    <h2>Coursework Projects</h2>
+    <p class="section-intro">
+      Smaller, focused projects from my web development coursework — each one
+      targeting a specific skill.
+    </p>
+
+    <div class="project-grid">
+
+      <article class="project-tile">
+        <img src="images/favorite-city.jpg" alt="Favorite City Website" loading="lazy">
+        <h3>Favorite City Website</h3>
+        <p>
+          A website highlighting Downtown Chicago. This project helped me practice
+          images, page layout, navigation, and organizing information for visitors.
+        </p>
+        <a href="https://dgnhw2.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/musician.jpg" alt="Musician Webpage" loading="lazy">
+        <h3>Musician Webpage</h3>
+        <p>
+          A webpage featuring a favorite artist with embedded media, images, and
+          custom styling. This connected my interest in music with web design.
+        </p>
+        <a href="https://hz463v.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/product-landing.jpg" alt="Product Landing Page" loading="lazy">
+        <h3>Product Landing Page</h3>
+        <p>
+          A product landing page focused on sections, navigation links, a form,
+          and embedded video. This project also practiced FreeCodeCamp requirements.
+        </p>
+        <a href="https://2cshtl.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/technical-doc.jpg" alt="Technical Documentation Page" loading="lazy">
+        <h3>Technical Documentation Page</h3>
+        <p>
+          A single-page documentation site using internal navigation, headings,
+          code examples, and organized text sections.
+        </p>
+        <a href="https://wjp7fz.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/layout.jpg" alt="Page Layout" loading="lazy">
+        <h3>Page Layout</h3>
+        <p>
+          This page focused on building structured webpage layouts using HTML and
+          CSS. It helped me understand how to arrange content on a page.
+        </p>
+        <a href="https://g95nxn.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/rwd.jpg" alt="Responsive Web Design" loading="lazy">
+        <h3>Responsive Web Design</h3>
+        <p>
+          This website introduced responsive web design and media queries, which help
+          websites adjust for phones, tablets, and desktop screens.
+        </p>
+        <a href="https://qgpygt.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/grid.jpg" alt="CSS Grid" loading="lazy">
+        <h3>CSS Grid</h3>
+        <p>
+          This page explored CSS Grid and how it can be used to create organized,
+          flexible layouts for webpages.
+        </p>
+        <a href="https://jvrmjw.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+      <article class="project-tile">
+        <img src="images/animations.jpg" alt="CSS Animations and Transitions" loading="lazy">
+        <h3>CSS Animations &amp; Transitions</h3>
+        <p>
+          This website focused on transitions and animations. I practiced adding
+          movement and hover effects to make webpages feel more interactive.
+        </p>
+        <a href="https://z67l6s.csb.app/" target="_blank" rel="noopener">View Project</a>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="about">
+
+    <h2>About My Path Into Development</h2>
+
+    <div class="about-grid">
+
+      <div class="about-block">
+        <h3>Where I'm Coming From</h3>
+        <p>
+          I hold a BM in Music Education from CSULB and have spent years teaching
+          and writing music professionally. That background shapes how I approach
+          code: break a big, unfamiliar system into parts, understand each one, and
+          rebuild it into something that works reliably — the same process as
+          arranging a song or planning a lesson.
+        </p>
+      </div>
+
+      <div class="about-block">
+        <h3>What I've Learned</h3>
+        <p>
+          Through self-directed study (including the 100Devs program) and formal
+          coursework, I've worked from page structure and CSS layout through
+          responsive design, CSS Grid, and animation, and into building a
+          full architecture-driven application in Unity and C#. I'm continuing
+          into JavaScript and full-stack development next.
+        </p>
+      </div>
+
+      <div class="about-block">
+        <h3>What I'm Looking For</h3>
+        <p>
+          I'm exploring entry-level front-end and full-stack developer roles.
+          I'm looking for a team where I can keep learning quickly, contribute
+          real work early, and bring the same discipline I've used to ship
+          music and run a game project to shipping software.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="contact">
+
+    <h2>Contact</h2>
+
+    <ul>
+      <li><a href="mailto:patricklawrosal@gmail.com">patricklawrosal@gmail.com</a></li>
+      <li><a href="https://github.com/patreekaRe" target="_blank" rel="noopener">github.com/patreekaRe</a></li>
+      <li>Los Angeles Area, California</li>
+    </ul>
+
+  </section>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year"></span> Patrick Rosal</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
