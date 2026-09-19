@@ -360,14 +360,14 @@ const rugTex = canvasTexture(512, 512, (g, w, h) => {
     }
   }
 });
-repeatTexture(rugTex, 2.6, 2);
-const rug = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 4.8), new THREE.MeshLambertMaterial({ map: rugTex }));
+repeatTexture(rugTex, 1.55, 1.46);
+const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 3.5), new THREE.MeshLambertMaterial({ map: rugTex }));
 rug.rotation.x = -Math.PI / 2;
-rug.position.set(0.4, 0.012, 0.7);
+rug.position.set(-3.9, 0.012, -3.8);
 insideGroup.add(rug);
-const rugFringe = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 5.0), lambert(0x7d3a20));
+const rugFringe = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.7), lambert(0x7d3a20));
 rugFringe.rotation.x = -Math.PI / 2;
-rugFringe.position.set(0.4, 0.008, 0.7);
+rugFringe.position.set(-3.9, 0.008, -3.8);
 insideGroup.add(rugFringe);
 
 // Walnut slat paneling (canvas texture) and cream plaster
@@ -517,7 +517,7 @@ function makePlant(x, y, z, scale = 1, potColor = 0xf2eee6) {
 
 // Brass globe chandelier
 const chandelier = new THREE.Group();
-chandelier.position.set(2.3, 3.6, -3.9);
+chandelier.position.set(-2.6, 3.6, -3.6);
 chandelier.scale.setScalar(0.75);
 const chRod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.6, 8), brassMat);
 chRod.position.y = 1.3;
@@ -545,7 +545,7 @@ const globeMat = new THREE.MeshBasicMaterial({ color: 0xfff3dc });
   chandelier.add(globe);
 });
 insideGroup.add(chandelier);
-lamp.position.set(2.0, 3.4, -2.6);
+lamp.position.set(-1.6, 3.4, -2.6);
 
 // Interior lighting: warm hemisphere fill plus the pools set up with each piece below
 insideGroup.add(new THREE.HemisphereLight(0xffe6c8, 0xffcf9a, 0.55));
@@ -738,19 +738,19 @@ const rbox = (w, h, d, r, material) => new THREE.Mesh(new RoundedBoxGeometry(w, 
 
 // Solid furniture footprints for walking collision (center x, z, half width, half depth)
 const FURNITURE = [
-  { x: 0.3, z: -0.6, hw: 2.1, hd: 0.7 },
-  { x: 0.3, z: 1.4, hw: 0.85, hd: 0.6 },
-  { x: 3.9, z: 0.9, hw: 0.9, hd: 0.85 },
-  { x: -2.35, z: -0.85, hw: 0.4, hd: 0.4 },
-  { x: -4.9, z: -0.7, hw: 0.62, hd: 0.62 },
-  { x: -5.4, z: -2.4, hw: 0.95, hd: 0.4 },
-  { x: 5.4, z: -2.4, hw: 0.9, hd: 0.42 },
-  { x: -3.9, z: -6.0, hw: 1.45, hd: 0.3 },
-  { x: 0, z: -5.4, hw: 1.1, hd: 0.55 },
-  { x: -5.6, z: 2.4, hw: 0.4, hd: 0.3 },
-  { x: 5.6, z: 2.7, hw: 0.42, hd: 0.42 },
-  { x: 2.95, z: -1.5, hw: 0.25, hd: 0.25 },
-  { x: -5.8, z: -5.5, hw: 0.3, hd: 0.3 },
+  { x: -3.9, z: -1.9, hw: 2.1, hd: 0.7 }, // sofa
+  { x: -3.9, z: -4.2, hw: 0.85, hd: 0.6 }, // coffee table
+  { x: 3.9, z: 0.9, hw: 0.9, hd: 0.85 }, // armchair
+  { x: -1.25, z: -1.65, hw: 0.4, hd: 0.4 }, // globe lamp side table
+  { x: -5.5, z: -4.0, hw: 0.62, hd: 0.62 }, // beanbag
+  { x: -3.9, z: -6.05, hw: 1.1, hd: 0.35 }, // TV console
+  { x: 4.35, z: -5.85, hw: 0.9, hd: 0.42 }, // desk
+  { x: -6.0, z: 1.6, hw: 0.3, hd: 1.45 }, // credenza on the left wall
+  { x: 0, z: -5.4, hw: 1.1, hd: 0.55 }, // record crate
+  { x: -5.7, z: 3.7, hw: 0.4, hd: 0.3 }, // guitar stand
+  { x: 5.5, z: 0.4, hw: 0.42, hd: 0.42 }, // phone table
+  { x: 2.95, z: -1.5, hw: 0.25, hd: 0.25 }, // plant
+  { x: -5.8, z: -5.5, hw: 0.3, hd: 0.3 }, // plant
 ];
 
 // Boucle fabric
@@ -813,6 +813,7 @@ wallClock.add(minuteHand);
 insideGroup.add(wallClock);
 
 // Sideboard with vase, books, sculpture and a textured art piece above
+const sideboardStart = insideGroup.children.length;
 const sideboard = new THREE.Group();
 sideboard.position.set(-3.9, 0, -6.0);
 const sbBody = rbox(2.8, 0.62, 0.5, 0.04, lambert(0xb0763f));
@@ -912,9 +913,21 @@ artPlane.position.z = 0.04;
 artFrame.add(artPlane);
 insideGroup.add(artFrame);
 
+// The whole set (credenza, decor and art) was built against the back wall; stand it along the
+// left wall instead, facing into the room, where it sits beside the guitar
+const sideboardSet = new THREE.Group();
+const sideboardShift = new THREE.Group();
+sideboardShift.position.set(3.9, 0, 6.0);
+insideGroup.children.slice(sideboardStart).forEach((part) => sideboardShift.add(part));
+sideboardSet.add(sideboardShift);
+sideboardSet.position.set(-6.0, 0, 1.6);
+sideboardSet.rotation.y = Math.PI / 2;
+insideGroup.add(sideboardSet);
+
 // Lounge: boucle sofa with throw pillows
 const sofa = new THREE.Group();
-sofa.position.set(0.3, 0, -0.6);
+sofa.position.set(-3.9, 0, -1.9);
+sofa.rotation.y = Math.PI;
 const sofaBase = rbox(3.0, 0.46, 1.15, 0.16, boucleMat);
 sofaBase.position.y = 0.32;
 sofa.add(sofaBase);
@@ -949,7 +962,7 @@ insideGroup.add(sofa);
 
 // Ottoman with a magazine and glasses
 const ottoman = new THREE.Group();
-ottoman.position.set(0.3, 0, 1.4);
+ottoman.position.set(-3.9, 0, -4.2);
 const ottBase = rbox(1.6, 0.55, 1.05, 0.2, boucleMat);
 ottBase.position.y = 0.3;
 ottoman.add(ottBase);
@@ -1024,7 +1037,7 @@ insideGroup.add(armchair);
 
 // Stacked black side table with a globe lamp
 const stack = new THREE.Group();
-stack.position.set(-2.35, 0, -0.85);
+stack.position.set(-1.25, 0, -1.65);
 [
   [0.36, 0.22],
   [0.3, 0.63],
@@ -1043,7 +1056,7 @@ lampGlobe.position.y = 1.56;
 stack.add(lampGlobe);
 insideGroup.add(stack);
 const globeLampLight = new THREE.PointLight(0xffd6a0, 1.1, 7, 1.6);
-globeLampLight.position.set(-2.35, 1.6, -0.6);
+globeLampLight.position.set(-1.25, 1.6, -1.4);
 insideGroup.add(globeLampLight);
 
 // Plants around the room
@@ -1053,7 +1066,8 @@ makePlant(5.9, 0, -5.6, 1.4, 0xf2eee6);
 
 // Acoustic guitar on a stand — About
 const guitarGroup = new THREE.Group();
-guitarGroup.position.set(-5.6, 0, 2.4);
+guitarGroup.position.set(-5.7, 0, 3.7);
+guitarGroup.rotation.y = 0.55;
 const honey = lambert(0xc8894a);
 const guitarLower = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.16, 22), honey);
 guitarLower.rotation.x = Math.PI / 2;
@@ -1090,11 +1104,11 @@ const guitarRest = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.05), charc
 guitarRest.position.set(0, 0.36, 0);
 guitarGroup.add(guitarRest);
 insideGroup.add(guitarGroup);
-makeLabel(insideGroup, "About", -5.6, 3.1, 2.4);
+makeLabel(insideGroup, "About", -5.7, 3.1, 3.7);
 
 // Gaming corner — Featured Work
 const tvGroup = new THREE.Group();
-tvGroup.position.set(-5.4, 0, -2.4);
+tvGroup.position.set(-3.9, 0, -6.05);
 const consoleBody = rbox(1.75, 0.34, 0.6, 0.04, walnutMat);
 consoleBody.position.y = 0.5;
 tvGroup.add(consoleBody);
@@ -1181,16 +1195,16 @@ tvGroup.add(tvGlowPlane);
 insideGroup.add(tvGroup);
 const beanbag = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), lambert(MC.blush));
 beanbag.scale.set(1, 0.66, 1);
-beanbag.position.set(-4.9, 0.36, -0.7);
+beanbag.position.set(-5.5, 0.36, -4.0);
 insideGroup.add(beanbag);
 const tvGlow = new THREE.PointLight(0xa06bff, 1.0, 5, 1.6);
-tvGlow.position.set(-5.4, 1.3, -1.6);
+tvGlow.position.set(-3.9, 1.3, -4.9);
 insideGroup.add(tvGlow);
-makeLabel(insideGroup, "Featured Work", -5.4, 1.9, -2.4);
+makeLabel(insideGroup, "Featured Work", -3.9, 2.1, -6.05);
 
 // Walnut desk with a monitor — Coursework
 const deskGroup = new THREE.Group();
-deskGroup.position.set(5.4, 0, -2.4);
+deskGroup.position.set(4.35, 0, -5.85);
 const deskTop = rbox(1.7, 0.06, 0.78, 0.02, walnutMat);
 deskTop.position.y = 0.78;
 deskGroup.add(deskTop);
@@ -1272,15 +1286,15 @@ const chairBaseDesk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.03
 chairBaseDesk.position.set(0, 0.02, 0.95);
 deskGroup.add(chairBaseDesk);
 insideGroup.add(deskGroup);
-makePlant(5.4 + 0.65, 0.81, -2.4 - 0.15, 0.45, 0xf2eee6);
+makePlant(4.35 + 0.65, 0.81, -5.85 - 0.15, 0.45, 0xf2eee6);
 const deskGlow = new THREE.PointLight(0x9fc4ff, 0.8, 4, 1.6);
-deskGlow.position.set(5.4, 1.3, -1.6);
+deskGlow.position.set(4.35, 1.3, -5.0);
 insideGroup.add(deskGlow);
-makeLabel(insideGroup, "Coursework", 5.4, 1.9, -2.4);
+makeLabel(insideGroup, "Coursework", 4.35, 1.95, -5.85);
 
 // Round walnut side table with a rotary phone — Contact
 const phoneGroup = new THREE.Group();
-phoneGroup.position.set(5.6, 0, 2.7);
+phoneGroup.position.set(5.5, 0, 0.4);
 const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 20), walnutMat);
 tableTop.position.y = 0.62;
 phoneGroup.add(tableTop);
@@ -1303,7 +1317,7 @@ handset.rotation.z = Math.PI / 2;
 handset.position.set(0, 0.83, -0.07);
 phoneGroup.add(handset);
 insideGroup.add(phoneGroup);
-makeLabel(insideGroup, "Contact", 5.6, 1.5, 2.7);
+makeLabel(insideGroup, "Contact", 5.5, 1.5, 0.4);
 
 // Woven doormat marking the exit back outside
 const exitMat = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.6), lambert(0xd8c8a4));
@@ -1386,21 +1400,26 @@ makePlant(-1.75 + 0.28, 2.62, -6.28, 0.42, 0xf2eee6);
 FURNITURE.push({ x: -1.75, z: -6.2, hw: 0.6, hd: 0.25 });
 
 // Small rugs under the beanbag and the desk chair
-function roundRug(x, z, layers) {
+function roundRug(x, z, layers, scale = 1) {
   layers.forEach(([inner, outer, color, y]) => {
-    const geo = inner > 0 ? new THREE.RingGeometry(inner, outer, 40) : new THREE.CircleGeometry(outer, 40);
+    const geo = inner > 0 ? new THREE.RingGeometry(inner * scale, outer * scale, 40) : new THREE.CircleGeometry(outer * scale, 40);
     const m = new THREE.Mesh(geo, lambert(color));
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, y, z);
     insideGroup.add(m);
   });
 }
-roundRug(-4.9, -0.7, [
-  [0, 1.2, 0xebdfc8, 0.016],
-  [0.9, 1.05, MC.blush, 0.017],
-  [0, 0.85, 0xf3e9d6, 0.018],
-]);
-roundRug(5.4, -1.35, [
+roundRug(
+  -5.5,
+  -4.0,
+  [
+    [0, 1.2, 0xebdfc8, 0.016],
+    [0.9, 1.05, MC.blush, 0.017],
+    [0, 0.85, 0xf3e9d6, 0.018],
+  ],
+  0.78
+);
+roundRug(4.35, -4.9, [
   [0, 1.0, 0xd9cdb6, 0.016],
   [0.62, 0.78, MC.dusty, 0.017],
   [0, 0.6, 0xf0e8d6, 0.018],
@@ -1932,21 +1951,24 @@ const HENRY_NODE_DEFS = {
   front: [0.3, 3.0],
   left: [-2.6, 2.8],
   right: [2.7, 2.9],
-  beanApproach: [-3.7, 0.4],
-  leftMid: [-3.4, -2.7],
-  sideboardFront: [-3.3, -4.8],
+  mid: [0.2, -0.4],
+  leftFront: [-3.9, 0.4],
+  beanApproach: [-5.5, -3.05],
+  leftMid: [-2.2, -3.4],
+  sideboardFront: [-3.9, -5.2],
+  tvRight: [-2.3, -5.0],
   crateMid: [0, -3.6],
   rightBack: [2.6, -3.6],
-  sun: [3.9, -4.6],
+  sun: [5.75, -4.2],
   rightMid: [3.6, -2.8],
-  eastStrip: [5.5, -0.2],
+  eastStrip: [5.7, -1.5],
   armApproach: [3.4, 2.4],
-  sofaFrontL: [-0.9, 0.5],
-  deskApproach: [4.3, -1.1],
+  sofaFrontL: [-2.9, -3.05],
+  deskApproach: [4.35, -3.8],
   behindSofa: [0.5, -2.4],
-  sofaFrontR: [1.6, 0.55],
-  ottApproach: [0.3, 2.55],
-  rugSpot: [-2.4, 1.3],
+  sofaFrontR: [-4.9, -3.05],
+  ottApproach: [-4.0, -3.05],
+  rugSpot: [-2.4, -3.9],
   crateSeat: [1.6, -4.3],
 };
 const nodeNames = Object.keys(HENRY_NODE_DEFS);
@@ -2006,8 +2028,8 @@ const HENRY_SPOTS = [
   { name: "armchair", kind: "sleep", elevated: true, approach: nodeIndex.armApproach, pos: worldOf(armchair, 0.1, 0.8, 0.12), heading: -0.5 },
   { name: "sofaLeft", kind: "stretch", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
   { name: "sofaRight", kind: "sit", elevated: true, approach: nodeIndex.sofaFrontR, pos: worldOf(sofa, 0.99, 0.8, 0.1), heading: -0.25 },
-  { name: "ottoman", kind: "stretch", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-0.35, 0.7, 1.45), heading: 0.4 },
-  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.9, 0.74, -0.7), heading: 1.0 },
+  { name: "ottoman", kind: "stretch", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-4.55, 0.7, -4.15), heading: 0.4 },
+  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-5.5, 0.74, -4.0), heading: 1.0 },
   { name: "deskChair", kind: "sit", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
   { name: "sunbeam", kind: "sleep", elevated: false, approach: nodeIndex.sun, pos: floorAt("sun"), heading: 2.2 },
   { name: "rug", kind: "stretch", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
@@ -2439,7 +2461,7 @@ const ROOM_ITEMS = [
   {
     key: "work",
     label: "Featured Work",
-    position: new THREE.Vector3(-5.4, 0, -2.4),
+    position: new THREE.Vector3(-3.9, 0, -4.9),
     eyebrow: "Selected work · In development",
     title: "Marvel Champions: Spider-Man vs. Rhino",
     body: "A work in progress: a digital solo app for Marvel Champions: The Card Game, built from scratch while learning Unity and C#. So far it's a singleton manager architecture with interrupt-driven card effects and async player choices, with more of the rules still to come.",
@@ -2455,7 +2477,7 @@ const ROOM_ITEMS = [
   {
     key: "coursework",
     label: "Coursework",
-    position: new THREE.Vector3(5.4, 0, -2.4),
+    position: new THREE.Vector3(4.35, 0, -4.6),
     eyebrow: "Fundamentals",
     title: "Coursework Projects",
     body: "Eight focused builds covering layout, responsive design, CSS Grid, and animation — each one targeting a specific front-end skill from the ground up.",
@@ -2463,7 +2485,7 @@ const ROOM_ITEMS = [
   {
     key: "about",
     label: "About",
-    position: new THREE.Vector3(-5.6, 0, 2.4),
+    position: new THREE.Vector3(-5.7, 0, 3.7),
     eyebrow: "Background",
     title: "Music Educator, Now Building for the Web",
     body: "A BM in Music Education from CSULB and years of teaching and producing music shape how I approach code: break a big unfamiliar system into parts, then rebuild it into something that holds up.",
@@ -2471,7 +2493,7 @@ const ROOM_ITEMS = [
   {
     key: "contact",
     label: "Contact",
-    position: new THREE.Vector3(5.6, 0, 2.7),
+    position: new THREE.Vector3(5.5, 0, 0.4),
     eyebrow: "Let's talk",
     title: "Get in Touch",
     body: "patricklawrosal@gmail.com — open to entry-level front-end and full-stack roles in the LA area.",
