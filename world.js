@@ -1677,10 +1677,19 @@ const henryTailRoot = tailParent;
 tailParent.position.set(0, 0.05, -0.27);
 henryRig.add(tailParent);
 for (let i = 0; i < 5; i++) {
-  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i === 4 || i % 2 ? henryStripe : henryFur);
+  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i === 4 ? henryStripe : henryFur);
   seg.rotation.x = Math.PI / 2;
   seg.position.z = -0.045;
   tailParent.add(seg);
+  // Thin dark rings up the tail; the last segment is a solid dark tip
+  if (i < 4) {
+    [-0.018, -0.045, -0.072].forEach((rz) => {
+      const ringBand = new THREE.Mesh(new THREE.CylinderGeometry(0.0295, 0.0295, 0.012, 10), henryStripe);
+      ringBand.rotation.x = Math.PI / 2;
+      ringBand.position.z = rz;
+      tailParent.add(ringBand);
+    });
+  }
   const next = new THREE.Group();
   next.position.z = -0.09;
   tailParent.add(next);
@@ -1711,6 +1720,9 @@ const henryLegs = [];
     b.position.y = y;
     parent.add(b);
   };
+  // Several stripes down a tapered limb, each sized to the limb's radius at that height
+  const bandsOn = (parent, rTop, rBottom, len, fractions) =>
+    fractions.forEach((f) => band(parent, rTop + (rBottom - rTop) * f + 0.0015, -len * f));
 
   // Paw: a soft pad with little toes, kept mostly flat on the floor by the animation
   const makePaw = (parent, y) => {
@@ -1745,7 +1757,8 @@ const henryLegs = [];
     pivot.add(elbow);
     jointBall(elbow, 0.026);
     limb(elbow, 0.024, 0.017, foreLen);
-    band(elbow, 0.021, -foreLen * 0.45);
+    bandsOn(pivot, 0.034, 0.025, upperLen, [0.55, 0.8]);
+    bandsOn(elbow, 0.024, 0.017, foreLen, [0.15, 0.35, 0.55, 0.75]);
     leg.knee = elbow;
     leg.paw = makePaw(elbow, -foreLen);
     // Elbow tucked back, forearm dropping straight down
@@ -1761,18 +1774,26 @@ const henryLegs = [];
     thigh.scale.set(0.85, 1.6, 1.25);
     thigh.position.set(0, -0.04, -0.006);
     pivot.add(thigh);
-    band(pivot, 0.03, -thighLen * 0.7);
+    // Stripes wrap the thigh's rounded bulge: each ring is sized to the ellipse at its height
+    [-0.06, -0.035, -0.01].forEach((dy) => {
+      const s = Math.sqrt(1 - (dy / 0.08) ** 2);
+      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.009, 14), henryStripe);
+      wrap.scale.set(0.0425 * s + 0.001, 1, 0.0625 * s + 0.001);
+      wrap.position.set(0, -0.04 + dy, -0.006);
+      pivot.add(wrap);
+    });
     const knee = new THREE.Group();
     knee.position.y = -thighLen;
     pivot.add(knee);
     jointBall(knee, 0.026);
     limb(knee, 0.026, 0.02, shinLen);
+    bandsOn(knee, 0.026, 0.02, shinLen, [0.25, 0.5, 0.75]);
     const hock = new THREE.Group();
     hock.position.y = -shinLen;
     knee.add(hock);
     jointBall(hock, 0.021);
     limb(hock, 0.019, 0.015, footLen);
-    band(hock, 0.0165, -footLen * 0.4);
+    bandsOn(hock, 0.019, 0.015, footLen, [0.2, 0.45, 0.7]);
     leg.knee = knee;
     leg.hock = hock;
     leg.paw = makePaw(hock, -footLen);
