@@ -2715,7 +2715,7 @@ function renderVinylFace() {
     btn.type = "button";
     btn.className = "vinyl-track" + (ti === trackIndex ? " active" : "");
     btn.textContent = track.title;
-    btn.addEventListener("click", () => loadTrack(recordIndex, ti));
+    btn.addEventListener("click", () => loadTrack(recordIndex, ti, true));
     list.appendChild(btn);
   });
   vinylFaceEl.appendChild(list);
@@ -2723,19 +2723,66 @@ function renderVinylFace() {
   faceTimer = setTimeout(() => vinylFaceEl.classList.add("show"), 500);
 }
 
-function loadTrack(r, t = 0) {
+// Spotify player. Spotify's iFrame API (when it loads) lets a tap on a song start playback;
+// without it the plain embed below still works, you just press play yourself.
+let spotifyApi = window.__spotifyApi || null;
+let spotifyController = null;
+let spotifyCreating = false;
+let spotifyWant = { uri: "", play: false };
+
+window.addEventListener("spotify-api-ready", () => {
+  spotifyApi = window.__spotifyApi;
+  if (browsing) ensureSpotifyController();
+});
+
+function ensureSpotifyController() {
+  if (!spotifyApi || spotifyController || spotifyCreating) return;
+  spotifyCreating = true;
+  const mount = document.createElement("div");
+  spotifyFrame.replaceWith(mount);
+  const startUri = spotifyWant.uri || `spotify:track:${RECORDS[0].tracks[0].id}`;
+  spotifyApi.createController(mount, { width: "100%", height: 152, uri: startUri }, (controller) => {
+    spotifyController = controller;
+    spotifyCreating = false;
+    // A song may have been picked while the player was still starting up
+    if (spotifyWant.uri && spotifyWant.uri !== startUri) controller.loadUri(spotifyWant.uri);
+    if (spotifyWant.play) controller.play();
+  });
+}
+
+function setSpotifyTrack(id, autoplay) {
+  const uri = `spotify:track:${id}`;
+  const changed = uri !== spotifyWant.uri;
+  spotifyWant = { uri, play: autoplay };
+  ensureSpotifyController();
+  if (spotifyController) {
+    if (changed) spotifyController.loadUri(uri);
+    if (autoplay) spotifyController.play();
+  } else if (!spotifyApi) {
+    const src = `https://open.spotify.com/embed/track/${id}?utm_source=generator&theme=0`;
+    if (spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
+  }
+}
+
+// autoplay is true when a song was chosen on the vinyl, false when just flipping through records
+function loadTrack(r, t = 0, autoplay = false) {
   const nextRecord = (r + RECORDS.length) % RECORDS.length;
   const recordChanged = nextRecord !== recordIndex || !vinylFaceEl.isConnected;
   recordIndex = nextRecord;
   const record = RECORDS[recordIndex];
   trackIndex = THREE.MathUtils.clamp(t, 0, record.tracks.length - 1);
 
-  // Wait for flipping to settle so quick flips don't leave the player on an earlier song
-  const src = `https://open.spotify.com/embed/track/${record.tracks[trackIndex].id}?utm_source=generator&theme=0`;
+  const id = record.tracks[trackIndex].id;
   clearTimeout(frameTimer);
-  frameTimer = setTimeout(() => {
-    if (browsing && spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
-  }, 350);
+  if (autoplay) {
+    // Straight away, so the play call stays as close as possible to the tap that chose the song
+    setSpotifyTrack(id, true);
+  } else {
+    // Wait for flipping to settle so quick flips don't leave the player on an earlier song
+    frameTimer = setTimeout(() => {
+      if (browsing) setSpotifyTrack(id, false);
+    }, 350);
+  }
   spotifyIndexEl.textContent = `${recordIndex + 1} / ${RECORDS.length}`;
   crateNowEl.textContent = `Now: ${record.tracks[trackIndex].title}`;
 
@@ -2761,6 +2808,7 @@ function enterBrowse() {
   app.classList.add("browsing");
   character.visible = false;
   crateLabel.visible = false;
+  ensureSpotifyController();
   loadTrack(recordIndex, trackIndex);
   crateSheet.classList.add("open");
 }
@@ -2772,7 +2820,8 @@ function exitBrowse() {
   crateLabel.visible = true;
   crateSheet.classList.remove("open");
   clearTimeout(frameTimer);
-  spotifyFrame.src = "";
+  if (spotifyController) spotifyController.pause();
+  else spotifyFrame.src = "";
   clearTimeout(faceTimer);
   vinylFaceEl.classList.remove("show");
   vinylFaceObj.removeFromParent();
