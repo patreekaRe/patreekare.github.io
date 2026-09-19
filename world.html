@@ -275,6 +275,48 @@
       margin-bottom: 0.6rem;
     }
 
+    .henry-bubble {
+      font-family: "Poppins", sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: #d9587a;
+      background: white;
+      border-radius: 999px;
+      padding: 3px 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .henry-bubble.show {
+      opacity: 1;
+      transform: translateY(-4px);
+    }
+
+    .henry-zzz {
+      font-family: "Poppins", sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      animation: zzz-float 2.4s ease-in-out infinite;
+    }
+
+    .henry-zzz.show {
+      opacity: 1;
+    }
+
+    @keyframes zzz-float {
+      0%, 100% { margin-top: 0; }
+      50% { margin-top: -8px; }
+    }
+
     .vinyl-face {
       display: flex;
       align-items: center;

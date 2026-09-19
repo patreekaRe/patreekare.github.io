@@ -716,7 +716,7 @@ function loadCoverArt() {
 }
 
 const rbox = (w, h, d, r, material) => new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), material);
-const catBreath = [];
+
 
 // Solid furniture footprints for walking collision (center x, z, half width, half depth)
 const FURNITURE = [
@@ -1001,31 +1001,7 @@ chairPillow.position.set(0.15, 0.98, -0.16);
 chairPillow.rotation.set(-0.3, 0, -0.12);
 armchair.add(chairPillow);
 
-// Sleeping cat
-const cat = new THREE.Group();
-cat.position.set(0.1, 0.86, 0.12);
-const catFur = lambert(0xe8a25a);
-const catBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.22, 4, 10), catFur);
-catBody.rotation.z = Math.PI / 2;
-catBody.scale.set(1, 1, 1.05);
-cat.add(catBody);
-const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), catFur);
-catHead.position.set(0.22, -0.02, 0.05);
-cat.add(catHead);
-[-0.05, 0.05].forEach((dz) => {
-  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.06, 4), catFur);
-  ear.position.set(0.24, 0.09, 0.05 + dz);
-  cat.add(ear);
-});
-const catTail = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.22, 4, 8), catFur);
-catTail.rotation.z = Math.PI / 2 + 0.5;
-catTail.position.set(-0.28, -0.03, 0.06);
-cat.add(catTail);
-const catStripe = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.2, 0.02), lambert(0xb56e2c));
-catStripe.position.set(0.02, 0.1, 0.1);
-cat.add(catStripe);
-armchair.add(cat);
-catBreath.push(catBody);
+
 insideGroup.add(armchair);
 
 // Stacked black side table with a globe lamp
@@ -1314,6 +1290,593 @@ exitMat.rotation.x = -Math.PI / 2;
 exitMat.position.set(0, 0.015, 5.4);
 insideGroup.add(exitMat);
 
+// ================= EXTRA DETAILS =================
+
+// Tall bookcase between the sideboard and the crate
+const bookcase = new THREE.Group();
+bookcase.position.set(-1.75, 0, -6.28);
+const bcMat = lambert(MC.walnutLight);
+[-0.6, 0.6].forEach((x) => {
+  const side = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.6, 0.34), bcMat);
+  side.position.set(x, 1.3, 0);
+  bookcase.add(side);
+});
+const bcTop = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.05, 0.34), bcMat);
+bcTop.position.set(0, 2.6, 0);
+bookcase.add(bcTop);
+const bcBack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.6, 0.02), lambert(MC.walnutDark));
+bcBack.position.set(0, 1.3, -0.16);
+bookcase.add(bcBack);
+const shelfYs = [0.12, 0.72, 1.32, 1.92];
+shelfYs.forEach((y) => {
+  const board = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.04, 0.32), bcMat);
+  board.position.set(0, y, 0);
+  bookcase.add(board);
+});
+const bookRand = seededRandom(31);
+const bookColors = [MC.rust, MC.sage, MC.dusty, MC.cream, 0x3d4a5c, 0xb98d3e, 0x7d3a20, 0x5a6b48, 0xd9a68f, 0x2f3437];
+shelfYs.forEach((y, si) => {
+  let x = -0.54;
+  while (x < 0.5) {
+    if (si === 1 && x > 0.05 && x < 0.32) {
+      x = 0.32;
+      continue;
+    }
+    if (si === 3 && x > -0.15 && x < 0.2) {
+      x = 0.2;
+      continue;
+    }
+    const w = 0.045 + bookRand() * 0.06;
+    const h = 0.26 + bookRand() * 0.2;
+    const book = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.22), lambert(bookColors[Math.floor(bookRand() * bookColors.length)]));
+    const lean = x > 0.42 && bookRand() > 0.5 ? 0.2 : 0;
+    book.position.set(x + w / 2, y + 0.02 + h / 2, 0.01);
+    book.rotation.z = -lean;
+    bookcase.add(book);
+    x += w + 0.004;
+  }
+});
+// Objects among the books: a mini globe, a framed photo, and a stack of board games
+const miniGlobe = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), lambert(0x6f8fb0));
+miniGlobe.position.set(0.18, shelfYs[1] + 0.22, 0.02);
+bookcase.add(miniGlobe);
+const globeStand = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.05, 0.1, 8), brassMat);
+globeStand.position.set(0.18, shelfYs[1] + 0.07, 0.02);
+bookcase.add(globeStand);
+const photoFrame = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.03), lambert(0x2f3437));
+photoFrame.position.set(0.02, shelfYs[3] + 0.16, 0.05);
+photoFrame.rotation.y = -0.15;
+bookcase.add(photoFrame);
+const photoArt = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.23), new THREE.MeshBasicMaterial({ color: 0xc9b99a }));
+photoArt.position.set(0.02, shelfYs[3] + 0.16, 0.067);
+photoArt.rotation.y = -0.15;
+bookcase.add(photoArt);
+[
+  [0.0, MC.rust, 0.34],
+  [0.02, MC.dusty, 0.3],
+].forEach(([dx, color, w], i) => {
+  const game = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, 0.24), lambert(color));
+  game.position.set(dx - 0.1, shelfYs[2] + 0.05 + i * 0.065, 0.01);
+  bookcase.add(game);
+});
+insideGroup.add(bookcase);
+makePlant(-1.75 - 0.3, 2.62, -6.28, 0.5, 0xd9a68f);
+makePlant(-1.75 + 0.28, 2.62, -6.28, 0.42, 0xf2eee6);
+FURNITURE.push({ x: -1.75, z: -6.2, hw: 0.6, hd: 0.25 });
+
+// Small rugs under the beanbag and the desk chair
+function roundRug(x, z, layers) {
+  layers.forEach(([inner, outer, color, y]) => {
+    const geo = inner > 0 ? new THREE.RingGeometry(inner, outer, 40) : new THREE.CircleGeometry(outer, 40);
+    const m = new THREE.Mesh(geo, lambert(color));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, y, z);
+    insideGroup.add(m);
+  });
+}
+roundRug(-4.9, -0.7, [
+  [0, 1.2, 0xebdfc8, 0.016],
+  [0.9, 1.05, MC.blush, 0.017],
+  [0, 0.85, 0xf3e9d6, 0.018],
+]);
+roundRug(5.4, -1.35, [
+  [0, 1.0, 0xd9cdb6, 0.016],
+  [0.62, 0.78, MC.dusty, 0.017],
+  [0, 0.6, 0xf0e8d6, 0.018],
+]);
+
+// Gallery prints on the slat wall
+function frameArt(w, h, tex, x, y, z) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, h + 0.14, 0.05), lambert(0x1f1d1c)));
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.06, h + 0.06), new THREE.MeshBasicMaterial({ color: 0xf1ead9 }));
+  mat.position.z = 0.028;
+  g.add(mat);
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+  art.position.z = 0.034;
+  g.add(art);
+  g.position.set(x, y, z);
+  insideGroup.add(g);
+}
+
+const vinylPrint = canvasTexture(200, 260, (g, w, h) => {
+  g.fillStyle = "#e9dfc9";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#1c1c1c";
+  g.beginPath();
+  g.arc(w / 2, h / 2, 76, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = "rgba(255,255,255,0.14)";
+  for (let r = 30; r < 74; r += 8) {
+    g.beginPath();
+    g.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.fillStyle = "#c0582b";
+  g.beginPath();
+  g.arc(w / 2, h / 2, 22, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#e9dfc9";
+  g.beginPath();
+  g.arc(w / 2, h / 2, 4, 0, Math.PI * 2);
+  g.fill();
+});
+const padPrint = canvasTexture(200, 260, (g, w, h) => {
+  g.fillStyle = "#8ea4b8";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#2f3437";
+  g.beginPath();
+  g.roundRect(28, 96, 144, 70, 30);
+  g.fill();
+  g.fillStyle = "#e9dfc9";
+  g.fillRect(52, 118, 30, 8);
+  g.fillRect(63, 107, 8, 30);
+  ["#e4574d", "#f0c05a", "#7fbf8a", "#c77dd6"].forEach((c, i) => {
+    g.fillStyle = c;
+    g.beginPath();
+    g.arc(130 + (i % 2) * 16 - (i > 1 ? 8 : 0), 120 + (i > 1 ? 14 : -4) + (i % 2) * 0, 6, 0, Math.PI * 2);
+    g.fill();
+  });
+});
+const mountainPrint = canvasTexture(200, 260, (g, w, h) => {
+  const sky = g.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#f2cfae");
+  sky.addColorStop(1, "#e79f95");
+  g.fillStyle = sky;
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#b3627a";
+  g.beginPath();
+  g.moveTo(0, h);
+  g.lineTo(0, 170);
+  g.lineTo(70, 100);
+  g.lineTo(130, 175);
+  g.lineTo(w, 130);
+  g.lineTo(w, h);
+  g.fill();
+  g.fillStyle = "#6d3f66";
+  g.beginPath();
+  g.moveTo(0, h);
+  g.lineTo(0, 215);
+  g.lineTo(90, 150);
+  g.lineTo(w, 220);
+  g.lineTo(w, h);
+  g.fill();
+  g.fillStyle = "#fbe6b8";
+  g.beginPath();
+  g.arc(140, 70, 24, 0, Math.PI * 2);
+  g.fill();
+});
+const cassettePrint = canvasTexture(200, 260, (g, w, h) => {
+  g.fillStyle = "#5f8f86";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#e9dfc9";
+  g.beginPath();
+  g.roundRect(26, 84, 148, 92, 8);
+  g.fill();
+  g.fillStyle = "#2f3437";
+  g.fillRect(44, 100, 112, 34);
+  g.fillStyle = "#e9dfc9";
+  [72, 128].forEach((cx) => {
+    g.beginPath();
+    g.arc(cx, 117, 12, 0, Math.PI * 2);
+    g.fill();
+  });
+  g.fillStyle = "#c0582b";
+  g.fillRect(44, 146, 112, 6);
+});
+const moonPrint = canvasTexture(200, 260, (g, w, h) => {
+  g.fillStyle = "#1e2447";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#f4ead0";
+  g.beginPath();
+  g.arc(100, 130, 52, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#1e2447";
+  g.beginPath();
+  g.arc(122, 116, 46, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#f4ead0";
+  for (let i = 0; i < 14; i++) g.fillRect((i * 53) % w, (i * 37) % 80, 2, 2);
+});
+frameArt(0.5, 0.65, vinylPrint, -5.15, 3.75, -6.44);
+frameArt(0.5, 0.65, padPrint, -4.4, 3.75, -6.44);
+frameArt(0.5, 0.65, mountainPrint, -3.65, 3.75, -6.44);
+frameArt(0.5, 0.65, cassettePrint, -0.65, 3.75, -6.44);
+frameArt(0.5, 0.65, moonPrint, 0.65, 3.75, -6.44);
+
+// ================= HENRY THE CAT =================
+// A grey tabby who wanders the room, hops up on furniture and naps in different spots.
+
+const henryFur = lambert(0x8d9199);
+const henryStripe = lambert(0x4b4e56);
+const henryLight = lambert(0xd0d2d6);
+const henryPink = lambert(0xe9a3a3);
+
+const henry = new THREE.Group();
+henry.scale.setScalar(1.6);
+insideGroup.add(henry);
+const henryRig = new THREE.Group();
+henry.add(henryRig);
+
+const henryBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.3, 6, 12), henryFur);
+henryBody.rotation.x = Math.PI / 2;
+henryRig.add(henryBody);
+const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), henryLight);
+henryChest.position.set(0, -0.045, 0.2);
+henryRig.add(henryChest);
+for (let i = 0; i < 6; i++) {
+  const z = -0.2 + i * 0.075;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.028), henryStripe);
+  top.position.set(0, 0.108, z);
+  henryRig.add(top);
+  [-1, 1].forEach((s) => {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.028), henryStripe);
+    side.position.set(s * 0.085, 0.08, z);
+    side.rotation.z = -s * 0.8;
+    henryRig.add(side);
+  });
+}
+
+const henryHead = new THREE.Group();
+henryRig.add(henryHead);
+const skull = new THREE.Mesh(new THREE.SphereGeometry(0.105, 14, 12), henryFur);
+skull.scale.set(1.1, 0.95, 1);
+henryHead.add(skull);
+const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), henryLight);
+muzzle.scale.set(1.2, 0.85, 1);
+muzzle.position.set(0, -0.03, 0.085);
+henryHead.add(muzzle);
+const nose = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), henryPink);
+nose.position.set(0, -0.005, 0.13);
+henryHead.add(nose);
+[-1, 1].forEach((s) => {
+  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 4), henryFur);
+  ear.position.set(s * 0.07, 0.1, -0.005);
+  ear.rotation.z = -s * 0.28;
+  henryHead.add(ear);
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.055, 4), henryPink);
+  inner.position.set(s * 0.07, 0.095, 0.012);
+  inner.rotation.z = -s * 0.28;
+  henryHead.add(inner);
+  for (let k = 0; k < 3; k++) {
+    const whisker = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.003, 0.003), henryLight);
+    whisker.position.set(s * 0.09, -0.02 - k * 0.012, 0.11);
+    whisker.rotation.z = s * (0.15 - k * 0.15);
+    henryHead.add(whisker);
+  }
+});
+const henryEyes = [];
+[-1, 1].forEach((s) => {
+  const eye = new THREE.Mesh(new THREE.CircleGeometry(0.024, 12), new THREE.MeshBasicMaterial({ color: 0x9fd18b }));
+  eye.position.set(s * 0.05, 0.025, 0.1);
+  henryHead.add(eye);
+  const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.03, 0.002), new THREE.MeshBasicMaterial({ color: 0x1e1e22 }));
+  pupil.position.set(s * 0.05, 0.025, 0.102);
+  henryHead.add(pupil);
+  henryEyes.push(eye, pupil);
+});
+for (let k = -1; k <= 1; k++) {
+  const mark = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.008, 0.05), henryStripe);
+  mark.position.set(k * 0.03, 0.097, 0.03);
+  mark.rotation.x = -0.15;
+  mark.rotation.z = -k * 0.15;
+  henryHead.add(mark);
+}
+
+const henryTail = [];
+let tailParent = new THREE.Group();
+tailParent.position.set(0, 0.04, -0.24);
+henryRig.add(tailParent);
+for (let i = 0; i < 5; i++) {
+  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i % 2 ? henryStripe : henryFur);
+  seg.rotation.x = Math.PI / 2;
+  seg.position.z = -0.045;
+  tailParent.add(seg);
+  const next = new THREE.Group();
+  next.position.z = -0.09;
+  tailParent.add(next);
+  henryTail.push(tailParent);
+  tailParent = next;
+}
+
+const henryLegs = [];
+[
+  [-0.075, 0.16],
+  [0.075, 0.16],
+  [-0.075, -0.14],
+  [0.075, -0.14],
+].forEach(([x, z], i) => {
+  const pivot = new THREE.Group();
+  pivot.position.set(x, -0.07, z);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.14, 4, 8), henryFur);
+  leg.position.y = -0.11;
+  pivot.add(leg);
+  const paw = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), henryLight);
+  paw.scale.set(1, 0.6, 1.3);
+  paw.position.set(0, -0.2, 0.012);
+  pivot.add(paw);
+  henryRig.add(pivot);
+  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI });
+});
+
+// Floor waypoints Henry walks between (checked against furniture so he never cuts through it)
+const HENRY_NODE_DEFS = {
+  front: [0.3, 3.0],
+  left: [-2.6, 2.8],
+  right: [2.7, 2.9],
+  beanApproach: [-3.7, 0.4],
+  leftMid: [-3.4, -2.7],
+  sideboardFront: [-3.3, -4.8],
+  crateMid: [0, -3.6],
+  rightBack: [2.6, -3.6],
+  sun: [3.6, -5.0],
+  rightMid: [3.6, -2.8],
+  eastStrip: [5.5, -0.2],
+  armApproach: [3.4, 2.4],
+  sofaFrontL: [-0.9, 0.5],
+  deskApproach: [4.3, -1.1],
+  behindSofa: [0.5, -2.4],
+  sofaFrontR: [1.6, 0.55],
+  ottApproach: [0.3, 2.55],
+  rugSpot: [-2.4, 1.3],
+  crateSeat: [1.6, -4.3],
+};
+const nodeNames = Object.keys(HENRY_NODE_DEFS);
+const henryNodes = nodeNames.map((n) => new THREE.Vector3(HENRY_NODE_DEFS[n][0], 0, HENRY_NODE_DEFS[n][1]));
+const nodeIndex = Object.fromEntries(nodeNames.map((n, i) => [n, i]));
+
+function segmentClear(a, b) {
+  const steps = Math.ceil(a.distanceTo(b) / 0.1);
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    const x = a.x + (b.x - a.x) * t;
+    const z = a.z + (b.z - a.z) * t;
+    if (FURNITURE.some((f) => Math.abs(x - f.x) < f.hw + 0.12 && Math.abs(z - f.z) < f.hd + 0.12)) return false;
+  }
+  return true;
+}
+const henryEdges = henryNodes.map(() => []);
+for (let i = 0; i < henryNodes.length; i++) {
+  for (let j = i + 1; j < henryNodes.length; j++) {
+    const d = henryNodes[i].distanceTo(henryNodes[j]);
+    if (d < 6.5 && segmentClear(henryNodes[i], henryNodes[j])) {
+      henryEdges[i].push([j, d]);
+      henryEdges[j].push([i, d]);
+    }
+  }
+}
+
+function henryPath(from, to) {
+  const dist = henryNodes.map(() => Infinity);
+  const prev = henryNodes.map(() => -1);
+  const open = new Set(henryNodes.map((_, i) => i));
+  dist[from] = 0;
+  while (open.size) {
+    let u = -1;
+    open.forEach((i) => {
+      if (u === -1 || dist[i] < dist[u]) u = i;
+    });
+    if (dist[u] === Infinity || u === to) break;
+    open.delete(u);
+    henryEdges[u].forEach(([v, w]) => {
+      if (dist[u] + w < dist[v]) {
+        dist[v] = dist[u] + w;
+        prev[v] = u;
+      }
+    });
+  }
+  const path = [];
+  for (let n = to; n !== -1 && n !== from; n = prev[n]) path.unshift(n);
+  return dist[to] === Infinity ? null : path;
+}
+
+insideGroup.updateMatrixWorld(true);
+const worldOf = (obj, x, y, z) => obj.localToWorld(new THREE.Vector3(x, y, z));
+const floorAt = (name, y = 0.012) => new THREE.Vector3(henryNodes[nodeIndex[name]].x, y, henryNodes[nodeIndex[name]].z);
+
+const HENRY_SPOTS = [
+  { name: "armchair", kind: "sleep", elevated: true, approach: nodeIndex.armApproach, pos: worldOf(armchair, 0.1, 0.8, 0.12), heading: -0.5 },
+  { name: "sofaLeft", kind: "sleep", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
+  { name: "sofaRight", kind: "sit", elevated: true, approach: nodeIndex.sofaFrontR, pos: worldOf(sofa, 0.99, 0.8, 0.1), heading: -0.25 },
+  { name: "ottoman", kind: "sit", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-0.35, 0.7, 1.45), heading: 0.4 },
+  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.9, 0.74, -0.7), heading: 1.0 },
+  { name: "deskChair", kind: "sleep", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
+  { name: "sunbeam", kind: "sleep", elevated: false, approach: nodeIndex.sun, pos: floorAt("sun"), heading: 2.2 },
+  { name: "rug", kind: "sleep", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
+  { name: "crateWatch", kind: "sit", elevated: false, approach: nodeIndex.crateSeat, pos: floorAt("crateSeat"), heading: Math.PI },
+];
+
+const henryAI = {
+  mode: "rest",
+  spot: HENRY_SPOTS[0],
+  node: HENRY_SPOTS[0].approach,
+  path: [],
+  target: null,
+  timer: 25,
+  jump: null,
+  purr: 0,
+  blinkIn: 3,
+  blinkFor: 0,
+};
+const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0 };
+henry.position.copy(HENRY_SPOTS[0].pos);
+henry.rotation.y = HENRY_SPOTS[0].heading;
+
+// "prrr" bubble, sleeping zzz, and the pet interaction
+const petEl = document.createElement("div");
+petEl.className = "henry-bubble";
+petEl.textContent = "prrr ♥";
+const petObj = new CSS2DObject(petEl);
+petObj.position.set(0, 0.55, 0);
+henry.add(petObj);
+insideLabels.push(petObj);
+const zzzEl = document.createElement("div");
+zzzEl.className = "henry-zzz";
+zzzEl.textContent = "z z z";
+const zzzObj = new CSS2DObject(zzzEl);
+zzzObj.position.set(0, 0.5, 0);
+henry.add(zzzObj);
+insideLabels.push(zzzObj);
+let petTimer = null;
+
+function petHenry() {
+  henryAI.purr = 3;
+  henryAI.timer += 6;
+  petEl.classList.add("show");
+  clearTimeout(petTimer);
+  petTimer = setTimeout(() => petEl.classList.remove("show"), 2200);
+}
+
+function startHenryJump(from, to, next) {
+  henryAI.mode = "jump";
+  henryAI.jump = { from: from.clone(), to: to.clone(), t: 0, dur: 0.75, arc: 0.4, next };
+}
+
+function beginHenryWalk() {
+  const path = henryPath(henryAI.node, henryAI.target.approach);
+  henryAI.path = path || [];
+  henryAI.mode = "walk";
+}
+
+function startHenryTrip() {
+  const options = HENRY_SPOTS.filter((s) => s !== henryAI.spot);
+  henryAI.target = options[Math.floor(Math.random() * options.length)];
+  if (henryAI.spot.elevated) {
+    henryAI.node = henryAI.spot.approach;
+    startHenryJump(henry.position, henryNodes[henryAI.node], "walk");
+  } else {
+    henryAI.node = henryAI.spot.approach;
+    beginHenryWalk();
+  }
+}
+
+function settleHenry(spot) {
+  henryAI.spot = spot;
+  henryAI.node = spot.approach;
+  henryAI.mode = "rest";
+  henryAI.timer = spot.kind === "sleep" ? 20 + Math.random() * 30 : 8 + Math.random() * 12;
+}
+
+const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+function updateHenry(delta, t) {
+  const ai = henryAI;
+  const pose = henryPose;
+  const ease = 1 - Math.pow(0.02, delta);
+  let desiredYaw = henry.rotation.y;
+  let moving = 0;
+
+  if (ai.mode === "rest") {
+    desiredYaw = ai.spot.heading;
+    ai.timer -= delta;
+    if (ai.timer <= 0) startHenryTrip();
+  } else if (ai.mode === "walk") {
+    const nextIdx = ai.path[0];
+    if (nextIdx === undefined) {
+      if (ai.target.elevated) startHenryJump(henry.position, ai.target.pos, "rest");
+      else {
+        henry.position.copy(ai.target.pos);
+        settleHenry(ai.target);
+      }
+    } else {
+      const wp = henryNodes[nextIdx];
+      const dx = wp.x - henry.position.x;
+      const dz = wp.z - henry.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.08) {
+        ai.node = nextIdx;
+        ai.path.shift();
+      } else {
+        const step = Math.min(0.85 * delta, dist);
+        henry.position.x += (dx / dist) * step;
+        henry.position.z += (dz / dist) * step;
+        henry.position.y += (0.012 - henry.position.y) * ease;
+        desiredYaw = Math.atan2(dx, dz);
+        moving = 1;
+      }
+    }
+  } else if (ai.mode === "jump") {
+    const j = ai.jump;
+    j.t += delta / j.dur;
+    const k = Math.min(j.t, 1);
+    henry.position.lerpVectors(j.from, j.to, k);
+    henry.position.y += Math.sin(Math.PI * k) * j.arc;
+    desiredYaw = Math.atan2(j.to.x - j.from.x, j.to.z - j.from.z);
+    if (k >= 1) {
+      if (j.next === "walk") beginHenryWalk();
+      else {
+        henry.position.copy(j.to);
+        settleHenry(ai.target);
+      }
+    }
+  }
+
+  henry.rotation.y += wrapPi(desiredYaw - henry.rotation.y) * Math.min(delta * 6, 1);
+
+  const resting = ai.mode === "rest";
+  const sleeping = resting && ai.spot.kind === "sleep";
+  pose.crouch += ((resting ? 1 : ai.mode === "jump" ? 0.2 : 0) - pose.crouch) * ease;
+  pose.sleep += ((sleeping ? 1 : 0) - pose.sleep) * ease;
+  pose.walk += (moving - pose.walk) * ease;
+  if (moving) pose.phase += delta * 9;
+
+  const breathRate = ai.purr > 0 ? 7 : 1.7;
+  ai.purr = Math.max(0, ai.purr - delta);
+  const breath = Math.sin(t * breathRate);
+  const bob = Math.abs(Math.sin(pose.phase)) * 0.014 * pose.walk;
+  henryRig.position.y = THREE.MathUtils.lerp(0.3, 0.13, pose.crouch) + bob;
+  henryBody.scale.set(1, 1, 0.9 + 0.05 * breath * pose.crouch);
+
+  henryLegs.forEach((leg) => {
+    leg.pivot.scale.y = THREE.MathUtils.lerp(1, 0.28, pose.crouch);
+    leg.pivot.rotation.x = Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk - 0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch);
+  });
+
+  henryHead.position.set(0, THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), THREE.MathUtils.lerp(0.28, 0.21, pose.sleep));
+  henryHead.rotation.x = 0.65 * pose.sleep + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
+  henryHead.rotation.y = 0.5 * pose.sleep;
+
+  const curl = pose.sleep;
+  henryTail.forEach((seg, i) => {
+    const sway = Math.sin(t * 1.6 + i * 0.5) * (0.12 + 0.12 * pose.walk);
+    seg.rotation.y = (i === 0 ? 0.6 : 0.5) * curl + sway * (1 - curl * 0.7);
+    seg.rotation.x = i === 0 ? -0.5 * (1 - curl) + 0.2 * curl : -0.12 * (1 - curl);
+  });
+
+  ai.blinkIn -= delta;
+  if (ai.blinkIn <= 0) {
+    ai.blinkFor = 0.14;
+    ai.blinkIn = 2.5 + Math.random() * 4;
+  }
+  ai.blinkFor = Math.max(0, ai.blinkFor - delta);
+  const eyeOpen = pose.sleep < 0.5 && ai.blinkFor === 0 ? 1 : 0.08;
+  henryEyes.forEach((e) => {
+    e.scale.y = eyeOpen;
+  });
+
+  zzzEl.classList.toggle("show", sleeping && pose.sleep > 0.8);
+}
+
 // ---------- Interactables ----------
 
 const ROOM_ITEMS = [
@@ -1374,8 +1937,10 @@ function blockedByHouse(x, z) {
   return FURNITURE.some((b) => Math.abs(x - b.x) < b.hw + 0.2 && Math.abs(z - b.z) < b.hd + 0.2);
 }
 
+const HENRY_ITEM = { key: "henry", label: "Pet Henry", position: henry.position, action: "pet", radius: 1.7 };
+
 function currentInteractables() {
-  return area === "outside" ? [DOOR_IN] : [...ROOM_ITEMS, DOOR_OUT];
+  return area === "outside" ? [DOOR_IN] : [...ROOM_ITEMS, HENRY_ITEM, DOOR_OUT];
 }
 
 // ---------- Character ----------
@@ -1557,6 +2122,7 @@ function tryInteract() {
   if (!nearestItem || transitioning || browsing) return;
   if (nearestItem.action === "enter") enterHouse();
   else if (nearestItem.action === "exit") exitHouse();
+  else if (nearestItem.action === "pet") petHenry();
   else openPanel(nearestItem);
 }
 
@@ -1772,9 +2338,7 @@ function animate() {
   }
 
   if (area === "inside") {
-    catBreath.forEach((body) => {
-      body.scale.y = 1 + 0.06 * Math.sin(t * 1.9);
-    });
+    updateHenry(delta, t);
   }
 
   // Vinyl crate: sleeves rest edge-on; the selected record rises, turns to face you, and
@@ -1838,13 +2402,13 @@ function animate() {
   const radius = area === "outside" ? DOOR_RADIUS : INTERACT_RADIUS;
   currentInteractables().forEach((item) => {
     const dist = character.position.distanceTo(item.position);
-    if (dist < closestDist) {
+    if (dist < (item.radius ?? radius) && dist < closestDist) {
       closestDist = dist;
       closest = item;
     }
   });
 
-  if (closest && closestDist < radius && !transitioning && !browsing) {
+  if (closest && !transitioning && !browsing) {
     nearestItem = closest;
     promptTextEl.textContent = closest.action === "enter" ? "Enter" : closest.action === "exit" ? "Exit" : closest.label;
     promptEl.classList.add("visible");
