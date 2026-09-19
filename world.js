@@ -2746,9 +2746,20 @@ function animate() {
 
   // Camera follow (fixed-angle, Animal Crossing style), or a close-up on the crate while browsing
   if (browsing) {
-    const dist = THREE.MathUtils.clamp(3.4 / camera.aspect, 3.6, 7.5);
-    targetCamPos.set(CRATE_POS.x, 2.2 + dist * 0.25, CRATE_POS.z + dist);
-    targetLookAt.set(CRATE_POS.x, 0.35, CRATE_POS.z);
+    if (window.innerWidth <= 700) {
+      // Phones: frame the pulled-out record (sleeve + disc, about 1.9 tall and 0.9 wide) so it
+      // fills the space above the bottom sheet, growing when the sheet is collapsed
+      const visibleFrac = THREE.MathUtils.clamp(1 - crateSheet.offsetHeight / window.innerHeight, 0.4, 1);
+      const fitTan = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const dist = Math.max(2.6 / (visibleFrac * fitTan), 1.3 / (camera.aspect * fitTan));
+      const recordZ = CRATE_POS.z + 0.95;
+      targetCamPos.set(CRATE_POS.x, 1.45 + dist * 0.1, recordZ + dist);
+      targetLookAt.set(CRATE_POS.x, 1.4, recordZ);
+    } else {
+      const dist = THREE.MathUtils.clamp(3.4 / camera.aspect, 3.6, 7.5);
+      targetCamPos.set(CRATE_POS.x, 2.2 + dist * 0.25, CRATE_POS.z + dist);
+      targetLookAt.set(CRATE_POS.x, 0.35, CRATE_POS.z);
+    }
   } else {
     targetCamPos.set(
       character.position.x + cameraOffset.x,
