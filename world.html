@@ -295,6 +295,32 @@
       transform: translateY(-4px);
     }
 
+    .time-badge {
+      position: fixed;
+      top: 3.6rem;
+      left: 1rem;
+      z-index: 20;
+      background: rgba(40, 54, 24, 0.85);
+      color: var(--cream);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+    }
+
+    .time-badge:empty {
+      display: none;
+    }
+
+    .browsing .time-badge {
+      display: none;
+    }
+
+    @supports (bottom: env(safe-area-inset-bottom)) {
+      .time-badge { top: calc(3.6rem + env(safe-area-inset-top)); }
+    }
+
     .henry-name {
       font-family: "Roboto Slab", serif;
       font-weight: 700;
@@ -626,6 +652,7 @@
 
   <div id="app">
     <div class="proto-badge">&larr; <a href="index.html">Back to site</a></div>
+    <div class="time-badge" id="timeBadge"></div>
     <div class="controls-hint">
       <strong>WASD / Arrows</strong> to walk<br>
       <strong>E</strong> to interact<br>
