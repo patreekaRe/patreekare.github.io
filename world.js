@@ -1693,66 +1693,92 @@ const henryLegs = [];
   [0.09, -0.15],
 ].forEach(([x, z], i) => {
   const front = i < 2;
-  const upperLen = 0.105;
-  const lowerLen = front ? 0.105 : 0.115;
   const pivot = new THREE.Group();
   pivot.position.set(x, -0.07, z);
 
-  // Upper leg tapers from a muscly shoulder or thigh down to the knee
-  const upper = new THREE.Mesh(
-    new THREE.CylinderGeometry(front ? 0.036 : 0.042, 0.026, upperLen, 10),
-    henryFur
-  );
-  upper.position.y = -upperLen / 2;
-  pivot.add(upper);
-  const muscle = new THREE.Mesh(new THREE.SphereGeometry(front ? 0.04 : 0.052, 10, 8), henryFur);
-  muscle.scale.set(0.95, front ? 1.2 : 1.35, front ? 1.1 : 1.25);
-  muscle.position.set(0, -0.025, front ? 0 : -0.008);
-  pivot.add(muscle);
-  const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.0305, 0.0285, 0.012, 10), henryStripe);
-  ring.position.y = -upperLen * 0.62;
-  pivot.add(ring);
-
-  // Elbow or knee: the lower leg hangs from a joint that can fold
-  const knee = new THREE.Group();
-  knee.position.y = -upperLen;
-  pivot.add(knee);
-  const joint = new THREE.Mesh(new THREE.SphereGeometry(0.027, 10, 8), henryFur);
-  knee.add(joint);
-  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.019, lowerLen, 10), henryFur);
-  lower.position.y = -lowerLen / 2;
-  knee.add(lower);
-  const lowerRing = new THREE.Mesh(new THREE.CylinderGeometry(0.0235, 0.0215, 0.011, 10), henryStripe);
-  lowerRing.position.y = -lowerLen * 0.42;
-  knee.add(lowerRing);
+  const limb = (parent, rTop, rBottom, len) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, len, 10), henryFur);
+    m.position.y = -len / 2;
+    parent.add(m);
+    return m;
+  };
+  const jointBall = (parent, r) => parent.add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), henryFur));
+  const band = (parent, r, y) => {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.97, 0.008, 10), henryStripe);
+    b.position.y = y;
+    parent.add(b);
+  };
 
   // Paw: a soft pad with little toes, kept mostly flat on the floor by the animation
-  const paw = new THREE.Group();
-  paw.position.y = -lowerLen;
-  knee.add(paw);
-  const pad = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), henryFur);
-  pad.scale.set(1, 0.6, 1.35);
-  pad.position.set(0, -0.006, 0.012);
-  paw.add(pad);
-  [-1, 0, 1].forEach((k) => {
-    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 6, 5), front ? henryLight : henryFur);
-    toe.scale.set(1, 0.8, 1.1);
-    toe.position.set(k * 0.019, -0.011, 0.045 - Math.abs(k) * 0.006);
-    paw.add(toe);
-  });
+  const makePaw = (parent, y) => {
+    const paw = new THREE.Group();
+    paw.position.y = y;
+    parent.add(paw);
+    const pad = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), henryFur);
+    pad.scale.set(1, 0.6, 1.4);
+    pad.position.set(0, -0.006, 0.014);
+    paw.add(pad);
+    [-1, 0, 1].forEach((k) => {
+      const toe = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 5), front ? henryLight : henryFur);
+      toe.scale.set(1, 0.8, 1.1);
+      toe.position.set(k * 0.018, -0.011, 0.046 - Math.abs(k) * 0.006);
+      paw.add(toe);
+    });
+    return paw;
+  };
 
+  const leg = { pivot, phase: i === 0 || i === 3 ? 0 : Math.PI, front, baseZ: z };
+  if (front) {
+    // Shoulder, upper arm, elbow, forearm, paw
+    const upperLen = 0.095;
+    const foreLen = 0.11;
+    limb(pivot, 0.034, 0.025, upperLen);
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.038, 10, 8), henryFur);
+    shoulder.scale.set(0.9, 1.3, 1.15);
+    shoulder.position.y = -0.03;
+    pivot.add(shoulder);
+    const elbow = new THREE.Group();
+    elbow.position.y = -upperLen;
+    pivot.add(elbow);
+    jointBall(elbow, 0.026);
+    limb(elbow, 0.024, 0.017, foreLen);
+    band(elbow, 0.021, -foreLen * 0.45);
+    leg.knee = elbow;
+    leg.paw = makePaw(elbow, -foreLen);
+    // Elbow tucked back, forearm dropping straight down
+    leg.baseUp = 0.2;
+    leg.baseKnee = -0.2;
+  } else {
+    // Big thigh, shin angled back to the heel, then the long foot bone forward to the paw
+    const thighLen = 0.088;
+    const shinLen = 0.088;
+    const footLen = 0.078;
+    limb(pivot, 0.04, 0.026, thighLen);
+    const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), henryFur);
+    thigh.scale.set(0.85, 1.6, 1.25);
+    thigh.position.set(0, -0.04, -0.006);
+    pivot.add(thigh);
+    band(pivot, 0.03, -thighLen * 0.7);
+    const knee = new THREE.Group();
+    knee.position.y = -thighLen;
+    pivot.add(knee);
+    jointBall(knee, 0.026);
+    limb(knee, 0.026, 0.02, shinLen);
+    const hock = new THREE.Group();
+    hock.position.y = -shinLen;
+    knee.add(hock);
+    jointBall(hock, 0.021);
+    limb(hock, 0.019, 0.015, footLen);
+    band(hock, 0.0165, -footLen * 0.4);
+    leg.knee = knee;
+    leg.hock = hock;
+    leg.paw = makePaw(hock, -footLen);
+    leg.baseUp = -0.55;
+    leg.baseKnee = 1.3;
+    leg.baseHock = -0.95;
+  }
   henryRig.add(pivot);
-  henryLegs.push({
-    pivot,
-    knee,
-    paw,
-    phase: i === 0 || i === 3 ? 0 : Math.PI,
-    front,
-    baseZ: z,
-    // Resting posture: hind legs zigzag (thigh forward, shin back), front legs nearly straight
-    baseUp: front ? -0.04 : -0.4,
-    baseKnee: front ? 0.08 : 0.78,
-  });
+  henryLegs.push(leg);
 });
 
 // Floor waypoints Henry walks between (checked against furniture so he never cuts through it)
@@ -2205,11 +2231,18 @@ function updateHenry(delta, t) {
       0.35 * jumping -
       1.5 * extend -
       1.4 * tuck;
-    const kneeRot = leg.baseKnee * bendScale + lift * (leg.front ? 1.0 : 1.15) + 0.6 * jumping;
+    const kneeRot = leg.baseKnee * bendScale + lift * (leg.front ? 1.0 : 0.9) + 0.6 * jumping;
     leg.pivot.rotation.x = hipRot;
     leg.knee.rotation.x = kneeRot;
+    let hockRot = 0;
+    if (leg.hock) {
+      // The heel folds up as the foot swings forward, and pushes off straight behind
+      const push = Math.max(0, Math.cos(legPhase)) * pose.walk;
+      hockRot = leg.baseHock * bendScale - lift * 0.75 + push * 0.3;
+      leg.hock.rotation.x = hockRot;
+    }
     // Counter-rotate the paw so it stays mostly flat, rolling up onto the toes as it lifts
-    leg.paw.rotation.x = -(hipRot + kneeRot) * 0.8 + 0.35 * lift;
+    leg.paw.rotation.x = -(hipRot + kneeRot + hockRot) * 0.8 + 0.35 * lift;
   });
 
   const M = THREE.MathUtils;
