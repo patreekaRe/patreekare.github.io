@@ -275,6 +275,62 @@
       margin-bottom: 0.6rem;
     }
 
+    .crate-head-actions {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .crate-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      border: 2px solid var(--tan);
+      color: var(--ink);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .crate-toggle svg {
+      transition: transform 0.3s ease;
+    }
+
+    .crate-sheet.collapsed .crate-toggle svg {
+      transform: rotate(180deg);
+    }
+
+    .crate-now {
+      display: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--olive);
+    }
+
+    .spotify-embed {
+      overflow: hidden;
+      max-height: 160px;
+      transition: max-height 0.3s ease;
+    }
+
+    .crate-sheet.collapsed .spotify-embed {
+      max-height: 0;
+    }
+
+    .crate-sheet.collapsed .crate-hint {
+      display: none;
+    }
+
+    .crate-sheet.collapsed .crate-now {
+      display: block;
+    }
+
+    .crate-sheet.collapsed .spotify-controls {
+      margin-top: 0.3rem;
+    }
+
     .henry-bubble {
       font-family: "Poppins", sans-serif;
       font-weight: 700;
@@ -645,7 +701,8 @@
         font-size: 0.6rem;
       }
 
-      .crate-close {
+      .crate-close,
+      .crate-toggle {
         width: 28px;
         height: 28px;
       }
@@ -713,21 +770,29 @@
         <div>
           <span class="crate-eyebrow">Independent work</span>
           <h2>Music &amp; Production</h2>
+          <p class="crate-now" id="crateNow"></p>
         </div>
-        <button class="crate-close" id="crateClose" type="button" aria-label="Close">&#10005;</button>
+        <div class="crate-head-actions">
+          <button class="crate-toggle" id="crateToggle" type="button" aria-label="Collapse player" aria-expanded="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="crate-close" id="crateClose" type="button" aria-label="Close">&#10005;</button>
+        </div>
       </div>
       <p class="crate-hint">Flip records with &larr; / &rarr; or the buttons. Tap a song on the record to play it.</p>
       <div class="spotify-player" id="spotifyPlayer">
-        <iframe
-          id="spotifyFrame"
-          style="border-radius: 12px"
-          width="100%"
-          height="152"
-          frameborder="0"
-          allowfullscreen=""
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-          title="Spotify player"></iframe>
+        <div class="spotify-embed" id="spotifyEmbed">
+          <iframe
+            id="spotifyFrame"
+            style="border-radius: 12px"
+            width="100%"
+            height="152"
+            frameborder="0"
+            allowfullscreen=""
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            title="Spotify player"></iframe>
+        </div>
         <div class="spotify-controls">
           <button id="spotifyPrev" type="button" aria-label="Previous song">&larr; Prev</button>
           <span id="spotifyIndex">1 / 1</span>

@@ -102,6 +102,8 @@ const computerScreen = document.getElementById("computerScreen");
 const computerList = document.getElementById("computerList");
 const crateSheet = document.getElementById("crateSheet");
 const crateCloseBtn = document.getElementById("crateClose");
+const crateToggleBtn = document.getElementById("crateToggle");
+const crateNowEl = document.getElementById("crateNow");
 const spotifyFrame = document.getElementById("spotifyFrame");
 const spotifyIndexEl = document.getElementById("spotifyIndex");
 const spotifyPrevBtn = document.getElementById("spotifyPrev");
@@ -2489,6 +2491,7 @@ function loadTrack(r, t = 0) {
     if (browsing && spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
   }, 350);
   spotifyIndexEl.textContent = `${recordIndex + 1} / ${RECORDS.length}`;
+  crateNowEl.textContent = `Now: ${record.tracks[trackIndex].title}`;
 
   if (recordChanged) {
     renderVinylFace();
@@ -2526,6 +2529,13 @@ function exitBrowse() {
 }
 
 crateCloseBtn.addEventListener("click", exitBrowse);
+
+// Fold the player down to a slim bar (it keeps playing behind it)
+crateToggleBtn.addEventListener("click", () => {
+  const collapsed = crateSheet.classList.toggle("collapsed");
+  crateToggleBtn.setAttribute("aria-expanded", String(!collapsed));
+  crateToggleBtn.setAttribute("aria-label", collapsed ? "Expand player" : "Collapse player");
+});
 
 let computerBuilt = false;
 
