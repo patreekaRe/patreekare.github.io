@@ -549,6 +549,12 @@ h3 {
   border-radius: var(--radius-pill);
 }
 
+.tag-wip {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #fff;
+}
+
 /* ---------- Coursework grid ---------- */
 
 .project-grid {

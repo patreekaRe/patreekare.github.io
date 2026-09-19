@@ -1107,6 +1107,9 @@ const gameTex = canvasTexture(512, 288, (g, w, h) => {
   g.fillStyle = "#e9f0ff";
   g.font = "700 30px 'Poppins', sans-serif";
   g.fillText("CHAMPIONS", w / 2, 116);
+  g.fillStyle = "#f0c05a";
+  g.font = "700 20px 'Poppins', sans-serif";
+  g.fillText("WORK IN PROGRESS", w / 2, 138);
   const cards = ["#e4574d", "#3f6fd8", "#f0c05a", "#7fbf8a", "#c77dd6"];
   cards.forEach((c, i) => {
     const x = 40 + i * 92;
@@ -2294,9 +2297,9 @@ const ROOM_ITEMS = [
     key: "work",
     label: "Featured Work",
     position: new THREE.Vector3(-5.4, 0, -2.4),
-    eyebrow: "Selected work",
+    eyebrow: "Selected work · In development",
     title: "Marvel Champions: Spider-Man vs. Rhino",
-    body: "A digital solo app for Marvel Champions: The Card Game, built from scratch while learning Unity and C# — a singleton manager architecture with interrupt-driven card effects and async player choices.",
+    body: "A work in progress: a digital solo app for Marvel Champions: The Card Game, built from scratch while learning Unity and C#. So far it's a singleton manager architecture with interrupt-driven card effects and async player choices, with more of the rules still to come.",
   },
   {
     key: "music",
