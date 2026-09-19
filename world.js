@@ -2729,7 +2729,13 @@ function animate() {
   const radius = area === "outside" ? DOOR_RADIUS : INTERACT_RADIUS;
   currentInteractables().forEach((item) => {
     const dist = character.position.distanceTo(item.position);
-    if (dist < (item.radius ?? radius) && dist < closestDist) {
+    if (dist >= (item.radius ?? radius)) return;
+    // Henry only gets the prompt when nothing else is in range, so he never steals the crate
+    const winsOver =
+      !closest ||
+      (closest === HENRY_ITEM && item !== HENRY_ITEM) ||
+      (item !== HENRY_ITEM && dist < closestDist);
+    if (winsOver) {
       closestDist = dist;
       closest = item;
     }
