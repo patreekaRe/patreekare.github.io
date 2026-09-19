@@ -1504,6 +1504,35 @@ frameArt(0.5, 0.65, mountainPrint, -3.65, 3.75, -6.44);
 frameArt(0.5, 0.65, cassettePrint, -0.65, 3.75, -6.44);
 frameArt(0.5, 0.65, moonPrint, 0.65, 3.75, -6.44);
 
+// Moonlight falling through the windows onto the floor (Henry's favorite napping spot)
+const moonTex = canvasTexture(256, 512, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  const cols = 2;
+  const rows = 4;
+  const gap = 12;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = (c * w) / cols + gap / 2;
+      const y = (r * h) / rows + gap / 2;
+      const fade = 1 - (r / rows) * 0.75;
+      const grad = g.createLinearGradient(0, y, 0, y + h / rows);
+      grad.addColorStop(0, `rgba(206, 224, 255, ${0.8 * fade})`);
+      grad.addColorStop(1, `rgba(206, 224, 255, ${0.8 * (fade - 0.19)})`);
+      g.fillStyle = grad;
+      g.fillRect(x, y, w / cols - gap, h / rows - gap);
+    }
+  }
+});
+[3.95, 5.85].forEach((x) => {
+  const beam = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 2.9),
+    new THREE.MeshBasicMaterial({ map: moonTex, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  beam.rotation.x = -Math.PI / 2;
+  beam.position.set(x, 0.024, -5.0);
+  insideGroup.add(beam);
+});
+
 // ================= HENRY THE CAT =================
 // A grey tabby who wanders the room, hops up on furniture and naps in different spots.
 
@@ -1689,7 +1718,7 @@ const HENRY_NODE_DEFS = {
   sideboardFront: [-3.3, -4.8],
   crateMid: [0, -3.6],
   rightBack: [2.6, -3.6],
-  sun: [3.6, -5.0],
+  sun: [3.9, -4.6],
   rightMid: [3.6, -2.8],
   eastStrip: [5.5, -0.2],
   armApproach: [3.4, 2.4],
@@ -1786,6 +1815,7 @@ const henryAI = {
   style: "curl",
   activity: "sleep",
   snap: false,
+  energy: 0.4,
 };
 const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0, stretch: 0, yawn: 0, curl: 1, side: 0 };
 henry.position.copy(HENRY_SPOTS[0].pos);
@@ -1854,7 +1884,7 @@ function startHenryFollow(duration) {
   ai.followTimer = duration;
   ai.followNode = -1;
   ai.attending = false;
-  ai.followCooldown = 45;
+  ai.followCooldown = 22 + 30 * (1 - ai.energy);
   if (ai.spot.elevated) {
     ai.node = ai.spot.approach;
     ai.spot = floorSpotFor(ai.node);
@@ -1878,8 +1908,10 @@ function beginHenryWalk() {
 }
 
 function startHenryTrip() {
-  const options = HENRY_SPOTS.filter((s) => s !== henryAI.spot);
-  henryAI.target = options[Math.floor(Math.random() * options.length)];
+  const sleepy = 1 - henryAI.energy;
+  henryAI.target = pickWeighted(
+    HENRY_SPOTS.filter((s) => s !== henryAI.spot).map((s) => [s, s.weight * (1 + sleepy * s.likes.sleep * 1.5)])
+  );
   if (henryAI.spot.elevated) {
     henryAI.node = henryAI.spot.approach;
     startHenryJump(henry.position, henryNodes[henryAI.node], "walk");
@@ -1889,18 +1921,45 @@ function startHenryTrip() {
   }
 }
 
-function settleHenry(spot) {
-  henryAI.spot = spot;
-  henryAI.node = spot.approach;
-  henryAI.mode = "rest";
-  henryAI.style = Math.random() < 0.5 ? "curl" : "side";
-  // Usually what the spot suits best, but he mixes it up
-  if (Math.random() < 0.55) henryAI.activity = spot.kind;
-  else {
-    const others = ["sleep", "sit", "stretch"].filter((k) => k !== spot.kind);
-    henryAI.activity = others[Math.floor(Math.random() * others.length)];
+// Henry's tastes: which spots he favors, what he likes to do there, and how he sleeps
+const SPOT_PERSONALITY = {
+  sunbeam: { weight: 2.4, likes: { sleep: 0.85, sit: 0.05, stretch: 0.1 }, curl: 0.25 },
+  armchair: { weight: 1.5, likes: { sleep: 0.6, sit: 0.25, stretch: 0.15 }, curl: 0.78 },
+  beanbag: { weight: 1.1, likes: { sleep: 0.55, sit: 0.2, stretch: 0.25 }, curl: 0.65 },
+  sofaLeft: { weight: 1.2, likes: { sleep: 0.3, sit: 0.2, stretch: 0.5 }, curl: 0.5 },
+  sofaRight: { weight: 1, likes: { sleep: 0.25, sit: 0.5, stretch: 0.25 }, curl: 0.5 },
+  ottoman: { weight: 0.9, likes: { sleep: 0.2, sit: 0.3, stretch: 0.5 }, curl: 0.5 },
+  deskChair: { weight: 0.9, likes: { sleep: 0.25, sit: 0.6, stretch: 0.15 }, curl: 0.6 },
+  rug: { weight: 1.1, likes: { sleep: 0.3, sit: 0.2, stretch: 0.5 }, curl: 0.35 },
+  crateWatch: { weight: 1, likes: { sleep: 0.1, sit: 0.75, stretch: 0.15 }, curl: 0.5 },
+};
+HENRY_SPOTS.forEach((s) => Object.assign(s, SPOT_PERSONALITY[s.name]));
+
+const pickWeighted = (entries) => {
+  const total = entries.reduce((sum, [, w]) => sum + w, 0);
+  let r = Math.random() * total;
+  for (const [value, w] of entries) {
+    r -= w;
+    if (r <= 0) return value;
   }
-  henryAI.timer = henryAI.activity === "sleep" ? 20 + Math.random() * 30 : 8 + Math.random() * 12;
+  return entries[entries.length - 1][0];
+};
+
+function settleHenry(spot) {
+  const ai = henryAI;
+  ai.spot = spot;
+  ai.node = spot.approach;
+  ai.mode = "rest";
+  const sleepy = 1 - ai.energy;
+  // He gets sleepier the longer he's been up; energetic Henry lounges awake
+  ai.activity = pickWeighted([
+    ["sleep", spot.likes.sleep * (0.25 + 0.9 * sleepy)],
+    ["sit", spot.likes.sit],
+    ["stretch", spot.likes.stretch],
+  ]);
+  ai.style = Math.random() < spot.curl ? "curl" : "side";
+  ai.timer =
+    ai.activity === "sleep" ? (22 + Math.random() * 32) * (0.6 + 0.6 * sleepy) : (8 + Math.random() * 12) * (0.6 + 0.6 * ai.energy);
 }
 
 // Each time the player enters the house Henry is doing something different
@@ -1910,26 +1969,27 @@ function randomizeHenry() {
   clearTimeout(petTimer);
   petEl.classList.remove("show");
   ai.snap = true;
-  ai.followCooldown = 6 + Math.random() * 14;
+  ai.energy = 1;
+  ai.followCooldown = 3 + Math.random() * 6;
   ai.yawIn = 4 + Math.random() * 12;
   ai.attending = false;
   ai.path = [];
-  if (roll < 0.62) {
-    // Already settled somewhere, napping or lounging
-    const spot = HENRY_SPOTS[Math.floor(Math.random() * HENRY_SPOTS.length)];
+  if (roll < 0.4) {
+    // Already settled somewhere, mostly awake right now
+    const spot = pickWeighted(HENRY_SPOTS.map((s) => [s, s.weight]));
     henry.position.copy(spot.pos);
     henry.rotation.y = spot.heading + (Math.random() - 0.5) * 0.6;
     settleHenry(spot);
     ai.timer *= 0.4 + Math.random() * 0.8;
   } else {
-    // Up and about: somewhere on the floor, on his way to a spot (or to say hi)
+    // Up and about: somewhere on the floor, either coming to say hi or heading to a spot
     const nodeIdx = Math.floor(Math.random() * henryNodes.length);
     henry.position.copy(henryNodes[nodeIdx]);
     henry.position.y = 0.012;
     ai.node = nodeIdx;
     ai.spot = floorSpotFor(nodeIdx);
     ai.mode = "rest";
-    if (roll < 0.74) startHenryFollow(10 + Math.random() * 8);
+    if (roll < 0.7) startHenryFollow(10 + Math.random() * 8);
     else startHenryTrip();
   }
 }
@@ -1945,13 +2005,14 @@ function updateHenry(delta, t) {
 
   const playerDist = Math.hypot(character.position.x - henry.position.x, character.position.z - henry.position.z);
   ai.followCooldown = Math.max(0, ai.followCooldown - delta);
+  ai.energy = Math.max(0, ai.energy - delta / 100);
 
   if (ai.mode === "rest") {
     desiredYaw = ai.spot.heading;
     ai.timer -= delta;
     const awake = ai.activity !== "sleep";
     // Wander over to greet the player when they come close
-    if (awake && !browsing && ai.followCooldown === 0 && playerDist < 3.4 && Math.random() < delta * 0.35) {
+    if (awake && !browsing && ai.followCooldown === 0 && playerDist < 3.4 && Math.random() < delta * (0.12 + 0.4 * ai.energy)) {
       startHenryFollow(12 + Math.random() * 8);
     } else if (ai.timer <= 0) startHenryTrip();
   } else if (ai.mode === "follow") {
