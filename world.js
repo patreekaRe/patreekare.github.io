@@ -1692,22 +1692,67 @@ const henryLegs = [];
   [-0.09, -0.15],
   [0.09, -0.15],
 ].forEach(([x, z], i) => {
+  const front = i < 2;
+  const upperLen = 0.105;
+  const lowerLen = front ? 0.105 : 0.115;
   const pivot = new THREE.Group();
   pivot.position.set(x, -0.07, z);
-  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.15, 4, 8), henryFur);
-  leg.position.y = -0.11;
-  pivot.add(leg);
-  [-0.08, -0.14].forEach((ry) => {
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.0325, 0.0325, 0.014, 8), henryStripe);
-    ring.position.y = ry;
-    pivot.add(ring);
+
+  // Upper leg tapers from a muscly shoulder or thigh down to the knee
+  const upper = new THREE.Mesh(
+    new THREE.CylinderGeometry(front ? 0.036 : 0.042, 0.026, upperLen, 10),
+    henryFur
+  );
+  upper.position.y = -upperLen / 2;
+  pivot.add(upper);
+  const muscle = new THREE.Mesh(new THREE.SphereGeometry(front ? 0.04 : 0.052, 10, 8), henryFur);
+  muscle.scale.set(0.95, front ? 1.2 : 1.35, front ? 1.1 : 1.25);
+  muscle.position.set(0, -0.025, front ? 0 : -0.008);
+  pivot.add(muscle);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.0305, 0.0285, 0.012, 10), henryStripe);
+  ring.position.y = -upperLen * 0.62;
+  pivot.add(ring);
+
+  // Elbow or knee: the lower leg hangs from a joint that can fold
+  const knee = new THREE.Group();
+  knee.position.y = -upperLen;
+  pivot.add(knee);
+  const joint = new THREE.Mesh(new THREE.SphereGeometry(0.027, 10, 8), henryFur);
+  knee.add(joint);
+  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.019, lowerLen, 10), henryFur);
+  lower.position.y = -lowerLen / 2;
+  knee.add(lower);
+  const lowerRing = new THREE.Mesh(new THREE.CylinderGeometry(0.0235, 0.0215, 0.011, 10), henryStripe);
+  lowerRing.position.y = -lowerLen * 0.42;
+  knee.add(lowerRing);
+
+  // Paw: a soft pad with little toes, kept mostly flat on the floor by the animation
+  const paw = new THREE.Group();
+  paw.position.y = -lowerLen;
+  knee.add(paw);
+  const pad = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), henryFur);
+  pad.scale.set(1, 0.6, 1.35);
+  pad.position.set(0, -0.006, 0.012);
+  paw.add(pad);
+  [-1, 0, 1].forEach((k) => {
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 6, 5), front ? henryLight : henryFur);
+    toe.scale.set(1, 0.8, 1.1);
+    toe.position.set(k * 0.019, -0.011, 0.045 - Math.abs(k) * 0.006);
+    paw.add(toe);
   });
-  const paw = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 6), henryFur);
-  paw.scale.set(1, 0.6, 1.3);
-  paw.position.set(0, -0.2, 0.012);
-  pivot.add(paw);
+
   henryRig.add(pivot);
-  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI, front: i < 2, baseZ: z });
+  henryLegs.push({
+    pivot,
+    knee,
+    paw,
+    phase: i === 0 || i === 3 ? 0 : Math.PI,
+    front,
+    baseZ: z,
+    // Resting posture: hind legs zigzag (thigh forward, shin back), front legs nearly straight
+    baseUp: front ? -0.04 : -0.4,
+    baseKnee: front ? 0.08 : 0.78,
+  });
 });
 
 // Floor waypoints Henry walks between (checked against furniture so he never cuts through it)
@@ -2136,6 +2181,9 @@ function updateHenry(delta, t) {
   );
   const torsoS = 1 + 0.08 * loaf + 0.03 * breath * pose.crouch + 0.1 * pose.curl;
   henryTorso.scale.set(torsoS, torsoS, torsoZ);
+  // Walking shifts his weight side to side and twists the spine a little
+  henryTorso.rotation.y = Math.sin(pose.phase) * 0.06 * pose.walk;
+  henryTorso.rotation.z = Math.sin(pose.phase + Math.PI / 2) * 0.04 * pose.walk;
   henryTailRoot.position.z = -0.27 * torsoZ;
 
   henryLegs.forEach((leg) => {
@@ -2145,11 +2193,23 @@ function updateHenry(delta, t) {
     const laidOut = THREE.MathUtils.lerp(THREE.MathUtils.lerp(settled, 0.42, tuck), 1.5, extend);
     leg.pivot.scale.y = laidOut;
     leg.pivot.position.z = leg.baseZ * torsoZ;
-    leg.pivot.rotation.x =
-      Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk -
-      0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch) -
+    const legPhase = pose.phase + leg.phase;
+    const jumping = (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch);
+    // Settled cats fold their legs away, so the resting zigzag fades out as he loafs or stretches
+    const bendScale = (1 - pose.crouch * 0.9) * (1 - extend);
+    // Swing phase (foot moving forward) lifts the paw by folding the knee; stance stays straight
+    const lift = Math.max(0, -Math.cos(legPhase)) * pose.walk;
+    const hipRot =
+      leg.baseUp * bendScale +
+      Math.sin(legPhase) * (leg.front ? 0.6 : 0.7) * pose.walk -
+      0.35 * jumping -
       1.5 * extend -
       1.4 * tuck;
+    const kneeRot = leg.baseKnee * bendScale + lift * (leg.front ? 1.0 : 1.15) + 0.6 * jumping;
+    leg.pivot.rotation.x = hipRot;
+    leg.knee.rotation.x = kneeRot;
+    // Counter-rotate the paw so it stays mostly flat, rolling up onto the toes as it lifts
+    leg.paw.rotation.x = -(hipRot + kneeRot) * 0.8 + 0.35 * lift;
   });
 
   const M = THREE.MathUtils;
