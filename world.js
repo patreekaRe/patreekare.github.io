@@ -1507,10 +1507,11 @@ frameArt(0.5, 0.65, moonPrint, 0.65, 3.75, -6.44);
 // ================= HENRY THE CAT =================
 // A grey tabby who wanders the room, hops up on furniture and naps in different spots.
 
-const henryFur = lambert(0x8d9199);
-const henryStripe = lambert(0x4b4e56);
-const henryLight = lambert(0xd0d2d6);
-const henryPink = lambert(0xe9a3a3);
+const henryFur = lambert(0x8a7d6b);
+const henryStripe = lambert(0x2b2825);
+const henryLight = lambert(0xe2d9c8);
+const henryPink = lambert(0xc98f86);
+const henryNoseMat = lambert(0xb78579);
 
 const henry = new THREE.Group();
 henry.scale.setScalar(1.6);
@@ -1518,22 +1519,28 @@ insideGroup.add(henry);
 const henryRig = new THREE.Group();
 henry.add(henryRig);
 
-const henryBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.3, 6, 12), henryFur);
+const henryBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.32, 6, 12), henryFur);
 henryBody.rotation.x = Math.PI / 2;
 henryRig.add(henryBody);
-const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), henryLight);
-henryChest.position.set(0, -0.045, 0.2);
+const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), henryLight);
+henryChest.scale.set(0.9, 1, 1.1);
+henryChest.position.set(0, -0.05, 0.2);
 henryRig.add(henryChest);
-for (let i = 0; i < 6; i++) {
-  const z = -0.2 + i * 0.075;
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.028), henryStripe);
-  top.position.set(0, 0.108, z);
-  henryRig.add(top);
+// Dark stripe down the spine plus mackerel stripes down the flanks
+const spine = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.5), henryStripe);
+spine.position.set(0, 0.11, -0.02);
+henryRig.add(spine);
+for (let i = 0; i < 9; i++) {
+  const z = -0.22 + i * 0.058;
   [-1, 1].forEach((s) => {
-    const side = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.028), henryStripe);
-    side.position.set(s * 0.085, 0.08, z);
-    side.rotation.z = -s * 0.8;
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.01, 0.018), henryStripe);
+    side.position.set(s * 0.075, 0.075, z);
+    side.rotation.z = -s * 0.95;
     henryRig.add(side);
+    const low = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.01, 0.016), henryStripe);
+    low.position.set(s * 0.108, 0.005, z + 0.01);
+    low.rotation.z = -s * 1.5;
+    henryRig.add(low);
   });
 }
 
@@ -1546,18 +1553,25 @@ const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), henryLight
 muzzle.scale.set(1.2, 0.85, 1);
 muzzle.position.set(0, -0.03, 0.085);
 henryHead.add(muzzle);
-const nose = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), henryPink);
+const nose = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 6), henryNoseMat);
 nose.position.set(0, -0.005, 0.13);
 henryHead.add(nose);
 [-1, 1].forEach((s) => {
-  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 4), henryFur);
-  ear.position.set(s * 0.07, 0.1, -0.005);
-  ear.rotation.z = -s * 0.28;
+  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.125, 4), henryFur);
+  ear.position.set(s * 0.075, 0.125, -0.005);
+  ear.rotation.z = -s * 0.22;
   henryHead.add(ear);
-  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.055, 4), henryPink);
-  inner.position.set(s * 0.07, 0.095, 0.012);
-  inner.rotation.z = -s * 0.28;
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.085, 4), henryPink);
+  inner.position.set(s * 0.075, 0.118, 0.014);
+  inner.rotation.z = -s * 0.22;
   henryHead.add(inner);
+  for (let k = 0; k < 2; k++) {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.007, 0.006), henryStripe);
+    cheek.position.set(s * 0.085, 0.015 - k * 0.022, 0.075);
+    cheek.rotation.z = s * (0.35 - k * 0.5);
+    cheek.rotation.y = -s * 0.5;
+    henryHead.add(cheek);
+  }
   for (let k = 0; k < 3; k++) {
     const whisker = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.003, 0.003), henryLight);
     whisker.position.set(s * 0.09, -0.02 - k * 0.012, 0.11);
@@ -1567,7 +1581,7 @@ henryHead.add(nose);
 });
 const henryEyes = [];
 [-1, 1].forEach((s) => {
-  const eye = new THREE.Mesh(new THREE.CircleGeometry(0.024, 12), new THREE.MeshBasicMaterial({ color: 0x9fd18b }));
+  const eye = new THREE.Mesh(new THREE.CircleGeometry(0.024, 12), new THREE.MeshBasicMaterial({ color: 0x9dbb8a }));
   eye.position.set(s * 0.05, 0.025, 0.1);
   henryHead.add(eye);
   const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.03, 0.002), new THREE.MeshBasicMaterial({ color: 0x1e1e22 }));
@@ -1588,7 +1602,7 @@ let tailParent = new THREE.Group();
 tailParent.position.set(0, 0.04, -0.24);
 henryRig.add(tailParent);
 for (let i = 0; i < 5; i++) {
-  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i % 2 ? henryStripe : henryFur);
+  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i === 4 || i % 2 ? henryStripe : henryFur);
   seg.rotation.x = Math.PI / 2;
   seg.position.z = -0.045;
   tailParent.add(seg);
@@ -1608,15 +1622,20 @@ const henryLegs = [];
 ].forEach(([x, z], i) => {
   const pivot = new THREE.Group();
   pivot.position.set(x, -0.07, z);
-  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.14, 4, 8), henryFur);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.15, 4, 8), henryFur);
   leg.position.y = -0.11;
   pivot.add(leg);
-  const paw = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), henryLight);
+  [-0.08, -0.14].forEach((ry) => {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.0325, 0.0325, 0.014, 8), henryStripe);
+    ring.position.y = ry;
+    pivot.add(ring);
+  });
+  const paw = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 6), henryFur);
   paw.scale.set(1, 0.6, 1.3);
   paw.position.set(0, -0.2, 0.012);
   pivot.add(paw);
   henryRig.add(pivot);
-  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI });
+  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI, front: i < 2 });
 });
 
 // Floor waypoints Henry walks between (checked against furniture so he never cuts through it)
@@ -1696,13 +1715,13 @@ const floorAt = (name, y = 0.012) => new THREE.Vector3(henryNodes[nodeIndex[name
 
 const HENRY_SPOTS = [
   { name: "armchair", kind: "sleep", elevated: true, approach: nodeIndex.armApproach, pos: worldOf(armchair, 0.1, 0.8, 0.12), heading: -0.5 },
-  { name: "sofaLeft", kind: "sleep", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
+  { name: "sofaLeft", kind: "stretch", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
   { name: "sofaRight", kind: "sit", elevated: true, approach: nodeIndex.sofaFrontR, pos: worldOf(sofa, 0.99, 0.8, 0.1), heading: -0.25 },
-  { name: "ottoman", kind: "sit", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-0.35, 0.7, 1.45), heading: 0.4 },
+  { name: "ottoman", kind: "stretch", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-0.35, 0.7, 1.45), heading: 0.4 },
   { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.9, 0.74, -0.7), heading: 1.0 },
-  { name: "deskChair", kind: "sleep", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
+  { name: "deskChair", kind: "sit", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
   { name: "sunbeam", kind: "sleep", elevated: false, approach: nodeIndex.sun, pos: floorAt("sun"), heading: 2.2 },
-  { name: "rug", kind: "sleep", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
+  { name: "rug", kind: "stretch", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
   { name: "crateWatch", kind: "sit", elevated: false, approach: nodeIndex.crateSeat, pos: floorAt("crateSeat"), heading: Math.PI },
 ];
 
@@ -1835,8 +1854,11 @@ function updateHenry(delta, t) {
 
   const resting = ai.mode === "rest";
   const sleeping = resting && ai.spot.kind === "sleep";
+  const stretching = resting && ai.spot.kind === "stretch";
+  pose.stretch = pose.stretch ?? 0;
   pose.crouch += ((resting ? 1 : ai.mode === "jump" ? 0.2 : 0) - pose.crouch) * ease;
   pose.sleep += ((sleeping ? 1 : 0) - pose.sleep) * ease;
+  pose.stretch += ((stretching ? 1 : 0) - pose.stretch) * ease;
   pose.walk += (moving - pose.walk) * ease;
   if (moving) pose.phase += delta * 9;
 
@@ -1848,19 +1870,27 @@ function updateHenry(delta, t) {
   henryBody.scale.set(1, 1, 0.9 + 0.05 * breath * pose.crouch);
 
   henryLegs.forEach((leg) => {
-    leg.pivot.scale.y = THREE.MathUtils.lerp(1, 0.28, pose.crouch);
-    leg.pivot.rotation.x = Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk - 0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch);
+    const extend = leg.front ? pose.stretch : 0;
+    leg.pivot.scale.y = THREE.MathUtils.lerp(THREE.MathUtils.lerp(1, 0.28, pose.crouch), 1.5, extend);
+    leg.pivot.rotation.x =
+      Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk -
+      0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch) -
+      1.5 * extend;
   });
 
-  henryHead.position.set(0, THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), THREE.MathUtils.lerp(0.28, 0.21, pose.sleep));
-  henryHead.rotation.x = 0.65 * pose.sleep + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
+  henryHead.position.set(
+    0,
+    THREE.MathUtils.lerp(THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), 0.04, pose.stretch),
+    THREE.MathUtils.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch
+  );
+  henryHead.rotation.x = 0.65 * pose.sleep + 0.2 * pose.stretch + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
   henryHead.rotation.y = 0.5 * pose.sleep;
 
   const curl = pose.sleep;
   henryTail.forEach((seg, i) => {
     const sway = Math.sin(t * 1.6 + i * 0.5) * (0.12 + 0.12 * pose.walk);
     seg.rotation.y = (i === 0 ? 0.6 : 0.5) * curl + sway * (1 - curl * 0.7);
-    seg.rotation.x = i === 0 ? -0.5 * (1 - curl) + 0.2 * curl : -0.12 * (1 - curl);
+    seg.rotation.x = (i === 0 ? -0.5 * (1 - curl) + 0.2 * curl : -0.12 * (1 - curl)) * (1 - 0.8 * pose.stretch);
   });
 
   ai.blinkIn -= delta;
@@ -1869,7 +1899,7 @@ function updateHenry(delta, t) {
     ai.blinkIn = 2.5 + Math.random() * 4;
   }
   ai.blinkFor = Math.max(0, ai.blinkFor - delta);
-  const eyeOpen = pose.sleep < 0.5 && ai.blinkFor === 0 ? 1 : 0.08;
+  const eyeOpen = pose.sleep >= 0.5 || ai.blinkFor > 0 ? 0.08 : pose.stretch > 0.5 ? 0.45 : 1;
   henryEyes.forEach((e) => {
     e.scale.y = eyeOpen;
   });
