@@ -573,16 +573,19 @@
       display: none;
     }
 
+    /* Touch controls: a light ring you drag, and a button that only lights up when something is in reach */
     .joystick {
       position: fixed;
-      left: 1.5rem;
-      bottom: 1.5rem;
+      left: 1.4rem;
+      bottom: 2.2rem;
       z-index: 20;
-      width: 108px;
-      height: 108px;
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
-      background: rgba(40, 54, 24, 0.35);
-      border: 2px solid rgba(254, 250, 224, 0.35);
+      background: rgba(254, 250, 224, 0.12);
+      border: 1.5px solid rgba(254, 250, 224, 0.3);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       touch-action: none;
     }
 
@@ -590,36 +593,45 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 48px;
-      height: 48px;
-      margin: -24px 0 0 -24px;
+      width: 40px;
+      height: 40px;
+      margin: -20px 0 0 -20px;
       border-radius: 50%;
-      background: rgba(221, 161, 94, 0.9);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      background: rgba(254, 250, 224, 0.85);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
       transition: transform 0.15s ease;
       pointer-events: none;
     }
 
     .interact-btn {
       position: fixed;
-      right: 1.5rem;
-      bottom: 2.1rem;
+      right: 1.4rem;
+      bottom: 3.2rem;
       z-index: 20;
-      width: 68px;
-      height: 68px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
-      background: rgba(188, 108, 37, 0.88);
-      border: 2px solid rgba(254, 250, 224, 0.5);
-      color: var(--cream);
+      background: rgba(254, 250, 224, 0.14);
+      border: 1.5px solid rgba(254, 250, 224, 0.3);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      color: rgba(254, 250, 224, 0.6);
       font-family: "Roboto Slab", serif;
       font-weight: 700;
-      font-size: 1.3rem;
+      font-size: 1.15rem;
       touch-action: none;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .interact-btn:active,
-    .joystick:active {
-      filter: brightness(1.1);
+    .interact-btn.ready {
+      background: var(--rust);
+      border-color: rgba(254, 250, 224, 0.75);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(188, 108, 37, 0.45);
+    }
+
+    .interact-btn:active {
+      transform: scale(0.94);
     }
 
     .mobile-hint {
@@ -627,25 +639,53 @@
       top: 1rem;
       right: 1rem;
       z-index: 20;
-      background: rgba(40, 54, 24, 0.85);
+      background: rgba(40, 54, 24, 0.7);
       color: var(--cream);
-      font-size: 0.75rem;
-      padding: 0.6rem 0.9rem;
-      border-radius: 12px;
-      max-width: 160px;
+      font-size: 0.7rem;
+      line-height: 1.4;
+      padding: 0.45rem 0.75rem;
+      border-radius: 10px;
       text-align: right;
       display: none;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .mobile-hint.hidden {
+      opacity: 0;
     }
 
     @media (max-width: 700px), (pointer: coarse) {
       .touch-controls { display: block; }
       .controls-hint { display: none; }
       .mobile-hint { display: block; }
+
+      /* On touch the label sits just above the button instead of repeating the key hint */
+      .prompt {
+        left: auto;
+        right: 1.4rem;
+        bottom: 7.6rem;
+        transform: translateY(8px);
+        padding: 0.4rem 0.85rem;
+        font-size: 0.78rem;
+        background: rgba(40, 54, 24, 0.85);
+      }
+
+      .prompt.visible {
+        transform: none;
+      }
+
+      .prompt kbd {
+        display: none;
+      }
     }
 
     @supports (bottom: env(safe-area-inset-bottom)) {
-      .joystick { bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
-      .interact-btn { bottom: calc(2.1rem + env(safe-area-inset-bottom)); }
+      .joystick { bottom: calc(2.2rem + env(safe-area-inset-bottom)); }
+      .interact-btn { bottom: calc(3.2rem + env(safe-area-inset-bottom)); }
+      @media (max-width: 700px), (pointer: coarse) {
+        .prompt { bottom: calc(7.6rem + env(safe-area-inset-bottom)); }
+      }
       .proto-badge, .controls-hint, .mobile-hint { top: calc(1rem + env(safe-area-inset-top)); }
     }
 

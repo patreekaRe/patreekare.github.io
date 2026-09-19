@@ -17,6 +17,7 @@ const DOOR_RADIUS = 2.2;
 // One entry per vinyl: songs that share cover art live on the same record.
 const RECORDS = [
   {
+    cover: "images/covers/record-1.jpg",
     tracks: [
       { id: "084YxThHOrmrM5YC0tyZEY", title: "Sofia" },
       { id: "2PDIfFHHKklyycN0paspsF", title: "Someone" },
@@ -24,9 +25,10 @@ const RECORDS = [
       { id: "6PXw0fITgSiBnRWFszSpAS", title: "Growing" },
     ],
   },
-  { tracks: [{ id: "1AffuacdDfxEh0ZQWFdAfm", title: "151" }] },
-  { tracks: [{ id: "1xBTI8q5lTUHf3hXRg2BAp", title: "Wait" }] },
+  { cover: "images/covers/record-2.jpg", tracks: [{ id: "1AffuacdDfxEh0ZQWFdAfm", title: "151" }] },
+  { cover: "images/covers/record-3.jpg", tracks: [{ id: "1xBTI8q5lTUHf3hXRg2BAp", title: "Wait" }] },
   {
+    cover: "images/covers/record-4.jpg",
     tracks: [
       { id: "5s71EMi5MNKD82SIBhkBC0", title: "Erased" },
       { id: "45hsEjHz0wsxX5t2mDXzhr", title: "She Said" },
@@ -688,33 +690,47 @@ function vinylForRecord(i) {
   return Math.round((i * (VINYL_COUNT - 1)) / (RECORDS.length - 1));
 }
 
-// Put each track's real cover on its sleeve (Spotify oEmbed returns the cover URL).
-// Sleeves keep their colored placeholder if a lookup fails.
+// Put each record's real cover on its sleeve. A record's `cover` file is used when it has one;
+// otherwise (or if that fails) the cover URL comes from Spotify oEmbed. Anything that still fails
+// is retried a few times, and again whenever the crate is opened, so a sleeve is never left blank.
 const coverLoader = new THREE.TextureLoader();
 coverLoader.setCrossOrigin("anonymous");
-let coversRequested = false;
+let coverRetries = 0;
 
 function loadCoverArt() {
-  if (coversRequested) return;
-  coversRequested = true;
+  let missing = false;
   RECORDS.forEach((record, i) => {
     const u = vinylPivots[vinylForRecord(i)].userData;
     if (u.hasArt) return;
-    u.hasArt = true;
-    fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${record.tracks[0].id}`)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        coverLoader.load(data.thumbnail_url, (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace;
-          u.art.material.dispose();
-          u.art.material = new THREE.MeshBasicMaterial({ map: tex, color: 0xdddddd });
-          u.artDot.visible = false;
-        });
-      })
-      .catch(() => {
-        u.hasArt = false;
-      });
+    missing = true;
+    if (u.loadingArt) return;
+    u.loadingArt = true;
+
+    const done = (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      u.art.material.dispose();
+      u.art.material = new THREE.MeshBasicMaterial({ map: tex, color: 0xdddddd });
+      u.artDot.visible = false;
+      u.hasArt = true;
+      u.loadingArt = false;
+    };
+    const fail = () => {
+      u.loadingArt = false;
+    };
+    const fromSpotify = () =>
+      fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${record.tracks[0].id}`)}`)
+        .then((r) => r.json())
+        .then((data) => coverLoader.load(data.thumbnail_url, done, undefined, fail))
+        .catch(fail);
+
+    if (record.cover) coverLoader.load(record.cover, done, undefined, fromSpotify);
+    else fromSpotify();
   });
+
+  if (missing && coverRetries < 5) {
+    coverRetries++;
+    setTimeout(loadCoverArt, 2000 * coverRetries);
+  }
 }
 
 const rbox = (w, h, d, r, material) => new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), material);
@@ -2650,10 +2666,17 @@ joystickEl.addEventListener("pointermove", (e) => {
 joystickEl.addEventListener("pointerup", resetJoystick);
 joystickEl.addEventListener("pointercancel", resetJoystick);
 
-document.getElementById("interactBtn").addEventListener("pointerdown", (e) => {
+const interactBtnEl = document.getElementById("interactBtn");
+interactBtnEl.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   tryInteract();
 });
+
+// The touch hint fades away once you start walking (or after a few seconds)
+const mobileHintEl = document.querySelector(".mobile-hint");
+const hideMobileHint = () => mobileHintEl?.classList.add("hidden");
+setTimeout(hideMobileHint, 8000);
+joystickEl.addEventListener("pointerdown", hideMobileHint, { once: true });
 
 let nearestItem = null;
 
@@ -2728,8 +2751,12 @@ function loadTrack(r, t = 0) {
 spotifyPrevBtn.addEventListener("click", () => loadTrack(recordIndex - 1));
 spotifyNextBtn.addEventListener("click", () => loadTrack(recordIndex + 1));
 
+let browseOpenedAt = 0;
+
 function enterBrowse() {
   browsing = true;
+  browseOpenedAt = performance.now();
+  loadCoverArt();
   resetJoystick();
   app.classList.add("browsing");
   character.visible = false;
@@ -2751,7 +2778,12 @@ function exitBrowse() {
   vinylFaceObj.removeFromParent();
 }
 
-crateCloseBtn.addEventListener("click", exitBrowse);
+// Ignore taps in the first moment after opening: the tap on the E button ends right where the
+// close button appears, and would otherwise close the player it just opened
+crateCloseBtn.addEventListener("click", () => {
+  if (performance.now() - browseOpenedAt < 700) return;
+  exitBrowse();
+});
 
 // Fold the player down to a slim bar (it keeps playing behind it)
 crateToggleBtn.addEventListener("click", () => {
@@ -2964,6 +2996,7 @@ function animate() {
     }
   });
 
+  interactBtnEl.classList.toggle("ready", !!closest && !transitioning && !browsing);
   if (closest && !transitioning && !browsing) {
     nearestItem = closest;
     promptTextEl.textContent = closest.action === "enter" ? "Enter" : closest.action === "exit" ? "Exit" : closest.label;
