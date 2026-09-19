@@ -1519,36 +1519,45 @@ insideGroup.add(henry);
 const henryRig = new THREE.Group();
 henry.add(henryRig);
 
-const henryBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.32, 6, 12), henryFur);
-henryBody.rotation.x = Math.PI / 2;
-henryRig.add(henryBody);
+// Cat-shaped torso: deep chest, narrow waist, round haunches and a neck, all in one group
+// so the whole body can compress into a loaf or stretch out.
 const henryWhite = lambert(0xf7f2e8);
-const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), henryWhite);
-henryChest.scale.set(1.0, 1.15, 1.25);
-henryChest.position.set(0, -0.035, 0.2);
-henryRig.add(henryChest);
+const henryTorso = new THREE.Group();
+henryRig.add(henryTorso);
+const torsoPart = (r, sx, sy, sz, x, y, z, mat = henryFur) => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+  m.scale.set(sx, sy, sz);
+  m.position.set(x, y, z);
+  henryTorso.add(m);
+  return m;
+};
+torsoPart(0.118, 0.95, 1.08, 1.15, 0, 0.005, 0.14); // chest and shoulders
+torsoPart(0.098, 0.9, 0.95, 1.7, 0, -0.005, 0.0); // waist
+torsoPart(0.128, 1.0, 1.0, 1.08, 0, 0.01, -0.14); // haunches
+torsoPart(0.075, 1, 1.05, 1.25, 0, 0.055, 0.235); // neck base
+torsoPart(0.088, 0.88, 1.1, 1.0, 0, -0.045, 0.2, henryWhite); // white chest bib
 const henryBelly = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.24, 4, 8), henryWhite);
 henryBelly.rotation.x = Math.PI / 2;
 henryBelly.scale.set(1, 1, 0.55);
-henryBelly.position.set(0, -0.085, 0.06);
-henryRig.add(henryBelly);
-// Dark stripe down the spine plus mackerel stripes down the flanks
-const spine = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.5), henryStripe);
-spine.position.set(0, 0.11, -0.02);
-henryRig.add(spine);
+henryBelly.position.set(0, -0.095, 0.06);
+henryTorso.add(henryBelly);
+
+// Mackerel stripes wrap around the torso following its curved surface
+const bodyRad = (z) =>
+  0.094 + 0.034 * Math.exp(-(((z + 0.14) / 0.13) ** 2)) + 0.022 * Math.exp(-(((z - 0.14) / 0.12) ** 2));
+const bodyStripeMat = lambert(0x3d352d);
+const addStripe = (z, phi, len, thick) => {
+  const r = bodyRad(z) + 0.0005;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.005, thick), bodyStripeMat);
+  m.position.set(Math.sin(phi) * r, 0.005 + Math.cos(phi) * r, z);
+  m.rotation.z = -phi;
+  henryTorso.add(m);
+};
 for (let i = 0; i < 9; i++) {
-  const z = -0.22 + i * 0.058;
-  [-1, 1].forEach((s) => {
-    const side = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.01, 0.018), henryStripe);
-    side.position.set(s * 0.075, 0.075, z);
-    side.rotation.z = -s * 0.95;
-    henryRig.add(side);
-    const low = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.01, 0.016), henryStripe);
-    low.position.set(s * 0.108, 0.005, z + 0.01);
-    low.rotation.z = -s * 1.5;
-    henryRig.add(low);
-  });
+  const z = -0.24 + i * 0.058;
+  [0, 0.5, -0.5, 1.0, -1.0, 1.4, -1.4].forEach((phi) => addStripe(z, phi, 0.058, 0.014));
 }
+for (let i = 0; i < 8; i++) addStripe(-0.22 + i * 0.062, 0, 0.026, 0.05);
 
 const henryHead = new THREE.Group();
 henryRig.add(henryHead);
@@ -1609,7 +1618,8 @@ for (let k = -1; k <= 1; k++) {
 
 const henryTail = [];
 let tailParent = new THREE.Group();
-tailParent.position.set(0, 0.04, -0.24);
+const henryTailRoot = tailParent;
+tailParent.position.set(0, 0.05, -0.27);
 henryRig.add(tailParent);
 for (let i = 0; i < 5; i++) {
   const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i === 4 || i % 2 ? henryStripe : henryFur);
@@ -1625,10 +1635,10 @@ for (let i = 0; i < 5; i++) {
 
 const henryLegs = [];
 [
-  [-0.075, 0.16],
-  [0.075, 0.16],
-  [-0.075, -0.14],
-  [0.075, -0.14],
+  [-0.07, 0.17],
+  [0.07, 0.17],
+  [-0.09, -0.15],
+  [0.09, -0.15],
 ].forEach(([x, z], i) => {
   const pivot = new THREE.Group();
   pivot.position.set(x, -0.07, z);
@@ -1645,7 +1655,7 @@ const henryLegs = [];
   paw.position.set(0, -0.2, 0.012);
   pivot.add(paw);
   henryRig.add(pivot);
-  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI, front: i < 2 });
+  henryLegs.push({ pivot, phase: i === 0 || i === 3 ? 0 : Math.PI, front: i < 2, baseZ: z });
 });
 
 // Floor waypoints Henry walks between (checked against furniture so he never cuts through it)
@@ -1990,21 +2000,35 @@ function updateHenry(delta, t) {
   const breath = Math.sin(t * breathRate);
   const bob = Math.abs(Math.sin(pose.phase)) * 0.014 * pose.walk;
   henryRig.position.y = THREE.MathUtils.lerp(0.3, 0.13, pose.crouch) + bob;
-  henryBody.scale.set(1, 1, 0.9 + 0.05 * breath * pose.crouch);
+
+  // Body shape: long and lean when walking or stretched, a compact rounded loaf when settled
+  const loaf = pose.crouch * (1 - pose.sleep) * (1 - pose.stretch);
+  const torsoZ = THREE.MathUtils.lerp(
+    THREE.MathUtils.lerp(THREE.MathUtils.lerp(1, 0.72, pose.crouch), 1.0, pose.stretch),
+    0.8,
+    pose.sleep
+  );
+  const torsoS = 1 + 0.08 * loaf + 0.03 * breath * pose.crouch;
+  henryTorso.scale.set(torsoS, torsoS, torsoZ);
+  henryTailRoot.position.z = -0.27 * torsoZ;
 
   henryLegs.forEach((leg) => {
     const extend = leg.front ? pose.stretch : 0;
-    leg.pivot.scale.y = THREE.MathUtils.lerp(THREE.MathUtils.lerp(1, 0.28, pose.crouch), 1.5, extend);
+    const tuck = leg.front ? loaf : 0;
+    const settled = THREE.MathUtils.lerp(1, 0.28, pose.crouch);
+    leg.pivot.scale.y = THREE.MathUtils.lerp(THREE.MathUtils.lerp(settled, 0.42, tuck), 1.5, extend);
+    leg.pivot.position.z = leg.baseZ * torsoZ;
     leg.pivot.rotation.x =
       Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk -
       0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch) -
-      1.5 * extend;
+      1.5 * extend -
+      1.4 * tuck;
   });
 
   henryHead.position.set(
     0,
     THREE.MathUtils.lerp(THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), 0.04, pose.stretch),
-    THREE.MathUtils.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch
+    THREE.MathUtils.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch - (1 - torsoZ) * 0.25
   );
   henryHead.rotation.x =
     0.65 * pose.sleep + 0.2 * pose.stretch - 0.55 * pose.yawn + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
