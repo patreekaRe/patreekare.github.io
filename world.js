@@ -1519,21 +1519,59 @@ insideGroup.add(henry);
 const henryRig = new THREE.Group();
 henry.add(henryRig);
 
-// Cat-shaped torso: deep chest, narrow waist, round haunches and a neck, all in one group
-// so the whole body can compress into a loaf or stretch out.
+// Tabby fur painted as a texture: stripes wrap around the body, a dark spine line runs along
+// the back, and the belly fades to cream. Spheres have their poles along z so the texture's
+// horizontal axis goes around the body and vertical goes along it.
+const makeFurTexture = (repeatY) => {
+  const tex = canvasTexture(256, 256, (g, w, h) => {
+    g.fillStyle = "#8a7d6b";
+    g.fillRect(0, 0, w, h);
+    const rnd = seededRandom(23);
+    const bands = 5;
+    for (let k = 0; k < bands; k++) {
+      const cy = ((k + 0.5) * h) / bands;
+      for (let x = 0; x < w; x += 8) {
+        const th = 17 + rnd() * 8;
+        g.fillStyle = "#3a322b";
+        g.fillRect(x, cy - th / 2 + (rnd() - 0.5) * 6, 9, th);
+      }
+      const cy2 = ((k + 1) * h) / bands;
+      for (let x = 0; x < w; x += 8) {
+        g.fillStyle = "rgba(58, 50, 43, 0.55)";
+        g.fillRect(x, cy2 - 2.5 + (rnd() - 0.5) * 4, 9, 5);
+      }
+    }
+    g.fillStyle = "#2a2521";
+    g.fillRect(w * 0.75 - 9, 0, 18, h);
+    const belly = g.createLinearGradient(w * 0.06, 0, w * 0.44, 0);
+    belly.addColorStop(0, "rgba(238, 231, 214, 0)");
+    belly.addColorStop(0.45, "rgba(240, 234, 220, 1)");
+    belly.addColorStop(0.55, "rgba(240, 234, 220, 1)");
+    belly.addColorStop(1, "rgba(238, 231, 214, 0)");
+    g.fillStyle = belly;
+    g.fillRect(w * 0.06, 0, w * 0.38, h);
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, repeatY);
+  return tex;
+};
+const furMatFor = (repeatY) => new THREE.MeshLambertMaterial({ map: makeFurTexture(repeatY) });
+
 const henryWhite = lambert(0xf7f2e8);
 const henryTorso = new THREE.Group();
 henryRig.add(henryTorso);
-const torsoPart = (r, sx, sy, sz, x, y, z, mat = henryFur) => {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+const torsoPart = (r, sx, sy, sz, x, y, z, mat = henryFur, alongZ = false) => {
+  const geo = new THREE.SphereGeometry(r, 20, 14);
+  if (alongZ) geo.rotateX(Math.PI / 2);
+  const m = new THREE.Mesh(geo, mat);
   m.scale.set(sx, sy, sz);
   m.position.set(x, y, z);
   henryTorso.add(m);
   return m;
 };
-torsoPart(0.118, 0.95, 1.08, 1.15, 0, 0.005, 0.14); // chest and shoulders
-torsoPart(0.098, 0.9, 0.95, 1.7, 0, -0.005, 0.0); // waist
-torsoPart(0.128, 1.0, 1.0, 1.08, 0, 0.01, -0.14); // haunches
+torsoPart(0.118, 0.95, 1.08, 1.15, 0, 0.005, 0.14, furMatFor(1), true); // chest and shoulders
+torsoPart(0.098, 0.9, 0.95, 1.7, 0, -0.005, 0.0, furMatFor(1.4), true); // waist
+torsoPart(0.128, 1.0, 1.0, 1.08, 0, 0.01, -0.14, furMatFor(1), true); // haunches
 torsoPart(0.075, 1, 1.05, 1.25, 0, 0.055, 0.235); // neck base
 torsoPart(0.088, 0.88, 1.1, 1.0, 0, -0.045, 0.2, henryWhite); // white chest bib
 const henryBelly = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.24, 4, 8), henryWhite);
@@ -1541,23 +1579,6 @@ henryBelly.rotation.x = Math.PI / 2;
 henryBelly.scale.set(1, 1, 0.55);
 henryBelly.position.set(0, -0.095, 0.06);
 henryTorso.add(henryBelly);
-
-// Mackerel stripes wrap around the torso following its curved surface
-const bodyRad = (z) =>
-  0.094 + 0.034 * Math.exp(-(((z + 0.14) / 0.13) ** 2)) + 0.022 * Math.exp(-(((z - 0.14) / 0.12) ** 2));
-const bodyStripeMat = lambert(0x3d352d);
-const addStripe = (z, phi, len, thick) => {
-  const r = bodyRad(z) + 0.0005;
-  const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.005, thick), bodyStripeMat);
-  m.position.set(Math.sin(phi) * r, 0.005 + Math.cos(phi) * r, z);
-  m.rotation.z = -phi;
-  henryTorso.add(m);
-};
-for (let i = 0; i < 9; i++) {
-  const z = -0.24 + i * 0.058;
-  [0, 0.5, -0.5, 1.0, -1.0, 1.4, -1.4].forEach((phi) => addStripe(z, phi, 0.058, 0.014));
-}
-for (let i = 0; i < 8; i++) addStripe(-0.22 + i * 0.062, 0, 0.026, 0.05);
 
 const henryHead = new THREE.Group();
 henryRig.add(henryHead);
@@ -1763,6 +1784,8 @@ const henryAI = {
   yawIn: 10,
   yawT: 0,
   style: "curl",
+  activity: "sleep",
+  snap: false,
 };
 const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0, stretch: 0, yawn: 0, curl: 1, side: 0 };
 henry.position.copy(HENRY_SPOTS[0].pos);
@@ -1799,7 +1822,7 @@ function petHenry() {
   petEl.classList.add("show");
   clearTimeout(petTimer);
   petTimer = setTimeout(() => petEl.classList.remove("show"), 2200);
-  const asleep = ai.mode === "rest" && ai.spot.kind === "sleep";
+  const asleep = ai.mode === "rest" && ai.activity === "sleep";
   if (!asleep && ai.mode !== "jump" && Math.random() < 0.6) startHenryFollow(14 + Math.random() * 8);
 }
 
@@ -1871,7 +1894,44 @@ function settleHenry(spot) {
   henryAI.node = spot.approach;
   henryAI.mode = "rest";
   henryAI.style = Math.random() < 0.5 ? "curl" : "side";
-  henryAI.timer = spot.kind === "sleep" ? 20 + Math.random() * 30 : 8 + Math.random() * 12;
+  // Usually what the spot suits best, but he mixes it up
+  if (Math.random() < 0.55) henryAI.activity = spot.kind;
+  else {
+    const others = ["sleep", "sit", "stretch"].filter((k) => k !== spot.kind);
+    henryAI.activity = others[Math.floor(Math.random() * others.length)];
+  }
+  henryAI.timer = henryAI.activity === "sleep" ? 20 + Math.random() * 30 : 8 + Math.random() * 12;
+}
+
+// Each time the player enters the house Henry is doing something different
+function randomizeHenry() {
+  const ai = henryAI;
+  const roll = Math.random();
+  clearTimeout(petTimer);
+  petEl.classList.remove("show");
+  ai.snap = true;
+  ai.followCooldown = 6 + Math.random() * 14;
+  ai.yawIn = 4 + Math.random() * 12;
+  ai.attending = false;
+  ai.path = [];
+  if (roll < 0.62) {
+    // Already settled somewhere, napping or lounging
+    const spot = HENRY_SPOTS[Math.floor(Math.random() * HENRY_SPOTS.length)];
+    henry.position.copy(spot.pos);
+    henry.rotation.y = spot.heading + (Math.random() - 0.5) * 0.6;
+    settleHenry(spot);
+    ai.timer *= 0.4 + Math.random() * 0.8;
+  } else {
+    // Up and about: somewhere on the floor, on his way to a spot (or to say hi)
+    const nodeIdx = Math.floor(Math.random() * henryNodes.length);
+    henry.position.copy(henryNodes[nodeIdx]);
+    henry.position.y = 0.012;
+    ai.node = nodeIdx;
+    ai.spot = floorSpotFor(nodeIdx);
+    ai.mode = "rest";
+    if (roll < 0.74) startHenryFollow(10 + Math.random() * 8);
+    else startHenryTrip();
+  }
 }
 
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -1879,7 +1939,7 @@ const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 function updateHenry(delta, t) {
   const ai = henryAI;
   const pose = henryPose;
-  const ease = 1 - Math.pow(0.02, delta);
+  const ease = ai.snap ? 1 : 1 - Math.pow(0.02, delta);
   let desiredYaw = henry.rotation.y;
   let moving = 0;
 
@@ -1889,7 +1949,7 @@ function updateHenry(delta, t) {
   if (ai.mode === "rest") {
     desiredYaw = ai.spot.heading;
     ai.timer -= delta;
-    const awake = ai.spot.kind !== "sleep";
+    const awake = ai.activity !== "sleep";
     // Wander over to greet the player when they come close
     if (awake && !browsing && ai.followCooldown === 0 && playerDist < 3.4 && Math.random() < delta * 0.35) {
       startHenryFollow(12 + Math.random() * 8);
@@ -1972,11 +2032,11 @@ function updateHenry(delta, t) {
     }
   }
 
-  henry.rotation.y += wrapPi(desiredYaw - henry.rotation.y) * Math.min(delta * 6, 1);
+  if (!ai.snap) henry.rotation.y += wrapPi(desiredYaw - henry.rotation.y) * Math.min(delta * 6, 1);
 
   const resting = ai.mode === "rest" || (ai.mode === "follow" && ai.attending);
-  const sleeping = ai.mode === "rest" && ai.spot.kind === "sleep";
-  const stretching = ai.mode === "rest" && ai.spot.kind === "stretch";
+  const sleeping = ai.mode === "rest" && ai.activity === "sleep";
+  const stretching = ai.mode === "rest" && ai.activity === "stretch";
 
   // Occasional yawn while awake and settled
   if (resting && !sleeping) {
@@ -2078,6 +2138,7 @@ function updateHenry(delta, t) {
     e.scale.y = eyeOpen;
   });
 
+  ai.snap = false;
   zzzEl.classList.toggle("show", sleeping && pose.sleep > 0.8);
   nameEl.classList.toggle("show", playerDist < 4.5 && !browsing);
 }
@@ -2198,6 +2259,7 @@ function enterHouse() {
   fadeSwitch(() => {
     area = "inside";
     loadCoverArt();
+    randomizeHenry();
     outsideGroup.visible = false;
     insideGroup.visible = true;
     outsideLabels.forEach((l) => (l.visible = false));
