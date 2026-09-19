@@ -7,7 +7,7 @@ const PALETTE = {
   olive: 0x606c38,
   rust: 0xbc6c25,
   tan: 0xdda15e,
-  dusk: 0x241a12,
+  dusk: 0x161b30,
 };
 
 const INTERACT_RADIUS = 2.6;
@@ -245,45 +245,288 @@ houseGroup.add(windowGlow2);
 makeLabel(outsideGroup, "Patrick's Studio", HOUSE_POS.x, 5.3, HOUSE_POS.z + 3.3);
 
 // ================= INSIDE =================
-// Cozy music room — lamp-lit, dark surround.
+// Scandinavian lo-fi room: pale birch, soft white walls, sage + dusty blue, warm lamps,
+// a pink neon glow, and a night sky in the window. Gaming-chill.
 
 const ROOM_HALF_X = 6.2;
 const ROOM_HALF_Z = 6.2;
 const SPAWN_INSIDE = new THREE.Vector3(0, 0, 4.6);
 
+const SCANDI = {
+  wall: 0xe9e3d6,
+  wallSide: 0xe1d9c9,
+  trim: 0xf6f2ea,
+  sage: 0x9caf88,
+  sageDark: 0x73896a,
+  dusty: 0x8ea4b8,
+  blush: 0xe2b8a8,
+  charcoal: 0x2f3437,
+  oak: 0xcfa970,
+  oakDark: 0xa9834f,
+  cream: 0xf1ebdd,
+};
+
+function canvasTexture(w, h, draw) {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  draw(c.getContext("2d"), w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// Birch plank floor
+const floorTex = canvasTexture(1024, 1024, (g, w, h) => {
+  const planks = 22;
+  const pw = w / planks;
+  for (let i = 0; i < planks; i++) {
+    g.fillStyle = `hsl(34, ${34 + ((i * 13) % 9)}%, ${72 + ((i * 37) % 7)}%)`;
+    g.fillRect(i * pw, 0, pw + 1, h);
+    g.fillStyle = "rgba(120, 84, 44, 0.32)";
+    g.fillRect(i * pw, 0, 2, h);
+    const seam = (i * 397) % h;
+    g.fillRect(i * pw, seam, pw, 2);
+    g.fillStyle = "rgba(150, 110, 62, 0.12)";
+    for (let k = 0; k < 4; k++) g.fillRect(i * pw + ((k * 29 + i * 7) % pw), 0, 1, h);
+  }
+});
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(15, 15),
-  new THREE.MeshLambertMaterial({ color: 0x6b4a2c })
+  new THREE.PlaneGeometry(13.2, 13.2),
+  new THREE.MeshLambertMaterial({ map: floorTex })
 );
 floor.rotation.x = -Math.PI / 2;
 insideGroup.add(floor);
 
-const rug = new THREE.Mesh(
-  new THREE.CircleGeometry(3.4, 28),
-  new THREE.MeshLambertMaterial({ color: PALETTE.rust })
-);
-rug.rotation.x = -Math.PI / 2;
-rug.position.y = 0.01;
-insideGroup.add(rug);
-const rugInner = new THREE.Mesh(
-  new THREE.CircleGeometry(2.5, 28),
-  new THREE.MeshLambertMaterial({ color: PALETTE.tan })
-);
-rugInner.rotation.x = -Math.PI / 2;
-rugInner.position.y = 0.02;
-insideGroup.add(rugInner);
+// Cream rug with sage and clay rings
+const rugLayers = [
+  [new THREE.CircleGeometry(3.4, 48), 0xefe8d8, 0.011],
+  [new THREE.RingGeometry(2.55, 2.85, 48), SCANDI.sage, 0.012],
+  [new THREE.RingGeometry(2.1, 2.22, 48), 0xc98a63, 0.013],
+  [new THREE.CircleGeometry(1.9, 48), 0xf5efe1, 0.013],
+];
+rugLayers.forEach(([geo, color, y]) => {
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = y;
+  insideGroup.add(m);
+});
 
-const wallMat = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+const wallMat = new THREE.MeshLambertMaterial({ color: SCANDI.wall });
+const wallSideMat = new THREE.MeshLambertMaterial({ color: SCANDI.wallSide });
 const backWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallMat);
 backWall.position.set(0, 2.3, -6.5);
 insideGroup.add(backWall);
-const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallMat);
+const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallSideMat);
 leftWall.position.set(-6.5, 2.3, 0);
 leftWall.rotation.y = Math.PI / 2;
 insideGroup.add(leftWall);
-const rightWall = leftWall.clone();
-rightWall.position.x = 6.5;
+const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(13, 4.6), wallSideMat);
+rightWall.position.set(6.5, 2.3, 0);
+rightWall.rotation.y = -Math.PI / 2;
 insideGroup.add(rightWall);
+
+// White skirting boards
+const trimMat = new THREE.MeshLambertMaterial({ color: SCANDI.trim });
+const skirtBack = new THREE.Mesh(new THREE.BoxGeometry(13, 0.2, 0.07), trimMat);
+skirtBack.position.set(0, 0.1, -6.47);
+insideGroup.add(skirtBack);
+const skirtSideGeo = new THREE.BoxGeometry(0.07, 0.2, 13);
+const skirtLeft = new THREE.Mesh(skirtSideGeo, trimMat);
+skirtLeft.position.set(-6.47, 0.1, 0);
+insideGroup.add(skirtLeft);
+const skirtRight = new THREE.Mesh(skirtSideGeo, trimMat);
+skirtRight.position.set(6.47, 0.1, 0);
+insideGroup.add(skirtRight);
+
+// Framed art
+function makeFrame(w, h, tex, x, y, z, rotY = 0) {
+  const g = new THREE.Group();
+  const frame = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.12, h + 0.12, 0.05),
+    new THREE.MeshLambertMaterial({ color: SCANDI.charcoal })
+  );
+  g.add(frame);
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+  art.position.z = 0.03;
+  g.add(art);
+  g.position.set(x, y, z);
+  g.rotation.y = rotY;
+  insideGroup.add(g);
+  return g;
+}
+
+const sunsetTex = canvasTexture(256, 340, (g, w, h) => {
+  const sky = g.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#f4c7a5");
+  sky.addColorStop(0.55, "#e9a9a0");
+  sky.addColorStop(1, "#8d86b8");
+  g.fillStyle = sky;
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#fbe6b8";
+  g.beginPath();
+  g.arc(w / 2, h * 0.5, 52, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#6f6a9c";
+  g.beginPath();
+  g.moveTo(0, h * 0.72);
+  g.quadraticCurveTo(w * 0.3, h * 0.6, w * 0.6, h * 0.74);
+  g.quadraticCurveTo(w * 0.85, h * 0.82, w, h * 0.68);
+  g.lineTo(w, h);
+  g.lineTo(0, h);
+  g.fill();
+  g.fillStyle = "#4e4a7a";
+  g.beginPath();
+  g.moveTo(0, h * 0.86);
+  g.quadraticCurveTo(w * 0.5, h * 0.74, w, h * 0.88);
+  g.lineTo(w, h);
+  g.lineTo(0, h);
+  g.fill();
+});
+
+const archesTex = canvasTexture(256, 340, (g, w, h) => {
+  g.fillStyle = "#f3ede0";
+  g.fillRect(0, 0, w, h);
+  const arches = [
+    ["#c98a63", 0.86, 0.75],
+    ["#9caf88", 0.62, 0.55],
+    ["#8ea4b8", 0.38, 0.36],
+  ];
+  arches.forEach(([color, ww, hh]) => {
+    const aw = w * ww;
+    const ah = h * hh;
+    const x = (w - aw) / 2;
+    const yBottom = h * 0.9;
+    g.fillStyle = color;
+    g.beginPath();
+    g.moveTo(x, yBottom);
+    g.lineTo(x, yBottom - ah + aw / 2);
+    g.arc(w / 2, yBottom - ah + aw / 2, aw / 2, Math.PI, 0);
+    g.lineTo(x + aw, yBottom);
+    g.fill();
+  });
+});
+
+makeFrame(0.85, 1.12, sunsetTex, -2.9, 2.5, -6.44);
+makeFrame(0.85, 1.12, archesTex, 2.3, 2.5, -6.44);
+
+// Pink neon sign
+const neonTex = canvasTexture(512, 192, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  g.font = "italic 700 120px 'Poppins', sans-serif";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.shadowColor = "#ff5fa8";
+  g.shadowBlur = 38;
+  g.fillStyle = "#ff9fcf";
+  g.fillText("chill", w / 2, h / 2);
+  g.shadowBlur = 12;
+  g.fillStyle = "#ffe3f1";
+  g.fillText("chill", w / 2, h / 2);
+});
+const neon = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.1, 0.79),
+  new THREE.MeshBasicMaterial({ map: neonTex, transparent: true })
+);
+neon.position.set(-4.7, 2.75, -6.46);
+insideGroup.add(neon);
+
+// Window with a night sky
+const nightTex = canvasTexture(256, 300, (g, w, h) => {
+  const sky = g.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#1b2145");
+  sky.addColorStop(1, "#4a3d7a");
+  g.fillStyle = sky;
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#fff6d8";
+  for (let i = 0; i < 26; i++) {
+    g.fillRect((i * 97) % w, (i * 53) % (h * 0.7), 2, 2);
+  }
+  g.beginPath();
+  g.arc(w * 0.68, h * 0.28, 22, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#1b2145";
+  g.beginPath();
+  g.arc(w * 0.68 + 9, h * 0.28 - 5, 20, 0, Math.PI * 2);
+  g.fill();
+});
+const windowGroup = new THREE.Group();
+windowGroup.position.set(4.6, 2.6, -6.46);
+const windowPane = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.5, 1.75),
+  new THREE.MeshBasicMaterial({ map: nightTex })
+);
+windowGroup.add(windowPane);
+const windowFrameMat = new THREE.MeshLambertMaterial({ color: SCANDI.trim });
+[
+  [1.7, 0.1, 0, 0.92],
+  [1.7, 0.1, 0, -0.92],
+  [0.1, 1.95, 0.8, 0],
+  [0.1, 1.95, -0.8, 0],
+  [0.06, 1.75, 0, 0],
+  [1.5, 0.06, 0, 0],
+].forEach(([w, h, x, y]) => {
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), windowFrameMat);
+  bar.position.set(x, y, 0.04);
+  windowGroup.add(bar);
+});
+insideGroup.add(windowGroup);
+
+// Potted plants (low-poly leaves)
+function makePlant(x, y, z, scale = 1, potColor = 0xf2eee6) {
+  const g = new THREE.Group();
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.17, 0.3, 10),
+    new THREE.MeshLambertMaterial({ color: potColor })
+  );
+  pot.position.y = 0.15;
+  g.add(pot);
+  const leafGeo = new THREE.SphereGeometry(0.16, 6, 5);
+  const leafColors = [0x7f9a6b, 0x93ad7d, 0x6c8a5e];
+  for (let i = 0; i < 7; i++) {
+    const leaf = new THREE.Mesh(leafGeo, new THREE.MeshLambertMaterial({ color: leafColors[i % 3] }));
+    const a = (i / 7) * Math.PI * 2;
+    leaf.scale.set(0.55, 1.7 + (i % 3) * 0.25, 0.4);
+    leaf.position.set(Math.cos(a) * 0.14, 0.62 + (i % 3) * 0.07, Math.sin(a) * 0.14);
+    leaf.rotation.z = -Math.cos(a) * 0.5;
+    leaf.rotation.x = Math.sin(a) * 0.5;
+    g.add(leaf);
+  }
+  g.position.set(x, y, z);
+  g.scale.setScalar(scale);
+  insideGroup.add(g);
+  return g;
+}
+
+makePlant(-5.7, 0, -5.6, 1.5, 0xf2eee6);
+makePlant(6.1 - 0.5, 0, -5.7, 1.3, 0xc98a63);
+makePlant(-5.7, 0, 5.4, 1.15, 0xf2eee6);
+
+// Fairy lights strung along the back wall
+const fairyBulbs = [];
+const wirePoints = [];
+const BULB_COUNT = 26;
+for (let i = 0; i < BULB_COUNT; i++) {
+  const t = i / (BULB_COUNT - 1);
+  const x = THREE.MathUtils.lerp(-6.2, 6.2, t);
+  const y = 4.15 - Math.sin(t * Math.PI * 3) * 0.05 - Math.pow(Math.sin(t * Math.PI * 3), 2) * 0.28;
+  wirePoints.push(new THREE.Vector3(x, y + 0.04, -6.44));
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffe2a8, transparent: true })
+  );
+  bulb.position.set(x, y, -6.42);
+  bulb.userData.phase = i * 0.9;
+  insideGroup.add(bulb);
+  fairyBulbs.push(bulb);
+}
+insideGroup.add(
+  new THREE.Line(new THREE.BufferGeometry().setFromPoints(wirePoints), new THREE.LineBasicMaterial({ color: 0x555555 }))
+);
+
+// Interior lighting: soft sky/ground fill, plus warm and cool pools
+insideGroup.add(new THREE.HemisphereLight(0xd9dcff, 0xffd2a0, 0.62));
 
 // Vinyl crate — a browsable stack of records, one per catalog track
 const crateGroup = new THREE.Group();
@@ -454,104 +697,292 @@ function loadCoverArt() {
   });
 }
 
-// Guitar — leaning near the west wall
+const lambert = (color) => new THREE.MeshLambertMaterial({ color });
+const oakMat = lambert(SCANDI.oak);
+const charcoalMat = lambert(SCANDI.charcoal);
+
+// Light over the crate so the records glow, plus a floating shelf above it
+const crateSpot = new THREE.SpotLight(0xffe2b0, 2.4, 9, 0.72, 0.6, 1.4);
+crateSpot.position.set(0, 3.7, -3.3);
+crateSpot.target.position.set(0, 0.9, -5.4);
+insideGroup.add(crateSpot, crateSpot.target);
+
+const shelfBoard = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 0.3), oakMat);
+shelfBoard.position.set(0, 2.55, -6.32);
+insideGroup.add(shelfBoard);
+[
+  [-0.85, 0.17, SCANDI.sage],
+  [-0.7, 0.2, SCANDI.dusty],
+  [-0.56, 0.15, 0xc98a63],
+].forEach(([x, h, color]) => {
+  const book = new THREE.Mesh(new THREE.BoxGeometry(0.11, h * 2, 0.2), lambert(color));
+  book.position.set(x, 2.58 + h, -6.32);
+  insideGroup.add(book);
+});
+const speaker = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.22), charcoalMat);
+speaker.position.set(0.55, 2.73, -6.32);
+insideGroup.add(speaker);
+const speakerCone = new THREE.Mesh(
+  new THREE.CircleGeometry(0.09, 16),
+  new THREE.MeshBasicMaterial({ color: 0x5a6068 })
+);
+speakerCone.position.set(0.55, 2.73, -6.2);
+insideGroup.add(speakerCone);
+makePlant(1.0, 2.58, -6.32, 0.5, SCANDI.blush);
+
+// Floor lamp with a warm glow
+const floorLampGroup = new THREE.Group();
+floorLampGroup.position.set(-3.6, 0, -5.9);
+const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.04, 16), charcoalMat);
+lampBase.position.y = 0.02;
+floorLampGroup.add(lampBase);
+const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.9, 8), charcoalMat);
+lampPole.position.y = 0.97;
+floorLampGroup.add(lampPole);
+const lampShade = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.2, 0.32, 0.4, 16, 1, true),
+  new THREE.MeshBasicMaterial({ color: 0xffdca0, side: THREE.DoubleSide })
+);
+lampShade.position.y = 2.0;
+floorLampGroup.add(lampShade);
+insideGroup.add(floorLampGroup);
+const floorLampLight = new THREE.PointLight(0xffc98a, 1.3, 9, 1.6);
+floorLampLight.position.set(-3.6, 1.9, -5.4);
+insideGroup.add(floorLampLight);
+
+// Acoustic guitar on a stand — About
 const guitarGroup = new THREE.Group();
 guitarGroup.position.set(-5.6, 0, 2.4);
-guitarGroup.rotation.z = -0.18;
-const guitarBody = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.55, 0.65, 0.18, 16),
-  new THREE.MeshLambertMaterial({ color: PALETTE.rust })
+const honey = lambert(0xc8894a);
+const guitarLower = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.16, 22), honey);
+guitarLower.rotation.x = Math.PI / 2;
+guitarLower.position.y = 0.72;
+guitarGroup.add(guitarLower);
+const guitarWaist = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.16), honey);
+guitarWaist.position.y = 1.0;
+guitarGroup.add(guitarWaist);
+const guitarUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.16, 20), honey);
+guitarUpper.rotation.x = Math.PI / 2;
+guitarUpper.position.y = 1.2;
+guitarGroup.add(guitarUpper);
+const soundHole = new THREE.Mesh(
+  new THREE.CircleGeometry(0.1, 20),
+  new THREE.MeshBasicMaterial({ color: 0x1e140c })
 );
-guitarBody.rotation.x = Math.PI / 2;
-guitarBody.position.y = 0.9;
-guitarGroup.add(guitarBody);
-const guitarNeck = new THREE.Mesh(
-  new THREE.BoxGeometry(0.12, 1.5, 0.08),
-  new THREE.MeshLambertMaterial({ color: 0x3a2a1a })
-);
-guitarNeck.position.set(0, 2, 0.05);
+soundHole.position.set(0, 0.86, 0.085);
+guitarGroup.add(soundHole);
+const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.03), lambert(0x3a2412));
+bridge.position.set(0, 0.55, 0.09);
+guitarGroup.add(bridge);
+const guitarNeck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.95, 0.07), lambert(0x4b3220));
+guitarNeck.position.set(0, 1.95, 0);
 guitarGroup.add(guitarNeck);
+const headstock = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.3, 0.06), lambert(0x3a2412));
+headstock.position.set(0, 2.55, 0);
+guitarGroup.add(headstock);
+const standRod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8), charcoalMat);
+standRod.position.set(0, 0.2, -0.05);
+guitarGroup.add(standRod);
+[-0.28, 0.28].forEach((x) => {
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.5), charcoalMat);
+  foot.position.set(x, 0.02, 0);
+  guitarGroup.add(foot);
+});
+const guitarRest = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.05), charcoalMat);
+guitarRest.position.set(0, 0.36, 0);
+guitarGroup.add(guitarRest);
 insideGroup.add(guitarGroup);
 makeLabel(insideGroup, "About", -5.6, 3.1, 2.4);
 
-// Retro TV / arcade corner — west wall
+// Gaming corner — Featured Work
 const tvGroup = new THREE.Group();
 tvGroup.position.set(-5.4, 0, -2.4);
-const tvBody = new THREE.Mesh(
-  new THREE.BoxGeometry(1.3, 1, 0.8),
-  new THREE.MeshLambertMaterial({ color: PALETTE.olive })
-);
-tvBody.position.y = 0.9;
-tvGroup.add(tvBody);
+const consoleBody = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.34, 0.6), oakMat);
+consoleBody.position.y = 0.5;
+tvGroup.add(consoleBody);
+[
+  [-0.78, -0.22],
+  [0.78, -0.22],
+  [-0.78, 0.22],
+  [0.78, 0.22],
+].forEach(([x, z]) => {
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.33, 8), charcoalMat);
+  leg.position.set(x, 0.165, z);
+  tvGroup.add(leg);
+});
+const gameTex = canvasTexture(512, 288, (g, w, h) => {
+  const bg = g.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, "#1a2350");
+  bg.addColorStop(1, "#4a1f52");
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "rgba(255, 255, 255, 0.08)";
+  for (let i = 0; i < 10; i++) g.fillRect(0, i * 30, w, 1);
+  g.fillStyle = "#ff5a6e";
+  g.font = "800 44px 'Poppins', sans-serif";
+  g.textAlign = "center";
+  g.fillText("MARVEL", w / 2, 78);
+  g.fillStyle = "#e9f0ff";
+  g.font = "700 30px 'Poppins', sans-serif";
+  g.fillText("CHAMPIONS", w / 2, 116);
+  const cards = ["#e4574d", "#3f6fd8", "#f0c05a", "#7fbf8a", "#c77dd6"];
+  cards.forEach((c, i) => {
+    const x = 40 + i * 92;
+    g.fillStyle = c;
+    g.beginPath();
+    g.roundRect(x, 150, 72, 100, 8);
+    g.fill();
+    g.fillStyle = "rgba(255,255,255,0.3)";
+    g.fillRect(x + 8, 160, 56, 40);
+  });
+});
+const tvBezel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.92, 0.05), charcoalMat);
+tvBezel.position.set(0, 1.2, 0);
+tvGroup.add(tvBezel);
 const tvScreen = new THREE.Mesh(
-  new THREE.PlaneGeometry(0.9, 0.6),
-  new THREE.MeshBasicMaterial({ color: PALETTE.tan })
+  new THREE.PlaneGeometry(1.5, 0.82),
+  new THREE.MeshBasicMaterial({ map: gameTex })
 );
-tvScreen.position.set(0, 0.95, 0.41);
+tvScreen.position.set(0, 1.2, 0.03);
 tvGroup.add(tvScreen);
-const tvStand = new THREE.Mesh(
-  new THREE.BoxGeometry(0.9, 0.5, 0.6),
-  new THREE.MeshLambertMaterial({ color: 0x3a2a1a })
+const tvFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.2), charcoalMat);
+tvFoot.position.set(0, 0.68, 0);
+tvGroup.add(tvFoot);
+const consoleUnit = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.28), lambert(0xf3f1ec));
+consoleUnit.position.set(-0.62, 0.71, 0.1);
+tvGroup.add(consoleUnit);
+const consoleLed = new THREE.Mesh(
+  new THREE.BoxGeometry(0.42, 0.012, 0.005),
+  new THREE.MeshBasicMaterial({ color: 0x59b4ff })
 );
-tvStand.position.y = 0.25;
-tvGroup.add(tvStand);
+consoleLed.position.set(-0.62, 0.71, 0.245);
+tvGroup.add(consoleLed);
+const controller = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.04, 0.1), charcoalMat);
+controller.position.set(0.55, 0.69, 0.12);
+tvGroup.add(controller);
+const tvGlowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.76, 1.06),
+  new THREE.MeshBasicMaterial({ color: 0xb07bff, transparent: true, opacity: 0.55 })
+);
+tvGlowPlane.position.set(0, 1.2, -0.06);
+tvGroup.add(tvGlowPlane);
 insideGroup.add(tvGroup);
+const beanbag = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), lambert(SCANDI.blush));
+beanbag.scale.set(1, 0.66, 1);
+beanbag.position.set(-4.35, 0.36, -1.15);
+insideGroup.add(beanbag);
+const tvGlow = new THREE.PointLight(0xa06bff, 1.0, 5, 1.6);
+tvGlow.position.set(-5.4, 1.3, -1.6);
+insideGroup.add(tvGlow);
 makeLabel(insideGroup, "Featured Work", -5.4, 1.9, -2.4);
 
-// Desk with laptop — east wall
+// Scandi desk with a monitor — Coursework
 const deskGroup = new THREE.Group();
 deskGroup.position.set(5.4, 0, -2.4);
-const deskTop = new THREE.Mesh(
-  new THREE.BoxGeometry(1.4, 0.1, 0.7),
-  new THREE.MeshLambertMaterial({ color: 0x8a5a34 })
-);
-deskTop.position.y = 0.75;
+const deskTop = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.78), oakMat);
+deskTop.position.y = 0.78;
 deskGroup.add(deskTop);
-const deskLegs = new THREE.Mesh(
-  new THREE.BoxGeometry(1.2, 0.7, 0.5),
-  new THREE.MeshLambertMaterial({ color: 0x5a3d22 })
+[
+  [-0.78, -0.32],
+  [0.78, -0.32],
+  [-0.78, 0.32],
+  [0.78, 0.32],
+].forEach(([x, z]) => {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.75, 0.05), charcoalMat);
+  leg.position.set(x, 0.375, z);
+  deskGroup.add(leg);
+});
+const codeTex = canvasTexture(512, 288, (g, w, h) => {
+  g.fillStyle = "#1b2032";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#12162a";
+  g.fillRect(0, 0, 46, h);
+  const colors = ["#ff7eb6", "#7fdbca", "#ffd479", "#c8d3f5", "#a29bfe"];
+  for (let i = 0; i < 14; i++) {
+    g.fillStyle = "#4d5573";
+    g.fillRect(14, 22 + i * 18, 16, 6);
+    const indent = (i % 4) * 22;
+    let x = 64 + indent;
+    for (let k = 0; k < 3; k++) {
+      const len = 30 + ((i * 41 + k * 67) % 90);
+      g.fillStyle = colors[(i + k) % colors.length];
+      g.fillRect(x, 22 + i * 18, len, 6);
+      x += len + 10;
+    }
+  }
+});
+const monitorBezel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.6, 0.03), charcoalMat);
+monitorBezel.position.set(0, 1.22, -0.18);
+deskGroup.add(monitorBezel);
+const monitorScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.94, 0.54),
+  new THREE.MeshBasicMaterial({ map: codeTex })
 );
-deskLegs.position.y = 0.35;
-deskGroup.add(deskLegs);
-const laptopBase = new THREE.Mesh(
-  new THREE.BoxGeometry(0.5, 0.04, 0.35),
-  new THREE.MeshLambertMaterial({ color: 0xdddddd })
-);
-laptopBase.position.set(0, 0.82, 0);
-deskGroup.add(laptopBase);
-const laptopScreen = new THREE.Mesh(
-  new THREE.BoxGeometry(0.5, 0.32, 0.03),
-  new THREE.MeshBasicMaterial({ color: PALETTE.rust })
-);
-laptopScreen.position.set(0, 1, -0.16);
-laptopScreen.rotation.x = -0.3;
-deskGroup.add(laptopScreen);
+monitorScreen.position.set(0, 1.22, -0.16);
+deskGroup.add(monitorScreen);
+const monitorNeck = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.05), charcoalMat);
+monitorNeck.position.set(0, 0.92, -0.18);
+deskGroup.add(monitorNeck);
+const monitorFoot = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.18), charcoalMat);
+monitorFoot.position.set(0, 0.82, -0.18);
+deskGroup.add(monitorFoot);
+const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.16), lambert(0xf0eee8));
+keyboard.position.set(-0.05, 0.82, 0.12);
+deskGroup.add(keyboard);
+const mouse = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.11), lambert(0xf0eee8));
+mouse.position.set(0.4, 0.83, 0.12);
+deskGroup.add(mouse);
+const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.1, 12), lambert(SCANDI.dusty));
+mug.position.set(-0.6, 0.86, 0.1);
+deskGroup.add(mug);
+const chairSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16), lambert(SCANDI.sage));
+chairSeat.position.set(0, 0.5, 0.95);
+deskGroup.add(chairSeat);
+const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.5, 0.06), lambert(SCANDI.sage));
+chairBack.position.set(0, 0.85, 1.25);
+deskGroup.add(chairBack);
+const chairPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.46, 8), charcoalMat);
+chairPole.position.set(0, 0.24, 0.95);
+deskGroup.add(chairPole);
+const chairBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.03, 5), charcoalMat);
+chairBase.position.set(0, 0.02, 0.95);
+deskGroup.add(chairBase);
 insideGroup.add(deskGroup);
+makePlant(5.4 + 0.65, 0.81, -2.4 - 0.15, 0.45, 0xf2eee6);
+const deskGlow = new THREE.PointLight(0x9fc4ff, 0.8, 4, 1.6);
+deskGlow.position.set(5.4, 1.3, -1.6);
+insideGroup.add(deskGlow);
 makeLabel(insideGroup, "Coursework", 5.4, 1.9, -2.4);
 
-// Side table with rotary phone — east wall, near entrance
+// Round side table with a rotary phone — Contact
 const phoneGroup = new THREE.Group();
 phoneGroup.position.set(5.6, 0, 2.7);
-const phoneTable = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12),
-  new THREE.MeshLambertMaterial({ color: 0x8a5a34 })
-);
-phoneTable.position.y = 0.3;
-phoneGroup.add(phoneTable);
-const phoneBody = new THREE.Mesh(
-  new THREE.BoxGeometry(0.35, 0.2, 0.3),
-  new THREE.MeshLambertMaterial({ color: PALETTE.ink })
-);
-phoneBody.position.y = 0.7;
+const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 20), oakMat);
+tableTop.position.y = 0.62;
+phoneGroup.add(tableTop);
+[0, 1, 2].forEach((i) => {
+  const a = (i / 3) * Math.PI * 2 + 0.5;
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.62, 8), charcoalMat);
+  leg.position.set(Math.cos(a) * 0.22, 0.31, Math.sin(a) * 0.22);
+  leg.rotation.z = -Math.cos(a) * 0.12;
+  leg.rotation.x = Math.sin(a) * 0.12;
+  phoneGroup.add(leg);
+});
+const phoneBody = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.26), lambert(SCANDI.cream));
+phoneBody.position.y = 0.72;
 phoneGroup.add(phoneBody);
+const phoneDial = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.02, 16), charcoalMat);
+phoneDial.position.set(0, 0.79, 0.02);
+phoneGroup.add(phoneDial);
+const handset = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.26, 4, 8), lambert(SCANDI.sage));
+handset.rotation.z = Math.PI / 2;
+handset.position.set(0, 0.83, -0.07);
+phoneGroup.add(handset);
 insideGroup.add(phoneGroup);
 makeLabel(insideGroup, "Contact", 5.6, 1.5, 2.7);
 
-// Doormat marking the exit back outside
-const exitMat = new THREE.Mesh(
-  new THREE.PlaneGeometry(1.4, 0.6),
-  new THREE.MeshLambertMaterial({ color: PALETTE.tan })
-);
+// Woven doormat marking the exit back outside
+const exitMat = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.6), lambert(0xd8c8a4));
 exitMat.rotation.x = -Math.PI / 2;
 exitMat.position.set(0, 0.015, 5.4);
 insideGroup.add(exitMat);
@@ -681,9 +1112,10 @@ function enterHouse() {
     boundZ = ROOM_HALF_Z - 0.4;
     cameraOffset = INSIDE_CAM_OFFSET.clone();
     scene.background = new THREE.Color(PALETTE.dusk);
-    scene.fog = new THREE.Fog(PALETTE.dusk, 9, 17);
-    ambient.intensity = 0.32;
-    lamp.intensity = 1.3;
+    scene.fog = new THREE.Fog(PALETTE.dusk, 20, 40);
+    ambient.intensity = 0.3;
+    sun.intensity = 0.2;
+    lamp.intensity = 1.6;
     hintEl.textContent = "Walk up to an object and press E";
   });
 }
@@ -703,6 +1135,7 @@ function exitHouse() {
     scene.background = new THREE.Color(PALETTE.cream);
     scene.fog = new THREE.Fog(PALETTE.cream, 18, 38);
     ambient.intensity = 0.75;
+    sun.intensity = 0.9;
     lamp.intensity = 0;
     hintEl.textContent = "Walk to the house and press E";
   });
@@ -1010,6 +1443,14 @@ function animate() {
     body.position.y = 1.05 + Math.abs(Math.sin(t * 10)) * 0.06;
   } else {
     body.position.y = 1.05;
+  }
+
+  if (area === "inside") {
+    fairyBulbs.forEach((bulb) => {
+      const s = 0.85 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.6 + bulb.userData.phase));
+      bulb.scale.setScalar(s);
+      bulb.material.opacity = 0.65 + 0.35 * s;
+    });
   }
 
   // Vinyl crate: sleeves rest edge-on; the selected record rises, turns to face you, and
