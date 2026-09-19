@@ -1595,18 +1595,15 @@ const furMatFor = (repeatY) => new THREE.MeshLambertMaterial({ map: makeFurTextu
 // limb and the vertical axis runs along it. Stripes are wavy, heaviest on the outer side, thin
 // out and break up toward a paler inner side, with a softer edge, thin secondary stripes and
 // speckled fur grain so they read as fur markings rather than painted rings.
-const makeMarkingTexture = ({ rows, seed, thick = 0.5, tip = false }) =>
+const makeMarkingTexture = ({ rows, seed, thick = 0.5 }) =>
   canvasTexture(128, 256, (g, w, h) => {
     const rnd = seededRandom(seed);
-    g.fillStyle = tip ? "#2b2825" : "#8a7d6b";
+    g.fillStyle = "#8a7d6b";
     g.fillRect(0, 0, w, h);
     for (let n = 0; n < 800; n++) {
-      g.fillStyle = tip
-        ? rnd() < 0.5 ? "rgba(90, 78, 66, 0.35)" : "rgba(10, 8, 7, 0.4)"
-        : rnd() < 0.5 ? "rgba(170, 157, 136, 0.2)" : "rgba(88, 78, 64, 0.22)";
+      g.fillStyle = rnd() < 0.5 ? "rgba(170, 157, 136, 0.2)" : "rgba(88, 78, 64, 0.22)";
       g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 2, 2 + rnd() * 5);
     }
-    if (tip) return;
 
     const pitch = h / rows;
     const step = 2;
@@ -1650,6 +1647,71 @@ const makeMarkingTexture = ({ rows, seed, thick = 0.5, tip = false }) =>
     g.fillRect(w * 0.32, 0, w * 0.36, h);
   });
 const markMat = (opts) => new THREE.MeshLambertMaterial({ map: makeMarkingTexture(opts) });
+
+// Tail markings: full rings that wrap all the way around, wobbling and a little thicker along the
+// top, with thin broken rings between them, a dark line down the spine and a paler underside.
+// The horizontal axis goes around the tail (top of the tail is the middle) and vertical runs along it.
+const makeTailTexture = ({ seed, thick, tip = false }) =>
+  canvasTexture(256, 256, (g, w, h) => {
+    const rnd = seededRandom(seed);
+    const TAU = Math.PI * 2;
+    g.fillStyle = tip ? "#2b2825" : "#8a7d6b";
+    g.fillRect(0, 0, w, h);
+    for (let n = 0; n < 1400; n++) {
+      g.fillStyle = tip
+        ? rnd() < 0.5 ? "rgba(92, 80, 68, 0.3)" : "rgba(10, 8, 7, 0.4)"
+        : rnd() < 0.5 ? "rgba(170, 157, 136, 0.2)" : "rgba(88, 78, 64, 0.24)";
+      g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 2, 2 + rnd() * 5);
+    }
+    if (tip) return;
+
+    const rows = 3;
+    const pitch = h / rows;
+    const step = 2;
+    for (let k = 0; k < rows; k++) {
+      const cy0 = (k + 0.5) * pitch + (rnd() - 0.5) * pitch * 0.16;
+      const phase = rnd() * TAU;
+      const phase2 = rnd() * TAU;
+      for (let x = 0; x < w; x += step) {
+        const top = 0.5 - 0.5 * Math.cos((x / w) * TAU);
+        const weight = 0.72 + 0.28 * top;
+        const cy = cy0 + Math.sin((x / w) * TAU * 2 + phase) * pitch * 0.07 + Math.sin((x / w) * TAU * 5 + phase2) * pitch * 0.025;
+        const th = pitch * thick * weight * (0.85 + rnd() * 0.3);
+        g.fillStyle = "rgba(48, 40, 34, 0.3)";
+        g.fillRect(x, cy - th / 2 - 3.5, step + 0.5, th + 7);
+        g.fillStyle = "#2c2520";
+        g.fillRect(x, cy - th / 2 + (rnd() - 0.5) * 2.5, step + 0.5, th + (rnd() - 0.5) * 2.5);
+        // Stray dark hairs feathering the edge of the ring
+        if (rnd() < 0.35) {
+          g.fillStyle = "rgba(44, 37, 32, 0.55)";
+          const dir = rnd() < 0.5 ? -1 : 1;
+          g.fillRect(x, dir < 0 ? cy - th / 2 - 5 - rnd() * 3 : cy + th / 2 + 1, 1, 4 + rnd() * 3);
+        }
+      }
+      // A thin broken ring between the main ones
+      const y = cy0 + pitch * 0.5;
+      for (let x = rnd() * 30; x < w; x += 24 + rnd() * 50) {
+        g.fillStyle = "rgba(52, 44, 37, 0.5)";
+        g.fillRect(x, y + (rnd() - 0.5) * 3, 14 + rnd() * 28, 2.5 + rnd() * 2);
+      }
+    }
+
+    // Dark line down the spine
+    for (let y = 0; y < h; y += 3) {
+      g.fillStyle = "rgba(38, 31, 26, 0.7)";
+      const wob = Math.sin(y * 0.08) * 2;
+      g.fillRect(w / 2 - 7 + wob, y, 14 + (rnd() - 0.5) * 3, 3.5);
+    }
+
+    // Paler underside
+    [[0, w * 0.2], [w * 0.8, w]].forEach(([x0, x1], side) => {
+      const belly = g.createLinearGradient(x0, 0, x1, 0);
+      belly.addColorStop(side ? 0 : 1, "rgba(226, 217, 200, 0)");
+      belly.addColorStop(side ? 1 : 0, "rgba(226, 217, 200, 0.35)");
+      g.fillStyle = belly;
+      g.fillRect(x0, 0, x1 - x0, h);
+    });
+  });
 
 const henryWhite = lambert(0xf7f2e8);
 const henryTorso = new THREE.Group();
@@ -1736,13 +1798,22 @@ let tailParent = new THREE.Group();
 const henryTailRoot = tailParent;
 tailParent.position.set(0, 0.05, -0.27);
 henryRig.add(tailParent);
+const tailJointMat = lambert(0x5a4f43);
 for (let i = 0; i < 5; i++) {
-  // Rings get heavier toward the tail, which ends in a solid dark tip
-  const tailMat = markMat({ rows: 3, seed: 61 + i * 7, thick: 0.42 + i * 0.07, tip: i === 4 });
-  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), tailMat);
-  seg.rotation.x = Math.PI / 2;
+  // Tapered tube whose texture runs evenly along its length, so the rings wrap around the tail.
+  // Rings get heavier toward the tip, and the last segment is solid dark.
+  const tailMat = new THREE.MeshLambertMaterial({ map: makeTailTexture({ seed: 61 + i * 7, thick: 0.4 + i * 0.07, tip: i === 4 }) });
+  const rProx = 0.029 - i * 0.0025;
+  const rDist = 0.029 - (i + 1) * 0.0025;
+  const tubeGeo = new THREE.CylinderGeometry(rProx, rDist, 0.09, 18, 1, true);
+  tubeGeo.rotateX(Math.PI / 2);
+  const seg = new THREE.Mesh(tubeGeo, tailMat);
   seg.position.z = -0.045;
   tailParent.add(seg);
+  // Round joint so the tube stays closed when the tail bends
+  const joint = new THREE.Mesh(new THREE.SphereGeometry(rDist * 1.02, 12, 10), i === 4 ? tailMat : tailJointMat);
+  joint.position.z = -0.09;
+  tailParent.add(joint);
   const next = new THREE.Group();
   next.position.z = -0.09;
   tailParent.add(next);
