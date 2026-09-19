@@ -361,9 +361,10 @@
       font-family: "Poppins", sans-serif;
       font-size: 1em;
       font-weight: 600;
-      color: var(--cream);
-      background: rgba(20, 20, 20, 0.88);
-      border: 1px solid rgba(221, 161, 94, 0.7);
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--tan);
+      box-shadow: 0 0 0 2px rgba(254, 250, 224, 0.95);
       border-radius: 999px;
       padding: 0.3em 0.6em;
       cursor: pointer;
@@ -374,12 +375,13 @@
     }
 
     .vinyl-track:hover {
-      background: rgba(221, 161, 94, 0.35);
+      background: #f3d9a4;
     }
 
     .vinyl-track.active {
-      background: var(--tan);
-      color: var(--ink);
+      background: var(--rust);
+      border-color: var(--rust);
+      color: #fff;
       font-weight: 700;
     }
 
@@ -618,6 +620,47 @@
       .proto-badge {
         font-size: 0.62rem;
         padding: 0.4rem 0.75rem;
+      }
+    }
+    @media (max-width: 700px) {
+      .crate-sheet {
+        bottom: 0.6rem;
+        padding: 0.65rem 0.85rem 0.75rem;
+        border-radius: 16px;
+      }
+
+      .crate-hint {
+        display: none;
+      }
+
+      .crate-sheet-head {
+        margin-bottom: 0.3rem;
+      }
+
+      .crate-sheet h2 {
+        font-size: 0.98rem;
+      }
+
+      .crate-eyebrow {
+        font-size: 0.6rem;
+      }
+
+      .crate-close {
+        width: 28px;
+        height: 28px;
+      }
+
+      #spotifyFrame {
+        height: 80px;
+      }
+
+      .spotify-controls {
+        margin-top: 0.45rem;
+      }
+
+      .spotify-controls button {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.75rem;
       }
     }
   </style>

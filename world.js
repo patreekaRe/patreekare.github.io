@@ -2604,6 +2604,7 @@ const moveDir = new THREE.Vector3();
 const targetCamPos = new THREE.Vector3();
 const targetLookAt = new THREE.Vector3();
 const currentLook = new THREE.Vector3();
+let viewShift = 0;
 const faceCenter = new THREE.Vector3();
 const faceEdge = new THREE.Vector3();
 let lookInitialized = false;
@@ -2758,6 +2759,16 @@ function animate() {
   }
   currentLook.lerp(targetLookAt, camEase);
   camera.lookAt(currentLook);
+
+  // On phones the bottom sheet covers a big slice of the screen, so slide the view up to keep
+  // the crate in the visible area above it
+  const wantShift = browsing && window.innerWidth <= 700 ? crateSheet.offsetHeight * 0.5 : 0;
+  viewShift += (wantShift - viewShift) * camEase;
+  if (Math.abs(viewShift) > 0.5) {
+    camera.setViewOffset(window.innerWidth, window.innerHeight, 0, viewShift, window.innerWidth, window.innerHeight);
+  } else if (camera.view && camera.view.enabled) {
+    camera.clearViewOffset();
+  }
 
   // Keep the on-record song list matched to the pulled-out disc's size on screen
   if (browsing && vinylFaceObj.parent) {
