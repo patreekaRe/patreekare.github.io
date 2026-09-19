@@ -444,7 +444,6 @@ const cityTex = canvasTexture(512, 1024, (g, w, h) => {
     }
   }
 });
-const windowPanes = [];
 const windowFrameMat = lambert(0x24170f);
 [3.5, 5.4].forEach((wx, wi) => {
   const wg = new THREE.Group();
@@ -455,7 +454,6 @@ const windowFrameMat = lambert(0x24170f);
   tex.wrapS = THREE.RepeatWrapping;
   const pane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 3.0), new THREE.MeshBasicMaterial({ map: tex }));
   wg.add(pane);
-  windowPanes.push(pane);
   [
     [1.62, 0.12, 0, 1.56],
     [1.62, 0.12, 0, -1.56],
@@ -546,8 +544,7 @@ insideGroup.add(chandelier);
 lamp.position.set(2.0, 3.4, -2.6);
 
 // Interior lighting: warm hemisphere fill plus the pools set up with each piece below
-const interiorHemi = new THREE.HemisphereLight(0xffe6c8, 0xffcf9a, 0.55);
-insideGroup.add(interiorHemi);
+insideGroup.add(new THREE.HemisphereLight(0xffe6c8, 0xffcf9a, 0.55));
 
 // Vinyl crate — a browsable stack of records, one per catalog track
 const crateGroup = new THREE.Group();
@@ -1526,7 +1523,6 @@ const moonTex = canvasTexture(256, 512, (g, w, h) => {
     }
   }
 });
-const moonBeams = [];
 [3.95, 5.85].forEach((x) => {
   const beam = new THREE.Mesh(
     new THREE.PlaneGeometry(1.5, 2.9),
@@ -1535,7 +1531,6 @@ const moonBeams = [];
   beam.rotation.x = -Math.PI / 2;
   beam.position.set(x, 0.024, -5.0);
   insideGroup.add(beam);
-  moonBeams.push(beam);
 });
 
 // ================= HENRY THE CAT =================
@@ -1914,11 +1909,7 @@ function beginHenryWalk() {
 function startHenryTrip() {
   const sleepy = 1 - henryAI.energy;
   henryAI.target = pickWeighted(
-    HENRY_SPOTS.filter((s) => s !== henryAI.spot).map((s) => {
-      const sunny = skyState.daylight * THREE.MathUtils.clamp(skyState.sunElev * 1.4, 0, 1);
-      const sunPull = s.name === "sunbeam" ? 1 + 0.9 * sunny : 1;
-      return [s, s.weight * (1 + sleepy * s.likes.sleep * 1.5) * sunPull];
-    })
+    HENRY_SPOTS.filter((s) => s !== henryAI.spot).map((s) => [s, s.weight * (1 + sleepy * s.likes.sleep * 1.5)])
   );
   if (henryAI.spot.elevated) {
     henryAI.node = henryAI.spot.approach;
@@ -2200,248 +2191,6 @@ function updateHenry(delta, t) {
   zzzEl.classList.toggle("show", sleeping && pose.sleep > 0.8);
   nameEl.classList.toggle("show", playerDist < 4.5 && !browsing);
 }
-
-// ================= DAY / NIGHT CYCLE =================
-// Starts at the visitor's real local time, then runs faster than real time (one full day per
-// DAY_LENGTH_SECONDS). Drives the window sky, the moon/sun patches on the floor, interior and
-// exterior lighting, and the sky color around the room.
-
-const DAY_LENGTH_SECONDS = 480;
-let timeOfDay = (() => {
-  const now = new Date();
-  return now.getHours() + now.getMinutes() / 60;
-})();
-const timeBadge = document.getElementById("timeBadge");
-const skyState = { daylight: 0, glow: 0, sunElev: 0, morning: false };
-
-const smoothstep = (a, b, x) => {
-  const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1);
-  return t * t * (3 - 2 * t);
-};
-
-function computeSky() {
-  const elev = Math.sin(((timeOfDay - 6) / 12) * Math.PI);
-  skyState.sunElev = elev;
-  skyState.daylight = smoothstep(-0.12, 0.28, elev);
-  skyState.glow = Math.exp(-Math.pow(elev / 0.22, 2));
-  skyState.morning = timeOfDay < 12;
-}
-
-// RGB helpers (0-255 arrays)
-const lerpRGB = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-const rgbCss = (c, a = 1) => `rgba(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])}, ${a})`;
-const skyPalette = {
-  night: { top: [20, 26, 58], mid: [46, 42, 92], bot: [107, 74, 110] },
-  day: { top: [95, 168, 238], mid: [159, 206, 255], bot: [223, 240, 255] },
-  sunset: { top: [74, 74, 138], mid: [240, 138, 106], bot: [255, 195, 138] },
-};
-
-// Window sky: one shared canvas redrawn a few times a second
-const skyCanvas = document.createElement("canvas");
-skyCanvas.width = 256;
-skyCanvas.height = 512;
-const skyCtx = skyCanvas.getContext("2d");
-const skyTextures = [0, 1].map((i) => {
-  const tex = new THREE.CanvasTexture(skyCanvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.offset.x = i * 0.35;
-  return tex;
-});
-windowPanes.forEach((pane, i) => {
-  pane.material.map = skyTextures[i % 2];
-  pane.material.needsUpdate = true;
-});
-
-const skyRand = seededRandom(41);
-const skyStars = Array.from({ length: 34 }, () => [skyRand() * 256, skyRand() * 230, 1 + skyRand() * 1.6]);
-const skyBuildings = [0, 1].map((layer) => {
-  const list = [];
-  let x = -20;
-  while (x < 280) {
-    const w = 50 + skyRand() * 70;
-    const h = (layer ? 240 : 330) + skyRand() * (layer ? 200 : 260);
-    const windows = [];
-    for (let wy = 512 - h + 14; wy < 502; wy += 22) {
-      for (let wx = x + 8; wx < x + w - 10; wx += 16) windows.push([wx, wy, skyRand()]);
-    }
-    list.push({ x, w, h, windows });
-    x += w + 6;
-  }
-  return list;
-});
-const skyClouds = [
-  [30, 110, 46],
-  [150, 70, 38],
-  [220, 170, 52],
-];
-
-function drawSky() {
-  const g = skyCtx;
-  const d = skyState.daylight;
-  const glow = skyState.glow * 0.85;
-  const stops = ["top", "mid", "bot"].map((k) => {
-    const c = lerpRGB(skyPalette.night[k], skyPalette.day[k], d);
-    return lerpRGB(c, skyPalette.sunset[k], glow);
-  });
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, rgbCss(stops[0]));
-  grad.addColorStop(0.55, rgbCss(stops[1]));
-  grad.addColorStop(1, rgbCss(stops[2]));
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 256, 512);
-
-  const night = 1 - d;
-  if (night > 0.05) {
-    g.fillStyle = `rgba(255, 246, 216, ${(night * night * 0.9).toFixed(3)})`;
-    skyStars.forEach(([sx, sy, sr]) => g.fillRect(sx, sy, sr, sr));
-  }
-
-  // Sun and moon arcing across the window
-  const sunP = (timeOfDay - 6) / 12;
-  if (sunP > -0.08 && sunP < 1.08) {
-    const sx = 256 * (0.1 + 0.8 * sunP);
-    const sy = 512 * (0.78 - 0.62 * Math.sin(Math.PI * Math.max(0, Math.min(1, sunP))));
-    const halo = g.createRadialGradient(sx, sy, 4, sx, sy, 70);
-    halo.addColorStop(0, "rgba(255, 236, 190, 0.85)");
-    halo.addColorStop(1, "rgba(255, 210, 150, 0)");
-    g.fillStyle = halo;
-    g.fillRect(sx - 80, sy - 80, 160, 160);
-    g.fillStyle = "#fff6d8";
-    g.beginPath();
-    g.arc(sx, sy, 20, 0, Math.PI * 2);
-    g.fill();
-  }
-  const moonP = ((timeOfDay - 18 + 24) % 24) / 12;
-  if (moonP > -0.05 && moonP < 1.05) {
-    const mx = 256 * (0.1 + 0.8 * moonP);
-    const my = 512 * (0.78 - 0.55 * Math.sin(Math.PI * Math.max(0, Math.min(1, moonP))));
-    g.fillStyle = "#f4ead0";
-    g.beginPath();
-    g.arc(mx, my, 20, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = rgbCss(stops[1]);
-    g.beginPath();
-    g.arc(mx + 9, my - 5, 18, 0, Math.PI * 2);
-    g.fill();
-  }
-
-  // Drifting daytime clouds
-  if (d > 0.1) {
-    g.fillStyle = `rgba(255, 255, 255, ${(d * 0.75).toFixed(3)})`;
-    skyClouds.forEach(([cx, cy, cs], i) => {
-      const x = ((cx + timeOfDay * (9 + i * 3)) % 340) - 50;
-      g.beginPath();
-      g.ellipse(x, cy, cs, cs * 0.34, 0, 0, Math.PI * 2);
-      g.ellipse(x - cs * 0.5, cy + 4, cs * 0.55, cs * 0.26, 0, 0, Math.PI * 2);
-      g.ellipse(x + cs * 0.55, cy + 5, cs * 0.5, cs * 0.24, 0, 0, Math.PI * 2);
-      g.fill();
-    });
-  }
-
-  // Skyline: dark against the night, hazy blue by day; lights come on as it gets dark
-  const farColor = lerpRGB(lerpRGB([26, 24, 48], [120, 138, 175], d), [90, 60, 92], skyState.glow * 0.4);
-  const nearColor = lerpRGB(lerpRGB([16, 15, 34], [92, 108, 145], d), [60, 40, 70], skyState.glow * 0.4);
-  [0, 1].forEach((layer) => {
-    g.fillStyle = rgbCss(layer ? nearColor : farColor);
-    skyBuildings[layer].forEach((b) => {
-      g.fillRect(b.x, 512 - b.h, b.w, b.h);
-      b.windows.forEach(([wx, wy, r]) => {
-        if (night > 0.12 + r * 0.7) {
-          g.fillStyle = r > 0.5 ? "#ffd27a" : "#ffb45c";
-          g.fillRect(wx, wy, 8, 11);
-        }
-      });
-      g.fillStyle = rgbCss(layer ? nearColor : farColor);
-    });
-  });
-  skyTextures.forEach((t) => (t.needsUpdate = true));
-}
-
-// Colors used for lighting and the sky around the room
-const skyOutsideNight = new THREE.Color(0x1a2140);
-const skyOutsideDay = new THREE.Color(0xfefae0);
-const skyOutsideGlow = new THREE.Color(0xf3b48a);
-const skyInsideNight = new THREE.Color(PALETTE.dusk);
-const skyInsideDay = new THREE.Color(0x9dc8ee);
-const skyInsideGlow = new THREE.Color(0xe8956d);
-const sunWhite = new THREE.Color(0xffffff);
-const sunWarm = new THREE.Color(0xffc890);
-const moonBeamColor = new THREE.Color(0xcfe0ff);
-const sunBeamColor = new THREE.Color(0xffdca0);
-const dawnBeamColor = new THREE.Color(0xffaa66);
-const globeNight = new THREE.Color(0xfff3dc);
-const globeDay = new THREE.Color(0xd8d0c0);
-const tmpColor = new THREE.Color();
-let skyRedrawIn = 0;
-let badgeIn = 0;
-
-function applyTimeLighting() {
-  const d = skyState.daylight;
-  const glow = skyState.glow;
-  const sunny = d * THREE.MathUtils.clamp(skyState.sunElev * 1.4, 0, 1);
-  sun.color.copy(sunWhite).lerp(sunWarm, glow * 0.9);
-
-  if (area === "inside") {
-    tmpColor.copy(skyInsideNight).lerp(skyInsideDay, d).lerp(skyInsideGlow, glow * 0.6);
-    scene.background.copy(tmpColor);
-    if (scene.fog) scene.fog.color.copy(tmpColor);
-    ambient.intensity = 0.28 + 0.24 * d;
-    sun.intensity = 0.12 + 0.85 * d;
-    interiorHemi.intensity = 0.42 + 0.62 * d;
-    lamp.intensity = 1.6 * (1 - 0.72 * d);
-    globeLampLight.intensity = 1.1 * (1 - 0.7 * d);
-    crateSpot.intensity = 2.4 * (1 - 0.35 * d);
-    globeMat.color.copy(globeNight).lerp(globeDay, d * 0.7);
-    lampGlobe.material.color.copy(globeNight).lerp(globeDay, d * 0.7);
-
-    // Moonlight at night, warm sunlight by day, orange at dawn and dusk
-    const beamAmt = 0.06 + 0.5 * sunny + 0.4 * (1 - d) * 0.5;
-    tmpColor.copy(moonBeamColor).lerp(sunBeamColor, d).lerp(dawnBeamColor, glow * 0.8);
-    moonBeams.forEach((beam) => {
-      beam.material.color.copy(tmpColor);
-      beam.material.opacity = beamAmt;
-    });
-  } else {
-    tmpColor.copy(skyOutsideNight).lerp(skyOutsideDay, d).lerp(skyOutsideGlow, glow * 0.55);
-    scene.background.copy(tmpColor);
-    if (scene.fog) scene.fog.color.copy(tmpColor);
-    ambient.intensity = 0.3 + 0.45 * d;
-    sun.intensity = 0.14 + 0.76 * d;
-  }
-}
-
-function formatTime() {
-  const h = Math.floor(timeOfDay) % 24;
-  const m = Math.floor((timeOfDay % 1) * 60);
-  const suffix = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  const d = skyState.daylight;
-  let phase = "Night";
-  if (skyState.glow > 0.35 && d > 0.05 && d < 0.95) phase = skyState.morning ? "Dawn" : "Dusk";
-  else if (d >= 0.95) phase = "Day";
-  else if (skyState.glow > 0.35) phase = skyState.morning ? "Dawn" : "Dusk";
-  return `${h12}:${String(m).padStart(2, "0")} ${suffix} · ${phase}`;
-}
-
-function updateTimeOfDay(delta) {
-  timeOfDay = (timeOfDay + (delta * 24) / DAY_LENGTH_SECONDS) % 24;
-  computeSky();
-  applyTimeLighting();
-  skyRedrawIn -= delta;
-  if (area === "inside" && skyRedrawIn <= 0) {
-    drawSky();
-    skyRedrawIn = 0.25;
-  }
-  badgeIn -= delta;
-  if (badgeIn <= 0 && timeBadge) {
-    timeBadge.textContent = formatTime();
-    badgeIn = 1;
-  }
-}
-
-computeSky();
-drawSky();
 
 // ---------- Interactables ----------
 
@@ -2865,7 +2614,6 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.1);
   const t = clock.getElapsedTime();
-  updateTimeOfDay(delta);
 
   moveDir.set(0, 0, 0);
   let speedFactor = 1;
