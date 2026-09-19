@@ -13,17 +13,26 @@ const PALETTE = {
 const INTERACT_RADIUS = 2.6;
 const DOOR_RADIUS = 2.2;
 
-const SPOTIFY_TRACKS = [
-  "084YxThHOrmrM5YC0tyZEY",
-  "2PDIfFHHKklyycN0paspsF",
-  "0A8uNXnfohqdCVXCfKPrSA",
-  "6PXw0fITgSiBnRWFszSpAS",
-  "1AffuacdDfxEh0ZQWFdAfm",
-  "1xBTI8q5lTUHf3hXRg2BAp",
-  "5s71EMi5MNKD82SIBhkBC0",
-  "45hsEjHz0wsxX5t2mDXzhr",
-  "3Z6qc0I5JDUol2PGF6WAek",
-  "4o1HNJ4RTT0ZipPDGyQrTq",
+// One entry per vinyl: songs that share cover art live on the same record.
+const RECORDS = [
+  {
+    tracks: [
+      { id: "084YxThHOrmrM5YC0tyZEY", title: "Sofia" },
+      { id: "2PDIfFHHKklyycN0paspsF", title: "Someone" },
+      { id: "0A8uNXnfohqdCVXCfKPrSA", title: "Time Machine" },
+      { id: "6PXw0fITgSiBnRWFszSpAS", title: "Growing" },
+    ],
+  },
+  { tracks: [{ id: "1AffuacdDfxEh0ZQWFdAfm", title: "151" }] },
+  { tracks: [{ id: "1xBTI8q5lTUHf3hXRg2BAp", title: "Wait" }] },
+  {
+    tracks: [
+      { id: "5s71EMi5MNKD82SIBhkBC0", title: "Erased" },
+      { id: "45hsEjHz0wsxX5t2mDXzhr", title: "She Said" },
+      { id: "3Z6qc0I5JDUol2PGF6WAek", title: "Herz" },
+      { id: "4o1HNJ4RTT0ZipPDGyQrTq", title: "Falcon" },
+    ],
+  },
 ];
 
 const COURSEWORK_PROJECTS = [
@@ -300,7 +309,7 @@ crateWallR.rotation.z = 0.06;
 crateGroup.add(crateWallR);
 
 const VINYL_COLORS = [PALETTE.rust, PALETTE.tan, PALETTE.olive];
-const VINYL_COUNT = THREE.MathUtils.clamp(SPOTIFY_TRACKS.length, 3, 12);
+const VINYL_COUNT = THREE.MathUtils.clamp(RECORDS.length, 3, 12);
 const vinylPivots = [];
 const CRATE_POS = new THREE.Vector3(0, 0, -5.4);
 const PIVOT_Y = 0.7;
@@ -357,10 +366,10 @@ for (let i = 0; i < VINYL_COUNT; i++) {
 
 const crateLabel = makeLabel(insideGroup, "Music & Production", 0, 1.9, -5.4);
 
-// Which crate record represents track i (catalogs larger than the crate map proportionally)
-function vinylForTrack(i) {
-  if (SPOTIFY_TRACKS.length <= VINYL_COUNT) return i;
-  return Math.round((i * (VINYL_COUNT - 1)) / (SPOTIFY_TRACKS.length - 1));
+// Which crate slot shows record i (with more records than slots, they map proportionally)
+function vinylForRecord(i) {
+  if (RECORDS.length <= VINYL_COUNT) return i;
+  return Math.round((i * (VINYL_COUNT - 1)) / (RECORDS.length - 1));
 }
 
 // Put each track's real cover on its sleeve (Spotify oEmbed returns the cover URL).
@@ -372,11 +381,11 @@ let coversRequested = false;
 function loadCoverArt() {
   if (coversRequested) return;
   coversRequested = true;
-  SPOTIFY_TRACKS.forEach((id, i) => {
-    const u = vinylPivots[vinylForTrack(i)].userData;
+  RECORDS.forEach((record, i) => {
+    const u = vinylPivots[vinylForRecord(i)].userData;
     if (u.hasArt) return;
     u.hasArt = true;
-    fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`)
+    fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${record.tracks[0].id}`)}`)
       .then((r) => r.json())
       .then((data) => {
         coverLoader.load(data.thumbnail_url, (tex) => {
@@ -662,8 +671,8 @@ const KEY_MAP = {
 
 window.addEventListener("keydown", (e) => {
   if (browsing) {
-    if (e.code === "ArrowLeft" || e.code === "KeyA") loadSpotifyTrack(spotifyIndex - 1);
-    else if (e.code === "ArrowRight" || e.code === "KeyD") loadSpotifyTrack(spotifyIndex + 1);
+    if (e.code === "ArrowLeft" || e.code === "KeyA") loadTrack(recordIndex - 1);
+    else if (e.code === "ArrowRight" || e.code === "KeyD") loadTrack(recordIndex + 1);
     else if (e.code === "KeyE" || e.code === "Enter" || e.code === "Escape") exitBrowse();
     return;
   }
@@ -739,16 +748,60 @@ function tryInteract() {
   else openPanel(nearestItem);
 }
 
-let spotifyIndex = 0;
+let recordIndex = 0;
+let trackIndex = 0;
 
-function loadSpotifyTrack(i) {
-  spotifyIndex = (i + SPOTIFY_TRACKS.length) % SPOTIFY_TRACKS.length;
-  spotifyFrame.src = `https://open.spotify.com/embed/track/${SPOTIFY_TRACKS[spotifyIndex]}?utm_source=generator&theme=0`;
-  spotifyIndexEl.textContent = `${spotifyIndex + 1} / ${SPOTIFY_TRACKS.length}`;
+// The song list that appears on the pulled-out record (a DOM overlay pinned to the 3D disc)
+const vinylFaceEl = document.createElement("div");
+vinylFaceEl.className = "vinyl-face";
+const vinylFaceObj = new CSS2DObject(vinylFaceEl);
+let faceTimer = null;
+
+function renderVinylFace() {
+  clearTimeout(faceTimer);
+  vinylFaceEl.classList.remove("show");
+  vinylFaceEl.replaceChildren();
+
+  const record = RECORDS[recordIndex];
+  vinylPivots[vinylForRecord(recordIndex)].userData.disc.add(vinylFaceObj);
+
+  const list = document.createElement("div");
+  list.className = "vinyl-tracks";
+  record.tracks.forEach((track, ti) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "vinyl-track" + (ti === trackIndex ? " active" : "");
+    btn.textContent = track.title;
+    btn.addEventListener("click", () => loadTrack(recordIndex, ti));
+    list.appendChild(btn);
+  });
+  vinylFaceEl.appendChild(list);
+
+  faceTimer = setTimeout(() => vinylFaceEl.classList.add("show"), 500);
 }
 
-spotifyPrevBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex - 1));
-spotifyNextBtn.addEventListener("click", () => loadSpotifyTrack(spotifyIndex + 1));
+function loadTrack(r, t = 0) {
+  const nextRecord = (r + RECORDS.length) % RECORDS.length;
+  const recordChanged = nextRecord !== recordIndex || !vinylFaceEl.isConnected;
+  recordIndex = nextRecord;
+  const record = RECORDS[recordIndex];
+  trackIndex = THREE.MathUtils.clamp(t, 0, record.tracks.length - 1);
+
+  const src = `https://open.spotify.com/embed/track/${record.tracks[trackIndex].id}?utm_source=generator&theme=0`;
+  if (spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
+  spotifyIndexEl.textContent = `${recordIndex + 1} / ${RECORDS.length}`;
+
+  if (recordChanged) {
+    renderVinylFace();
+  } else {
+    vinylFaceEl.querySelectorAll(".vinyl-track").forEach((el, ti) => {
+      el.classList.toggle("active", ti === trackIndex);
+    });
+  }
+}
+
+spotifyPrevBtn.addEventListener("click", () => loadTrack(recordIndex - 1));
+spotifyNextBtn.addEventListener("click", () => loadTrack(recordIndex + 1));
 
 function enterBrowse() {
   browsing = true;
@@ -756,7 +809,7 @@ function enterBrowse() {
   app.classList.add("browsing");
   character.visible = false;
   crateLabel.visible = false;
-  loadSpotifyTrack(spotifyIndex);
+  loadTrack(recordIndex, trackIndex);
   crateSheet.classList.add("open");
 }
 
@@ -767,6 +820,9 @@ function exitBrowse() {
   crateLabel.visible = true;
   crateSheet.classList.remove("open");
   spotifyFrame.src = "";
+  clearTimeout(faceTimer);
+  vinylFaceEl.classList.remove("show");
+  vinylFaceObj.removeFromParent();
 }
 
 crateCloseBtn.addEventListener("click", exitBrowse);
@@ -803,7 +859,7 @@ function buildComputerList() {
 }
 
 function openPanel(item) {
-  if (item.key === "music" && SPOTIFY_TRACKS.length) {
+  if (item.key === "music" && RECORDS.length) {
     enterBrowse();
     return;
   }
@@ -848,6 +904,8 @@ const moveDir = new THREE.Vector3();
 const targetCamPos = new THREE.Vector3();
 const targetLookAt = new THREE.Vector3();
 const currentLook = new THREE.Vector3();
+const faceCenter = new THREE.Vector3();
+const faceEdge = new THREE.Vector3();
 let lookInitialized = false;
 const clock = new THREE.Clock();
 const SPEED = 5.2;
@@ -897,7 +955,7 @@ function animate() {
 
   // Vinyl crate: idle sway, or the selected record pops out while browsing
   if (area === "inside") {
-    const selected = browsing ? vinylForTrack(spotifyIndex) : -1;
+    const selected = browsing ? vinylForRecord(recordIndex) : -1;
     const ease = 1 - Math.pow(0.0008, delta);
     vinylPivots.forEach((pivot, i) => {
       const u = pivot.userData;
@@ -912,11 +970,11 @@ function animate() {
         const d = i - selected;
         if (d === 0) {
           tx = 0;
-          ty = 1.3;
+          ty = 0.95;
           tz = 0.75;
           ry = 0;
           rx = -0.12;
-          discY = 0.5;
+          discY = 0.98;
         } else {
           tx = THREE.MathUtils.clamp(u.baseX + Math.sign(d) * 0.3, -0.92, 0.92);
           tz = u.baseZ - 0.05;
@@ -979,6 +1037,19 @@ function animate() {
   }
   currentLook.lerp(targetLookAt, camEase);
   camera.lookAt(currentLook);
+
+  // Keep the on-record song list matched to the pulled-out disc's size on screen
+  if (browsing && vinylFaceObj.parent) {
+    camera.updateMatrixWorld();
+    vinylFaceObj.parent.getWorldPosition(faceCenter);
+    faceEdge.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(0.42).add(faceCenter);
+    faceCenter.project(camera);
+    faceEdge.project(camera);
+    const radiusPx = Math.abs(faceEdge.x - faceCenter.x) * 0.5 * window.innerWidth;
+    vinylFaceEl.style.width = `${radiusPx * 2}px`;
+    vinylFaceEl.style.height = `${radiusPx * 2}px`;
+    vinylFaceEl.style.fontSize = `${Math.max(radiusPx * 0.11, 8)}px`;
+  }
 
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
