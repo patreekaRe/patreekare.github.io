@@ -1591,6 +1591,66 @@ const makeFurTexture = (repeatY) => {
 };
 const furMatFor = (repeatY) => new THREE.MeshLambertMaterial({ map: makeFurTexture(repeatY) });
 
+// Painted tabby markings for the legs and tail. The texture's horizontal axis wraps around the
+// limb and the vertical axis runs along it. Stripes are wavy, heaviest on the outer side, thin
+// out and break up toward a paler inner side, with a softer edge, thin secondary stripes and
+// speckled fur grain so they read as fur markings rather than painted rings.
+const makeMarkingTexture = ({ rows, seed, thick = 0.5, tip = false }) =>
+  canvasTexture(128, 256, (g, w, h) => {
+    const rnd = seededRandom(seed);
+    g.fillStyle = tip ? "#2b2825" : "#8a7d6b";
+    g.fillRect(0, 0, w, h);
+    for (let n = 0; n < 800; n++) {
+      g.fillStyle = tip
+        ? rnd() < 0.5 ? "rgba(90, 78, 66, 0.35)" : "rgba(10, 8, 7, 0.4)"
+        : rnd() < 0.5 ? "rgba(170, 157, 136, 0.2)" : "rgba(88, 78, 64, 0.22)";
+      g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 2, 2 + rnd() * 5);
+    }
+    if (tip) return;
+
+    const pitch = h / rows;
+    const step = 2;
+    for (let k = 0; k < rows; k++) {
+      const cy0 = (k + 0.5) * pitch + (rnd() - 0.5) * pitch * 0.2;
+      const phase = rnd() * Math.PI * 2;
+      let gap = 0;
+      for (let x = 0; x < w; x += step) {
+        if (gap > 0) {
+          gap--;
+          continue;
+        }
+        const outer = 0.5 + 0.5 * Math.cos((x / w) * Math.PI * 2);
+        const weight = 0.45 + 0.55 * outer;
+        if (weight < 0.7 && rnd() < 0.1) {
+          gap = 1 + Math.floor(rnd() * 3);
+          continue;
+        }
+        const cy = cy0 + Math.sin(x * 0.09 + phase) * pitch * 0.08 + (rnd() - 0.5) * 1.6;
+        const th = pitch * thick * weight * (0.8 + rnd() * 0.45);
+        g.fillStyle = "rgba(48, 40, 34, 0.35)";
+        g.fillRect(x, cy - th / 2 - 2.5, step + 0.5, th + 5);
+        g.fillStyle = "#2f2822";
+        g.fillRect(x, cy - th / 2 + (rnd() - 0.5) * 2, step + 0.5, th + (rnd() - 0.5) * 2);
+      }
+      // A thinner, broken stripe between the main ones
+      if (rnd() < 0.7) {
+        const y = cy0 + pitch * 0.5;
+        for (let x = rnd() * 20; x < w; x += 18 + rnd() * 30) {
+          g.fillStyle = "rgba(52, 44, 37, 0.55)";
+          g.fillRect(x, y + (rnd() - 0.5) * 3, 8 + rnd() * 14, 2 + rnd() * 2);
+        }
+      }
+    }
+
+    const inner = g.createLinearGradient(w * 0.32, 0, w * 0.68, 0);
+    inner.addColorStop(0, "rgba(226, 217, 200, 0)");
+    inner.addColorStop(0.5, "rgba(226, 217, 200, 0.3)");
+    inner.addColorStop(1, "rgba(226, 217, 200, 0)");
+    g.fillStyle = inner;
+    g.fillRect(w * 0.32, 0, w * 0.36, h);
+  });
+const markMat = (opts) => new THREE.MeshLambertMaterial({ map: makeMarkingTexture(opts) });
+
 const henryWhite = lambert(0xf7f2e8);
 const henryTorso = new THREE.Group();
 henryRig.add(henryTorso);
@@ -1677,19 +1737,12 @@ const henryTailRoot = tailParent;
 tailParent.position.set(0, 0.05, -0.27);
 henryRig.add(tailParent);
 for (let i = 0; i < 5; i++) {
-  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), i === 4 ? henryStripe : henryFur);
+  // Rings get heavier toward the tail, which ends in a solid dark tip
+  const tailMat = markMat({ rows: 3, seed: 61 + i * 7, thick: 0.42 + i * 0.07, tip: i === 4 });
+  const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 4, 8), tailMat);
   seg.rotation.x = Math.PI / 2;
   seg.position.z = -0.045;
   tailParent.add(seg);
-  // Thin dark rings up the tail; the last segment is a solid dark tip
-  if (i < 4) {
-    [-0.018, -0.045, -0.072].forEach((rz) => {
-      const ringBand = new THREE.Mesh(new THREE.CylinderGeometry(0.0295, 0.0295, 0.012, 10), henryStripe);
-      ringBand.rotation.x = Math.PI / 2;
-      ringBand.position.z = rz;
-      tailParent.add(ringBand);
-    });
-  }
   const next = new THREE.Group();
   next.position.z = -0.09;
   tailParent.add(next);
@@ -1708,21 +1761,15 @@ const henryLegs = [];
   const pivot = new THREE.Group();
   pivot.position.set(x, -0.07, z);
 
-  const limb = (parent, rTop, rBottom, len) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, len, 10), henryFur);
+  // Each leg gets its own painted markings (different seed per leg so they don't all match)
+  const marks = (rows, thick = 0.5) => markMat({ rows, thick, seed: 101 + i * 13 + rows * 3 });
+  const limb = (parent, rTop, rBottom, len, mat) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, len, 12), mat);
     m.position.y = -len / 2;
     parent.add(m);
     return m;
   };
   const jointBall = (parent, r) => parent.add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), henryFur));
-  const band = (parent, r, y) => {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.97, 0.008, 10), henryStripe);
-    b.position.y = y;
-    parent.add(b);
-  };
-  // Several stripes down a tapered limb, each sized to the limb's radius at that height
-  const bandsOn = (parent, rTop, rBottom, len, fractions) =>
-    fractions.forEach((f) => band(parent, rTop + (rBottom - rTop) * f + 0.0015, -len * f));
 
   // Paw: a soft pad with little toes, kept mostly flat on the floor by the animation
   const makePaw = (parent, y) => {
@@ -1747,8 +1794,8 @@ const henryLegs = [];
     // Shoulder, upper arm, elbow, forearm, paw
     const upperLen = 0.095;
     const foreLen = 0.11;
-    limb(pivot, 0.034, 0.025, upperLen);
-    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.038, 10, 8), henryFur);
+    limb(pivot, 0.034, 0.025, upperLen, marks(3));
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), marks(4, 0.46));
     shoulder.scale.set(0.9, 1.3, 1.15);
     shoulder.position.y = -0.03;
     pivot.add(shoulder);
@@ -1756,9 +1803,7 @@ const henryLegs = [];
     elbow.position.y = -upperLen;
     pivot.add(elbow);
     jointBall(elbow, 0.026);
-    limb(elbow, 0.024, 0.017, foreLen);
-    bandsOn(pivot, 0.034, 0.025, upperLen, [0.55, 0.8]);
-    bandsOn(elbow, 0.024, 0.017, foreLen, [0.15, 0.35, 0.55, 0.75]);
+    limb(elbow, 0.024, 0.017, foreLen, marks(4, 0.46));
     leg.knee = elbow;
     leg.paw = makePaw(elbow, -foreLen);
     // Elbow tucked back, forearm dropping straight down
@@ -1769,31 +1814,21 @@ const henryLegs = [];
     const thighLen = 0.088;
     const shinLen = 0.088;
     const footLen = 0.078;
-    limb(pivot, 0.04, 0.026, thighLen);
-    const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), henryFur);
+    limb(pivot, 0.04, 0.026, thighLen, marks(2));
+    const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), marks(5, 0.46));
     thigh.scale.set(0.85, 1.6, 1.25);
     thigh.position.set(0, -0.04, -0.006);
     pivot.add(thigh);
-    // Stripes wrap the thigh's rounded bulge: each ring is sized to the ellipse at its height
-    [-0.06, -0.035, -0.01].forEach((dy) => {
-      const s = Math.sqrt(1 - (dy / 0.08) ** 2);
-      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.009, 14), henryStripe);
-      wrap.scale.set(0.0425 * s + 0.001, 1, 0.0625 * s + 0.001);
-      wrap.position.set(0, -0.04 + dy, -0.006);
-      pivot.add(wrap);
-    });
     const knee = new THREE.Group();
     knee.position.y = -thighLen;
     pivot.add(knee);
     jointBall(knee, 0.026);
-    limb(knee, 0.026, 0.02, shinLen);
-    bandsOn(knee, 0.026, 0.02, shinLen, [0.25, 0.5, 0.75]);
+    limb(knee, 0.026, 0.02, shinLen, marks(4, 0.46));
     const hock = new THREE.Group();
     hock.position.y = -shinLen;
     knee.add(hock);
     jointBall(hock, 0.021);
-    limb(hock, 0.019, 0.015, footLen);
-    bandsOn(hock, 0.019, 0.015, footLen, [0.2, 0.45, 0.7]);
+    limb(hock, 0.019, 0.015, footLen, marks(3, 0.44));
     leg.knee = knee;
     leg.hock = hock;
     leg.paw = makePaw(hock, -footLen);
