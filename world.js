@@ -1762,8 +1762,9 @@ const henryAI = {
   attending: false,
   yawIn: 10,
   yawT: 0,
+  style: "curl",
 };
-const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0, stretch: 0, yawn: 0 };
+const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0, stretch: 0, yawn: 0, curl: 1, side: 0 };
 henry.position.copy(HENRY_SPOTS[0].pos);
 henry.rotation.y = HENRY_SPOTS[0].heading;
 
@@ -1869,6 +1870,7 @@ function settleHenry(spot) {
   henryAI.spot = spot;
   henryAI.node = spot.approach;
   henryAI.mode = "rest";
+  henryAI.style = Math.random() < 0.5 ? "curl" : "side";
   henryAI.timer = spot.kind === "sleep" ? 20 + Math.random() * 30 : 8 + Math.random() * 12;
 }
 
@@ -1992,6 +1994,8 @@ function updateHenry(delta, t) {
   pose.crouch += ((resting ? 1 : ai.mode === "jump" ? 0.2 : 0) - pose.crouch) * ease;
   pose.sleep += ((sleeping ? 1 : 0) - pose.sleep) * ease;
   pose.stretch += ((stretching ? 1 : 0) - pose.stretch) * ease;
+  pose.curl += ((sleeping && ai.style === "curl" ? 1 : 0) - pose.curl) * ease;
+  pose.side += ((sleeping && ai.style === "side" ? 1 : 0) - pose.side) * ease;
   pose.walk += (moving - pose.walk) * ease;
   if (moving) pose.phase += delta * 9;
 
@@ -1999,16 +2003,21 @@ function updateHenry(delta, t) {
   ai.purr = Math.max(0, ai.purr - delta);
   const breath = Math.sin(t * breathRate);
   const bob = Math.abs(Math.sin(pose.phase)) * 0.014 * pose.walk;
-  henryRig.position.y = THREE.MathUtils.lerp(0.3, 0.13, pose.crouch) + bob;
+  henryRig.position.y = THREE.MathUtils.lerp(0.3, 0.13, pose.crouch) - 0.028 * pose.side + bob;
+  // Flopped on his side: the whole body rolls over
+  henryRig.rotation.z = 1.45 * pose.side;
 
-  // Body shape: long and lean when walking or stretched, a compact rounded loaf when settled
+  // Body shape: long and lean when walking or stretched, a compact rounded loaf when settled,
+  // a tight ball when curled, relaxed and long when flopped on his side
   const loaf = pose.crouch * (1 - pose.sleep) * (1 - pose.stretch);
+  const curlFrac = pose.curl / Math.max(pose.curl + pose.side, 0.001);
+  const sleepZ = THREE.MathUtils.lerp(0.95, 0.64, curlFrac);
   const torsoZ = THREE.MathUtils.lerp(
     THREE.MathUtils.lerp(THREE.MathUtils.lerp(1, 0.72, pose.crouch), 1.0, pose.stretch),
-    0.8,
+    sleepZ,
     pose.sleep
   );
-  const torsoS = 1 + 0.08 * loaf + 0.03 * breath * pose.crouch;
+  const torsoS = 1 + 0.08 * loaf + 0.03 * breath * pose.crouch + 0.1 * pose.curl;
   henryTorso.scale.set(torsoS, torsoS, torsoZ);
   henryTailRoot.position.z = -0.27 * torsoZ;
 
@@ -2016,28 +2025,45 @@ function updateHenry(delta, t) {
     const extend = leg.front ? pose.stretch : 0;
     const tuck = leg.front ? loaf : 0;
     const settled = THREE.MathUtils.lerp(1, 0.28, pose.crouch);
-    leg.pivot.scale.y = THREE.MathUtils.lerp(THREE.MathUtils.lerp(settled, 0.42, tuck), 1.5, extend);
+    const laidOut = THREE.MathUtils.lerp(THREE.MathUtils.lerp(settled, 0.42, tuck), 1.5, extend);
+    leg.pivot.scale.y = THREE.MathUtils.lerp(laidOut, 0.9, pose.side);
     leg.pivot.position.z = leg.baseZ * torsoZ;
     leg.pivot.rotation.x =
       Math.sin(pose.phase + leg.phase) * 0.7 * pose.walk -
       0.35 * (ai.mode === "jump" ? 1 : 0) * (1 - pose.crouch) -
       1.5 * extend -
-      1.4 * tuck;
+      1.4 * tuck -
+      (leg.front ? 0.5 : -0.35) * pose.side;
   });
 
-  henryHead.position.set(
-    0,
-    THREE.MathUtils.lerp(THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), 0.04, pose.stretch),
-    THREE.MathUtils.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch - (1 - torsoZ) * 0.25
-  );
-  henryHead.rotation.x =
-    0.65 * pose.sleep + 0.2 * pose.stretch - 0.55 * pose.yawn + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
-  henryHead.rotation.y = 0.5 * pose.sleep;
+  const M = THREE.MathUtils;
+  let headY = M.lerp(M.lerp(0.07, 0.0, pose.sleep), 0.04, pose.stretch);
+  let headZ = M.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch - (1 - torsoZ) * 0.25;
+  let headX = 0;
+  let headRx = 0.65 * pose.sleep + 0.2 * pose.stretch - 0.55 * pose.yawn + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
+  let headRy = 0.5 * pose.sleep;
+  let headRz = 0;
+  // Curled: head tucked round toward his tail, chin resting down
+  headX = M.lerp(headX, 0.075, pose.curl);
+  headY = M.lerp(headY, -0.015, pose.curl);
+  headZ = M.lerp(headZ, 0.1, pose.curl);
+  headRx = M.lerp(headRx, 0.55, pose.curl);
+  headRy = M.lerp(headRy, 1.25, pose.curl);
+  headRz = M.lerp(headRz, -0.3, pose.curl);
+  // Flopped on his side: head resting on the ground, slightly outstretched
+  headY = M.lerp(headY, -0.02, pose.side);
+  headZ = M.lerp(headZ, 0.27, pose.side);
+  headRx = M.lerp(headRx, 0.2, pose.side);
+  headRy = M.lerp(headRy, 0.25, pose.side);
+  henryHead.position.set(headX, headY, headZ);
+  henryHead.rotation.set(headRx, headRy, headRz);
 
   const curl = pose.sleep;
+  henryTailRoot.position.x = M.lerp(0, 0.06, pose.curl);
   henryTail.forEach((seg, i) => {
     const sway = Math.sin(t * 1.6 + i * 0.5) * (0.12 + 0.12 * pose.walk);
-    seg.rotation.y = (i === 0 ? 0.6 : 0.5) * curl + sway * (1 - curl * 0.7);
+    const wrap = (i === 0 ? -1.3 : -0.78) * pose.curl;
+    seg.rotation.y = wrap + sway * (1 - pose.curl * 0.85) + (i === 0 ? 0.25 : 0.1) * pose.side;
     seg.rotation.x = (i === 0 ? -0.5 * (1 - curl) + 0.2 * curl : -0.12 * (1 - curl)) * (1 - 0.8 * pose.stretch);
   });
 
