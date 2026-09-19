@@ -290,23 +290,40 @@ const crateGroup = new THREE.Group();
 crateGroup.position.set(0, 0, -5.4);
 insideGroup.add(crateGroup);
 
-const crateBase = new THREE.Mesh(
-  new THREE.BoxGeometry(2, 0.22, 0.75),
-  new THREE.MeshLambertMaterial({ color: 0x6b4a2c })
-);
-crateBase.position.y = 0.11;
+// Light pine box, sized like a real record crate (sleeves stand edge-on inside it)
+const CRATE_W = 2.1;
+const CRATE_D = 1.0;
+const CRATE_H = 0.55;
+const pineMat = new THREE.MeshLambertMaterial({ color: 0xd8b47a });
+
+const crateBase = new THREE.Mesh(new THREE.BoxGeometry(CRATE_W, 0.08, CRATE_D), pineMat);
+crateBase.position.y = 0.04;
 crateGroup.add(crateBase);
 
-const crateWallMat = new THREE.MeshLambertMaterial({ color: 0x8a5a34 });
-const crateWallGeo = new THREE.BoxGeometry(0.09, 0.55, 0.75);
-const crateWallL = new THREE.Mesh(crateWallGeo, crateWallMat);
-crateWallL.position.set(-1, 0.375, 0);
-crateWallL.rotation.z = -0.06;
-crateGroup.add(crateWallL);
-const crateWallR = new THREE.Mesh(crateWallGeo, crateWallMat);
-crateWallR.position.set(1, 0.375, 0);
-crateWallR.rotation.z = 0.06;
-crateGroup.add(crateWallR);
+const crateFront = new THREE.Mesh(new THREE.BoxGeometry(CRATE_W, CRATE_H, 0.05), pineMat);
+crateFront.position.set(0, CRATE_H / 2, CRATE_D / 2);
+crateGroup.add(crateFront);
+const crateBack = crateFront.clone();
+crateBack.position.z = -CRATE_D / 2;
+crateGroup.add(crateBack);
+
+const crateSideGeo = new THREE.BoxGeometry(0.05, CRATE_H, CRATE_D);
+const crateSideL = new THREE.Mesh(crateSideGeo, pineMat);
+crateSideL.position.set(-CRATE_W / 2, CRATE_H / 2, 0);
+crateGroup.add(crateSideL);
+const crateSideR = crateSideL.clone();
+crateSideR.position.x = CRATE_W / 2;
+crateGroup.add(crateSideR);
+
+// Hand-hold slot in the front panel
+const handHold = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.07, 0.5, 4, 12),
+  new THREE.MeshLambertMaterial({ color: 0x2a1a0e })
+);
+handHold.rotation.z = Math.PI / 2;
+handHold.scale.z = 0.25;
+handHold.position.set(0, 0.34, CRATE_D / 2 + 0.02);
+crateGroup.add(handHold);
 
 const VINYL_COLORS = [PALETTE.rust, PALETTE.tan, PALETTE.olive];
 const VINYL_COUNT = THREE.MathUtils.clamp(RECORDS.length, 3, 12);
@@ -314,28 +331,64 @@ const vinylPivots = [];
 const CRATE_POS = new THREE.Vector3(0, 0, -5.4);
 const PIVOT_Y = 0.7;
 
-const sleeveGeo = new THREE.BoxGeometry(0.9, 0.9, 0.025);
+const sleeveGeo = new THREE.BoxGeometry(0.86, 0.9, 0.03);
 const artGeo = new THREE.PlaneGeometry(0.8, 0.8);
 const artDotGeo = new THREE.CircleGeometry(0.17, 20);
 const discGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.02, 28);
 const discLabelGeo = new THREE.CircleGeometry(0.14, 20);
 const creamColor = new THREE.Color(PALETTE.cream);
 
+// The crate is packed with sleeves standing edge-on. Your records sit at evenly spread
+// slots among the decorative filler sleeves.
+const SLOT_COUNT = 46;
+const slotX = (s) => THREE.MathUtils.lerp(-0.92, 0.92, s / (SLOT_COUNT - 1));
+const recordSlots = new Set();
+const recordSlotList = [];
 for (let i = 0; i < VINYL_COUNT; i++) {
-  const t = VINYL_COUNT > 1 ? i / (VINYL_COUNT - 1) : 0.5;
-  const baseX = THREE.MathUtils.lerp(-0.82, 0.82, t);
-  const baseZ = (i - (VINYL_COUNT - 1) / 2) * 0.02;
-  const baseAngle = (t - 0.5) * 0.6;
+  const s = Math.round(THREE.MathUtils.lerp(4, SLOT_COUNT - 5, (i + 0.5) / VINYL_COUNT));
+  recordSlots.add(s);
+  recordSlotList.push(s);
+}
+
+const FILLER_COLORS = [0xd9c9a3, 0xc9a66b, 0xb5733a, 0x7d8a52, 0x3a3a3a, 0xe8dcc0, 0x8a4b32, 0x5d6d7e, 0xa89b7c, 0x6b5a45];
+const fillerGeo = new THREE.BoxGeometry(0.03, 0.9, 0.86);
+const fillerSleeves = [];
+let fillerSeed = 7;
+const rand = () => {
+  fillerSeed = (fillerSeed * 9301 + 49297) % 233280;
+  return fillerSeed / 233280;
+};
+
+for (let s = 0; s < SLOT_COUNT; s++) {
+  if (recordSlots.has(s)) continue;
+  const h = 0.8 + rand() * 0.14;
+  const mesh = new THREE.Mesh(
+    fillerGeo,
+    new THREE.MeshLambertMaterial({ color: FILLER_COLORS[Math.floor(rand() * FILLER_COLORS.length)] })
+  );
+  mesh.scale.y = h;
+  const baseTilt = (rand() - 0.5) * 0.08;
+  mesh.position.set(slotX(s), PIVOT_Y - 0.45 + 0.45 * h, 0);
+  mesh.rotation.z = baseTilt;
+  mesh.userData = { baseX: slotX(s), baseY: mesh.position.y, baseTilt };
+  crateGroup.add(mesh);
+  fillerSleeves.push(mesh);
+}
+
+for (let i = 0; i < VINYL_COUNT; i++) {
+  const baseX = slotX(recordSlotList[i]);
+  const baseTilt = (rand() - 0.5) * 0.06;
   const color = new THREE.Color(VINYL_COLORS[i % VINYL_COLORS.length]);
 
   const pivot = new THREE.Group();
-  pivot.position.set(baseX, PIVOT_Y, baseZ);
-  pivot.rotation.y = baseAngle;
+  pivot.rotation.order = "ZYX";
+  pivot.position.set(baseX, PIVOT_Y, 0);
+  pivot.rotation.set(0, Math.PI / 2, baseTilt);
   crateGroup.add(pivot);
 
   const disc = new THREE.Mesh(discGeo, new THREE.MeshLambertMaterial({ color: 0x1c1c1c }));
   disc.rotation.x = Math.PI / 2;
-  disc.position.set(0, 0.1, -0.03);
+  disc.position.set(0, 0, -0.03);
   pivot.add(disc);
 
   const discLabel = new THREE.Mesh(discLabelGeo, new THREE.MeshBasicMaterial({ color }));
@@ -350,17 +403,17 @@ for (let i = 0; i < VINYL_COUNT; i++) {
     artGeo,
     new THREE.MeshLambertMaterial({ color: color.clone().lerp(creamColor, 0.4) })
   );
-  art.position.z = 0.014;
+  art.position.z = 0.017;
   pivot.add(art);
 
   const artDot = new THREE.Mesh(
     artDotGeo,
     new THREE.MeshBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.55 })
   );
-  artDot.position.z = 0.016;
+  artDot.position.z = 0.019;
   pivot.add(artDot);
 
-  pivot.userData = { baseX, baseZ, baseAngle, phase: i * 0.7, disc, art, artDot, hasArt: false };
+  pivot.userData = { baseX, baseTilt, disc, art, artDot, hasArt: false };
   vinylPivots.push(pivot);
 }
 
@@ -756,6 +809,7 @@ const vinylFaceEl = document.createElement("div");
 vinylFaceEl.className = "vinyl-face";
 const vinylFaceObj = new CSS2DObject(vinylFaceEl);
 let faceTimer = null;
+let frameTimer = null;
 
 function renderVinylFace() {
   clearTimeout(faceTimer);
@@ -787,8 +841,12 @@ function loadTrack(r, t = 0) {
   const record = RECORDS[recordIndex];
   trackIndex = THREE.MathUtils.clamp(t, 0, record.tracks.length - 1);
 
+  // Wait for flipping to settle so quick flips don't leave the player on an earlier song
   const src = `https://open.spotify.com/embed/track/${record.tracks[trackIndex].id}?utm_source=generator&theme=0`;
-  if (spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
+  clearTimeout(frameTimer);
+  frameTimer = setTimeout(() => {
+    if (browsing && spotifyFrame.getAttribute("src") !== src) spotifyFrame.src = src;
+  }, 350);
   spotifyIndexEl.textContent = `${recordIndex + 1} / ${RECORDS.length}`;
 
   if (recordChanged) {
@@ -819,6 +877,7 @@ function exitBrowse() {
   character.visible = true;
   crateLabel.visible = true;
   crateSheet.classList.remove("open");
+  clearTimeout(frameTimer);
   spotifyFrame.src = "";
   clearTimeout(faceTimer);
   vinylFaceEl.classList.remove("show");
@@ -953,33 +1012,49 @@ function animate() {
     body.position.y = 1.05;
   }
 
-  // Vinyl crate: idle sway, or the selected record pops out while browsing
+  // Vinyl crate: sleeves rest edge-on; the selected record rises, turns to face you, and
+  // the sleeves around it part and lean away
   if (area === "inside") {
-    const selected = browsing ? vinylForRecord(recordIndex) : -1;
+    const selectedPivot = browsing ? vinylPivots[vinylForRecord(recordIndex)] : null;
+    const selectedX = selectedPivot ? selectedPivot.userData.baseX : 0;
     const ease = 1 - Math.pow(0.0008, delta);
-    vinylPivots.forEach((pivot, i) => {
+
+    const spread = (baseX) => {
+      if (!selectedPivot) return { push: 0, lean: 0 };
+      const dx = baseX - selectedX;
+      const falloff = Math.exp(-Math.abs(dx) * 2.4);
+      return { push: Math.sign(dx) * 0.5 * falloff, lean: -Math.sign(dx) * 0.28 * falloff };
+    };
+
+    fillerSleeves.forEach((mesh) => {
+      const u = mesh.userData;
+      const { push, lean } = spread(u.baseX);
+      mesh.position.x += (u.baseX + push - mesh.position.x) * ease;
+      mesh.rotation.z += (u.baseTilt + lean - mesh.rotation.z) * ease;
+    });
+
+    vinylPivots.forEach((pivot) => {
       const u = pivot.userData;
       let tx = u.baseX;
       let ty = PIVOT_Y;
-      let tz = u.baseZ;
-      let ry = u.baseAngle + Math.sin(t * 0.8 + u.phase) * 0.12;
+      let tz = 0;
+      let ry = Math.PI / 2;
       let rx = 0;
-      let discY = 0.1;
+      let rz = u.baseTilt;
+      let discY = 0;
 
-      if (browsing) {
-        const d = i - selected;
-        if (d === 0) {
-          tx = 0;
-          ty = 0.95;
-          tz = 0.75;
-          ry = 0;
-          rx = -0.12;
-          discY = 0.98;
-        } else {
-          tx = THREE.MathUtils.clamp(u.baseX + Math.sign(d) * 0.3, -0.92, 0.92);
-          tz = u.baseZ - 0.05;
-          ry = u.baseAngle * 0.5;
-        }
+      if (pivot === selectedPivot) {
+        tx = 0;
+        ty = 0.95;
+        tz = 0.95;
+        ry = 0;
+        rx = -0.12;
+        rz = 0;
+        discY = 0.98;
+      } else {
+        const { push, lean } = spread(u.baseX);
+        tx = u.baseX + push;
+        rz = u.baseTilt + lean;
       }
 
       pivot.position.x += (tx - pivot.position.x) * ease;
@@ -987,6 +1062,7 @@ function animate() {
       pivot.position.z += (tz - pivot.position.z) * ease;
       pivot.rotation.y += (ry - pivot.rotation.y) * ease;
       pivot.rotation.x += (rx - pivot.rotation.x) * ease;
+      pivot.rotation.z += (rz - pivot.rotation.z) * ease;
       u.disc.position.y += (discY - u.disc.position.y) * ease;
     });
   }
