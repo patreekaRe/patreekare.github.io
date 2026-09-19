@@ -1522,10 +1522,16 @@ henry.add(henryRig);
 const henryBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.32, 6, 12), henryFur);
 henryBody.rotation.x = Math.PI / 2;
 henryRig.add(henryBody);
-const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), henryLight);
-henryChest.scale.set(0.9, 1, 1.1);
-henryChest.position.set(0, -0.05, 0.2);
+const henryWhite = lambert(0xf7f2e8);
+const henryChest = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), henryWhite);
+henryChest.scale.set(1.0, 1.15, 1.25);
+henryChest.position.set(0, -0.035, 0.2);
 henryRig.add(henryChest);
+const henryBelly = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.24, 4, 8), henryWhite);
+henryBelly.rotation.x = Math.PI / 2;
+henryBelly.scale.set(1, 1, 0.55);
+henryBelly.position.set(0, -0.085, 0.06);
+henryRig.add(henryBelly);
 // Dark stripe down the spine plus mackerel stripes down the flanks
 const spine = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.5), henryStripe);
 spine.position.set(0, 0.11, -0.02);
@@ -1556,6 +1562,10 @@ henryHead.add(muzzle);
 const nose = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 6), henryNoseMat);
 nose.position.set(0, -0.005, 0.13);
 henryHead.add(nose);
+const henryMouth = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), lambert(0x6b2f36));
+henryMouth.scale.set(1, 0.04, 0.8);
+henryMouth.position.set(0, -0.052, 0.112);
+henryHead.add(henryMouth);
 [-1, 1].forEach((s) => {
   const ear = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.125, 4), henryFur);
   ear.position.set(s * 0.075, 0.125, -0.005);
@@ -1736,8 +1746,14 @@ const henryAI = {
   purr: 0,
   blinkIn: 3,
   blinkFor: 0,
+  followTimer: 0,
+  followNode: -1,
+  followCooldown: 25,
+  attending: false,
+  yawIn: 10,
+  yawT: 0,
 };
-const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0 };
+const henryPose = { crouch: 1, sleep: 1, walk: 0, phase: 0, stretch: 0, yawn: 0 };
 henry.position.copy(HENRY_SPOTS[0].pos);
 henry.rotation.y = HENRY_SPOTS[0].heading;
 
@@ -1746,24 +1762,74 @@ const petEl = document.createElement("div");
 petEl.className = "henry-bubble";
 petEl.textContent = "prrr ♥";
 const petObj = new CSS2DObject(petEl);
-petObj.position.set(0, 0.55, 0);
+petObj.position.set(0, 0.78, 0);
 henry.add(petObj);
 insideLabels.push(petObj);
 const zzzEl = document.createElement("div");
 zzzEl.className = "henry-zzz";
 zzzEl.textContent = "z z z";
 const zzzObj = new CSS2DObject(zzzEl);
-zzzObj.position.set(0, 0.5, 0);
+zzzObj.position.set(0, 0.62, 0);
 henry.add(zzzObj);
 insideLabels.push(zzzObj);
+const nameEl = document.createElement("div");
+nameEl.className = "henry-name";
+nameEl.textContent = "Henry";
+const nameObj = new CSS2DObject(nameEl);
+nameObj.position.set(0, 0.36, 0);
+henry.add(nameObj);
+insideLabels.push(nameObj);
 let petTimer = null;
 
 function petHenry() {
-  henryAI.purr = 3;
-  henryAI.timer += 6;
+  const ai = henryAI;
+  ai.purr = 3;
+  ai.timer += 6;
   petEl.classList.add("show");
   clearTimeout(petTimer);
   petTimer = setTimeout(() => petEl.classList.remove("show"), 2200);
+  const asleep = ai.mode === "rest" && ai.spot.kind === "sleep";
+  if (!asleep && ai.mode !== "jump" && Math.random() < 0.6) startHenryFollow(14 + Math.random() * 8);
+}
+
+const nearestHenryNode = (pos) => {
+  let best = 0;
+  let bestD = Infinity;
+  henryNodes.forEach((n, i) => {
+    const d = Math.hypot(n.x - pos.x, n.z - pos.z);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  });
+  return best;
+};
+
+// A pseudo-spot for when Henry is standing on the floor and not tied to a piece of furniture
+const floorSpotFor = (nodeIdx) => ({
+  name: "floor",
+  kind: "sit",
+  elevated: false,
+  approach: nodeIdx,
+  pos: henryNodes[nodeIdx].clone(),
+  heading: henry.rotation.y,
+});
+
+function startHenryFollow(duration) {
+  const ai = henryAI;
+  ai.followTimer = duration;
+  ai.followNode = -1;
+  ai.attending = false;
+  ai.followCooldown = 45;
+  if (ai.spot.elevated) {
+    ai.node = ai.spot.approach;
+    ai.spot = floorSpotFor(ai.node);
+    startHenryJump(henry.position, henryNodes[ai.node], "follow");
+  } else {
+    ai.node = nearestHenryNode(henry.position);
+    ai.spot = floorSpotFor(ai.node);
+    ai.mode = "follow";
+  }
 }
 
 function startHenryJump(from, to, next) {
@@ -1805,10 +1871,51 @@ function updateHenry(delta, t) {
   let desiredYaw = henry.rotation.y;
   let moving = 0;
 
+  const playerDist = Math.hypot(character.position.x - henry.position.x, character.position.z - henry.position.z);
+  ai.followCooldown = Math.max(0, ai.followCooldown - delta);
+
   if (ai.mode === "rest") {
     desiredYaw = ai.spot.heading;
     ai.timer -= delta;
-    if (ai.timer <= 0) startHenryTrip();
+    const awake = ai.spot.kind !== "sleep";
+    // Wander over to greet the player when they come close
+    if (awake && !browsing && ai.followCooldown === 0 && playerDist < 3.4 && Math.random() < delta * 0.35) {
+      startHenryFollow(12 + Math.random() * 8);
+    } else if (ai.timer <= 0) startHenryTrip();
+  } else if (ai.mode === "follow") {
+    ai.followTimer -= delta;
+    const pNode = nearestHenryNode(character.position);
+    if (pNode !== ai.followNode) {
+      ai.followNode = pNode;
+      ai.path = henryPath(ai.node, pNode) || [];
+      ai.attending = false;
+    }
+    const nextIdx = ai.path[0];
+    if (nextIdx === undefined) {
+      ai.attending = true;
+      desiredYaw = Math.atan2(character.position.x - henry.position.x, character.position.z - henry.position.z);
+    } else {
+      const wp = henryNodes[nextIdx];
+      const dx = wp.x - henry.position.x;
+      const dz = wp.z - henry.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.08) {
+        ai.node = nextIdx;
+        ai.path.shift();
+      } else {
+        const step = Math.min(1.05 * delta, dist);
+        henry.position.x += (dx / dist) * step;
+        henry.position.z += (dz / dist) * step;
+        henry.position.y += (0.012 - henry.position.y) * ease;
+        desiredYaw = Math.atan2(dx, dz);
+        moving = 1;
+      }
+    }
+    if (ai.followTimer <= 0 || browsing) {
+      ai.attending = false;
+      ai.spot = floorSpotFor(ai.node);
+      startHenryTrip();
+    }
   } else if (ai.mode === "walk") {
     const nextIdx = ai.path[0];
     if (nextIdx === undefined) {
@@ -1843,7 +1950,10 @@ function updateHenry(delta, t) {
     desiredYaw = Math.atan2(j.to.x - j.from.x, j.to.z - j.from.z);
     if (k >= 1) {
       if (j.next === "walk") beginHenryWalk();
-      else {
+      else if (j.next === "follow") {
+        ai.mode = "follow";
+        ai.followNode = -1;
+      } else {
         henry.position.copy(j.to);
         settleHenry(ai.target);
       }
@@ -1852,10 +1962,23 @@ function updateHenry(delta, t) {
 
   henry.rotation.y += wrapPi(desiredYaw - henry.rotation.y) * Math.min(delta * 6, 1);
 
-  const resting = ai.mode === "rest";
-  const sleeping = resting && ai.spot.kind === "sleep";
-  const stretching = resting && ai.spot.kind === "stretch";
-  pose.stretch = pose.stretch ?? 0;
+  const resting = ai.mode === "rest" || (ai.mode === "follow" && ai.attending);
+  const sleeping = ai.mode === "rest" && ai.spot.kind === "sleep";
+  const stretching = ai.mode === "rest" && ai.spot.kind === "stretch";
+
+  // Occasional yawn while awake and settled
+  if (resting && !sleeping) {
+    ai.yawIn -= delta;
+    if (ai.yawIn <= 0 && ai.yawT <= 0) {
+      ai.yawT = 1.7;
+      ai.yawIn = 9 + Math.random() * 14;
+    }
+  }
+  ai.yawT = Math.max(0, ai.yawT - delta);
+  const yawnTarget = ai.yawT > 0 ? Math.sin(Math.PI * (1 - ai.yawT / 1.7)) : 0;
+  pose.yawn += (yawnTarget - pose.yawn) * Math.min(delta * 12, 1);
+  henryMouth.scale.set(1 + 0.3 * pose.yawn, 0.04 + 0.95 * pose.yawn, 0.8);
+  henryMouth.position.y = -0.052 - 0.012 * pose.yawn;
   pose.crouch += ((resting ? 1 : ai.mode === "jump" ? 0.2 : 0) - pose.crouch) * ease;
   pose.sleep += ((sleeping ? 1 : 0) - pose.sleep) * ease;
   pose.stretch += ((stretching ? 1 : 0) - pose.stretch) * ease;
@@ -1883,7 +2006,8 @@ function updateHenry(delta, t) {
     THREE.MathUtils.lerp(THREE.MathUtils.lerp(0.07, 0.0, pose.sleep), 0.04, pose.stretch),
     THREE.MathUtils.lerp(0.28, 0.21, pose.sleep) + 0.02 * pose.stretch
   );
-  henryHead.rotation.x = 0.65 * pose.sleep + 0.2 * pose.stretch + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
+  henryHead.rotation.x =
+    0.65 * pose.sleep + 0.2 * pose.stretch - 0.55 * pose.yawn + Math.sin(pose.phase * 2) * 0.03 * pose.walk;
   henryHead.rotation.y = 0.5 * pose.sleep;
 
   const curl = pose.sleep;
@@ -1899,12 +2023,13 @@ function updateHenry(delta, t) {
     ai.blinkIn = 2.5 + Math.random() * 4;
   }
   ai.blinkFor = Math.max(0, ai.blinkFor - delta);
-  const eyeOpen = pose.sleep >= 0.5 || ai.blinkFor > 0 ? 0.08 : pose.stretch > 0.5 ? 0.45 : 1;
+  const eyeOpen = pose.sleep >= 0.5 || ai.blinkFor > 0 || pose.yawn > 0.3 ? 0.08 : pose.stretch > 0.5 ? 0.45 : 1;
   henryEyes.forEach((e) => {
     e.scale.y = eyeOpen;
   });
 
   zzzEl.classList.toggle("show", sleeping && pose.sleep > 0.8);
+  nameEl.classList.toggle("show", playerDist < 4.5 && !browsing);
 }
 
 // ---------- Interactables ----------
