@@ -49,6 +49,7 @@ const COURSEWORK_PROJECTS = [
   },
   {
     key: "product",
+    hasReturn: true, // the page has its own "back to the studio" link, so it opens in the same tab
     title: "Product Landing Page",
     desc: "Sections, nav links, a form, and embedded video.",
     image: "images/product-landing.jpg",
