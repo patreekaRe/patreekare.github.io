@@ -749,15 +749,15 @@ const FURNITURE = [
   { x: 4.4, z: 1.55, hw: 1.0, hd: 0.75 }, // sectional, chaise
   { x: 3.8, z: 3.4, hw: 0.5, hd: 0.5 }, // round coffee table
   { x: -1.25, z: -1.65, hw: 0.4, hd: 0.4 }, // globe lamp side table
-  { x: -4.5, z: 3.1, hw: 0.62, hd: 0.62 }, // beanbag
-  { x: -3.6, z: 4.35, hw: 0.28, hd: 0.28 }, // songwriting stool
+  { x: -4.9, z: 4.6, hw: 0.62, hd: 0.62 }, // beanbag
+  { x: -4.75, z: 3.45, hw: 0.28, hd: 0.28 }, // songwriting stool
   { x: -3.9, z: -6.05, hw: 1.1, hd: 0.35 }, // TV console
   { x: 4.35, z: -5.85, hw: 0.9, hd: 0.42 }, // desk
   { x: 0.35, z: -6.05, hw: 1.45, hd: 0.35 }, // record desk
   { x: -6.0, z: 1.6, hw: 0.3, hd: 1.45 }, // credenza on the left wall
-  { x: -5.7, z: 3.7, hw: 0.4, hd: 0.3 }, // guitar stand
-  { x: 5.6, z: 0.0, hw: 0.42, hd: 0.42 }, // phone table
-  { x: 2.95, z: -1.5, hw: 0.25, hd: 0.25 }, // plant
+  { x: -6.0, z: 4.4, hw: 0.35, hd: 0.35 }, // guitar stand
+  { x: 5.5, z: 5.3, hw: 0.42, hd: 0.42 }, // phone table
+  { x: 5.6, z: 0.0, hw: 0.28, hd: 0.28 }, // plant
   { x: -5.8, z: -5.5, hw: 0.3, hd: 0.3 }, // plant
 ];
 
@@ -1203,14 +1203,14 @@ globeLampLight.position.set(-1.25, 1.6, -1.4);
 insideGroup.add(globeLampLight);
 
 // Plants around the room
-makePlant(2.95, 0, -1.5, 1.7, 0xb5653f);
+makePlant(5.6, 0, 0.0, 1.7, 0xb5653f);
 makePlant(-5.8, 0, -5.5, 1.5, 0xf2eee6);
 makePlant(5.9, 0, -5.6, 1.4, 0xf2eee6);
 
 // Acoustic guitar on a stand — About
 const guitarGroup = new THREE.Group();
-guitarGroup.position.set(-5.7, 0, 3.7);
-guitarGroup.rotation.y = 0.55;
+guitarGroup.position.set(-6.0, 0, 4.4);
+guitarGroup.rotation.y = Math.PI / 2;
 const honey = lambert(0xc8894a);
 const guitarLower = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.16, 22), honey);
 guitarLower.rotation.x = Math.PI / 2;
@@ -1247,11 +1247,11 @@ const guitarRest = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.05), charc
 guitarRest.position.set(0, 0.36, 0);
 guitarGroup.add(guitarRest);
 insideGroup.add(guitarGroup);
-makeLabel(insideGroup, "About", -5.7, 3.1, 3.7);
+makeLabel(insideGroup, "About", -6.0, 3.1, 4.4);
 
 // Songwriting corner: a stool with a lyric notebook, pencil and mug beside the guitar and beanbag
 const songStool = new THREE.Group();
-songStool.position.set(-3.6, 0, 4.35);
+songStool.position.set(-4.75, 0, 3.45);
 const stoolTop = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 18), walnutMat);
 stoolTop.position.y = 0.52;
 songStool.add(stoolTop);
@@ -1369,7 +1369,7 @@ tvGroup.add(tvGlowPlane);
 insideGroup.add(tvGroup);
 const beanbag = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), lambert(MC.blush));
 beanbag.scale.set(1, 0.66, 1);
-beanbag.position.set(-4.5, 0.36, 3.1);
+beanbag.position.set(-4.9, 0.36, 4.6);
 insideGroup.add(beanbag);
 const tvGlow = new THREE.PointLight(0xa06bff, 1.0, 5, 1.6);
 tvGlow.position.set(-3.9, 1.3, -4.9);
@@ -1468,7 +1468,7 @@ makeLabel(insideGroup, "Coursework", 4.35, 1.95, -5.85);
 
 // Round walnut side table with a rotary phone — Contact
 const phoneGroup = new THREE.Group();
-phoneGroup.position.set(5.6, 0, 0.0);
+phoneGroup.position.set(5.5, 0, 5.3);
 const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 20), walnutMat);
 tableTop.position.y = 0.62;
 phoneGroup.add(tableTop);
@@ -1491,7 +1491,7 @@ handset.rotation.z = Math.PI / 2;
 handset.position.set(0, 0.83, -0.07);
 phoneGroup.add(handset);
 insideGroup.add(phoneGroup);
-makeLabel(insideGroup, "Contact", 5.6, 1.5, 0.0);
+makeLabel(insideGroup, "Contact", 5.5, 1.5, 5.3);
 
 // Woven doormat marking the exit back outside
 const exitMat = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.6), lambert(0xd8c8a4));
@@ -1584,8 +1584,8 @@ function roundRug(x, z, layers, scale = 1) {
   });
 }
 roundRug(
-  -4.5,
-  3.1,
+  -4.9,
+  4.6,
   [
     [0, 1.2, 0xebdfc8, 0.016],
     [0.9, 1.05, MC.blush, 0.017],
@@ -2127,7 +2127,7 @@ const HENRY_NODE_DEFS = {
   right: [2.9, 1.3],
   mid: [0.2, -0.4],
   leftFront: [-3.9, 0.4],
-  beanApproach: [-3.4, 3.1],
+  beanApproach: [-3.6, 4.7],
   leftMid: [-2.2, -3.4],
   sideboardFront: [-3.9, -5.2],
   tvRight: [-2.3, -5.0],
@@ -2206,7 +2206,7 @@ const HENRY_SPOTS = [
   { name: "sofaLeft", kind: "stretch", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
   { name: "sofaRight", kind: "sit", elevated: true, approach: nodeIndex.sofaFrontR, pos: worldOf(sofa, 0.99, 0.8, 0.1), heading: -0.25 },
   { name: "ottoman", kind: "stretch", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-4.55, 0.7, -4.15), heading: 0.4 },
-  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.5, 0.74, 3.1), heading: 1.0 },
+  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.9, 0.74, 4.6), heading: 1.0 },
   { name: "deskChair", kind: "sit", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
   { name: "sunbeam", kind: "sleep", elevated: false, approach: nodeIndex.sun, pos: floorAt("sun"), heading: 2.2 },
   { name: "rug", kind: "stretch", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
@@ -2664,7 +2664,7 @@ const ROOM_ITEMS = [
   {
     key: "about",
     label: "About",
-    position: new THREE.Vector3(-5.7, 0, 3.7),
+    position: new THREE.Vector3(-6.0, 0, 4.4),
     eyebrow: "Background",
     title: "Music Educator, Now Building for the Web",
     body: "A BM in Music Education from CSULB and years of teaching and producing music shape how I approach code: break a big unfamiliar system into parts, then rebuild it into something that holds up.",
@@ -2672,7 +2672,7 @@ const ROOM_ITEMS = [
   {
     key: "contact",
     label: "Contact",
-    position: new THREE.Vector3(5.5, 0, 0.4),
+    position: new THREE.Vector3(5.5, 0, 5.3),
     eyebrow: "Let's talk",
     title: "Get in Touch",
     body: "patricklawrosal@gmail.com — open to entry-level front-end and full-stack roles in the LA area.",
