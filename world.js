@@ -42,21 +42,21 @@ const COURSEWORK_PROJECTS = [
   {
     key: "musician",
     title: "Musician Webpage",
-    desc: "A favorite artist, embedded media, and custom styling.",
+    desc: "A retro-soul tribute page with a Spotify player, discography, and a scrolling lookbook.",
     image: "images/musician.jpg",
     url: "https://patreekare.github.io/mayer-hawthorne-page/",
-  },
-  {
-    title: "Favorite City Website",
-    desc: "Downtown Chicago — layout, images, and navigation.",
-    image: "images/favorite-city.jpg",
-    url: "https://dgnhw2.csb.app/",
   },
   {
     title: "Product Landing Page",
     desc: "Sections, nav links, a form, and embedded video.",
     image: "images/product-landing.jpg",
     url: "https://2cshtl.csb.app/",
+  },
+  {
+    title: "Favorite City Website",
+    desc: "Downtown Chicago — layout, images, and navigation.",
+    image: "images/favorite-city.jpg",
+    url: "https://dgnhw2.csb.app/",
   },
   {
     title: "Technical Documentation Page",

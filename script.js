@@ -177,3 +177,20 @@ if (finePointer && !reduceMotion) {
     });
   }
 }
+
+// Coursework: two highlights up front, the rest tucked behind a "More projects" button
+const moreToggle = document.getElementById('moreToggle');
+const moreProjects = document.getElementById('moreProjects');
+if (moreToggle && moreProjects) {
+  const moreLabel = moreToggle.querySelector('.more-label');
+  moreToggle.addEventListener('click', () => {
+    const opening = !moreProjects.classList.contains('open');
+    moreProjects.classList.toggle('open', opening);
+    moreToggle.setAttribute('aria-expanded', String(opening));
+    moreLabel.textContent = opening ? 'Show fewer' : 'More projects';
+    // Closing a long list can leave you far down the page, so bring the section back into view
+    if (!opening) {
+      document.getElementById('coursework').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+  });
+}

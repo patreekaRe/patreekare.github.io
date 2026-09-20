@@ -960,3 +960,87 @@ h3 {
     transition: none;
   }
 }
+
+/* ---------- Expandable coursework ---------- */
+
+.more-projects {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.6s var(--ease), visibility 0s linear 0.6s;
+}
+
+.more-projects.open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 0.6s var(--ease), visibility 0s;
+}
+
+.more-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.more-inner .project-grid {
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.more-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--tan);
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.more-toggle:hover {
+  background: var(--cream);
+  border-color: var(--rust);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.more-count {
+  min-width: 1.6rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+  color: #fff;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.more-toggle svg {
+  transition: transform 0.4s var(--ease);
+}
+
+.more-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.more-toggle[aria-expanded="true"] .more-count {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-projects,
+  .more-projects.open {
+    transition: none;
+  }
+}
