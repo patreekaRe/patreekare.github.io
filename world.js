@@ -49,7 +49,7 @@ const COURSEWORK_PROJECTS = [
     title: "Musician Webpage",
     desc: "A favorite artist, embedded media, and custom styling.",
     image: "images/musician.jpg",
-    url: "https://hz463v.csb.app/",
+    url: "https://patreekare.github.io/mayer-hawthorne-page/",
   },
   {
     title: "Product Landing Page",
