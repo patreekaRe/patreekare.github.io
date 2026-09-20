@@ -41,6 +41,7 @@ const RECORDS = [
 const COURSEWORK_PROJECTS = [
   {
     key: "musician",
+    hasReturn: true, // the page has its own "back to the studio" link, so it opens in the same tab
     title: "Musician Webpage",
     desc: "A retro-soul tribute page with a Spotify player, discography, and a scrolling lookbook.",
     image: "images/musician.jpg",
@@ -51,7 +52,7 @@ const COURSEWORK_PROJECTS = [
     title: "Product Landing Page",
     desc: "Sections, nav links, a form, and embedded video.",
     image: "images/product-landing.jpg",
-    url: "https://2cshtl.csb.app/",
+    url: "https://patreekare.github.io/product-landing-page/",
   },
   {
     title: "Favorite City Website",
@@ -3249,9 +3250,9 @@ function buildComputerList() {
     const card = document.createElement("a");
     card.className = "computer-card";
     card.draggable = false;
-    if (p.url.startsWith("https://patreekare.github.io/")) {
-      // Our own pages open in this tab and know they came from the room, so their back link
-      // brings you straight back to this computer
+    if (p.hasReturn) {
+      // Pages with their own back link open in this tab and know they came from the room, so the
+      // link brings you straight back to this computer
       card.href = `${p.url}?from=room`;
     } else {
       card.href = p.url;
