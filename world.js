@@ -266,7 +266,7 @@ makeLabel(outsideGroup, "Patrick's Studio", HOUSE_POS.x, 5.3, HOUSE_POS.z + 3.3)
 
 const ROOM_HALF_X = 6.2;
 const ROOM_HALF_Z = 6.2;
-const SPAWN_INSIDE = new THREE.Vector3(0, 0, 4.6);
+const SPAWN_INSIDE = new THREE.Vector3(0, 0, 3.6);
 
 const MC = {
   plaster: 0xe6dcc8,
@@ -1613,6 +1613,7 @@ const exitMat = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.6), lambert(0xd8c8
 exitMat.rotation.x = -Math.PI / 2;
 exitMat.position.set(0, 0.015, 5.4);
 insideGroup.add(exitMat);
+makeLabel(insideGroup, "Back to the portfolio", 0, 0.75, 5.4);
 
 // ================= EXTRA DETAILS =================
 
@@ -2795,7 +2796,7 @@ const ROOM_ITEMS = [
 ];
 
 const DOOR_IN = { key: "door-in", label: "Enter the House", position: DOOR_POS, action: "enter" };
-const DOOR_OUT = { key: "door-out", label: "Exit", position: new THREE.Vector3(0, 0, 5.4), action: "exit" };
+const DOOR_OUT = { key: "door-out", label: "Back to the portfolio", position: new THREE.Vector3(0, 0, 5.4), action: "exit", radius: 1.3 };
 
 let area = "outside";
 let boundX = OUTSIDE_BOUND_X;
@@ -2861,27 +2862,36 @@ function fadeSwitch(callback) {
   }, 220);
 }
 
-function enterHouse() {
+// The door inside the house is the way out of the studio and back to the main site
+function leaveToPortfolio() {
   fadeSwitch(() => {
-    area = "inside";
-    loadCoverArt();
-    randomizeHenry();
-    outsideGroup.visible = false;
-    insideGroup.visible = true;
-    outsideLabels.forEach((l) => (l.visible = false));
-    insideLabels.forEach((l) => (l.visible = true));
-    character.position.copy(SPAWN_INSIDE);
-    character.rotation.y = Math.PI;
-    boundX = ROOM_HALF_X - 0.4;
-    boundZ = ROOM_HALF_Z - 0.4;
-    cameraOffset = INSIDE_CAM_OFFSET.clone();
-    scene.background = new THREE.Color(PALETTE.dusk);
-    scene.fog = new THREE.Fog(PALETTE.dusk, 20, 40);
-    ambient.intensity = 0.3;
-    sun.intensity = 0.2;
-    lamp.intensity = 1.6;
-    hintEl.textContent = "Walk up to an object and press E";
+    window.location.href = "index.html";
   });
+}
+
+function enterHouse() {
+  fadeSwitch(applyEnterHouse);
+}
+
+function applyEnterHouse() {
+  area = "inside";
+  loadCoverArt();
+  randomizeHenry();
+  outsideGroup.visible = false;
+  insideGroup.visible = true;
+  outsideLabels.forEach((l) => (l.visible = false));
+  insideLabels.forEach((l) => (l.visible = true));
+  character.position.copy(SPAWN_INSIDE);
+  character.rotation.y = Math.PI;
+  boundX = ROOM_HALF_X - 0.4;
+  boundZ = ROOM_HALF_Z - 0.4;
+  cameraOffset = INSIDE_CAM_OFFSET.clone();
+  scene.background = new THREE.Color(PALETTE.dusk);
+  scene.fog = new THREE.Fog(PALETTE.dusk, 20, 40);
+  ambient.intensity = 0.3;
+  sun.intensity = 0.2;
+  lamp.intensity = 1.6;
+  hintEl.textContent = "Walk up to an object and press E";
 }
 
 function exitHouse() {
@@ -3008,7 +3018,7 @@ let browsing = false;
 function tryInteract() {
   if (!nearestItem || transitioning || browsing) return;
   if (nearestItem.action === "enter") enterHouse();
-  else if (nearestItem.action === "exit") exitHouse();
+  else if (nearestItem.action === "exit") leaveToPortfolio();
   else if (nearestItem.action === "pet") petHenry();
   else openPanel(nearestItem);
 }
@@ -3515,7 +3525,7 @@ function animate() {
   interactBtnEl.classList.toggle("ready", !!closest && !transitioning && !browsing);
   if (closest && !transitioning && !browsing) {
     nearestItem = closest;
-    promptTextEl.textContent = closest.action === "enter" ? "Enter" : closest.action === "exit" ? "Exit" : closest.label;
+    promptTextEl.textContent = closest.action === "enter" ? "Enter" : closest.action === "exit" ? "Back to the portfolio" : closest.label;
     promptEl.classList.add("visible");
   } else {
     nearestItem = null;
@@ -3599,17 +3609,24 @@ function animate() {
 
 animate();
 
-// Coming back from a coursework page (?open=coursework&project=musician): walk straight into the
-// house, stand at the desk and show that project on the computer
-const deepLink = new URLSearchParams(window.location.search);
-if (deepLink.get("open") === "coursework") {
+// The studio starts inside the room (open world.html?yard=1 to start in the yard instead). When
+// coming back from a coursework page (?open=coursework&project=musician) you stand at the desk
+// with that project showing on the computer.
+const startParams = new URLSearchParams(window.location.search);
+if (startParams.get("yard") !== "1") {
+  applyEnterHouse();
+  camera.position.set(
+    character.position.x + cameraOffset.x,
+    cameraOffset.y,
+    character.position.z + cameraOffset.z
+  );
+}
+if (startParams.get("open") === "coursework") {
   history.replaceState(null, "", window.location.pathname);
-  enterHouse();
-  setTimeout(() => {
-    character.position.set(4.35, 0, -3.6);
-    character.rotation.y = Math.PI;
-    openPanel(ROOM_ITEMS.find((item) => item.key === "coursework"));
-    const wanted = COURSEWORK_PROJECTS.findIndex((p) => p.key === deepLink.get("project"));
-    goComputer(Math.max(wanted, 0));
-  }, 900);
+  character.position.set(4.35, 0, -3.6);
+  character.rotation.y = Math.PI;
+  camera.position.set(character.position.x + cameraOffset.x, cameraOffset.y, character.position.z + cameraOffset.z);
+  openPanel(ROOM_ITEMS.find((item) => item.key === "coursework"));
+  const wanted = COURSEWORK_PROJECTS.findIndex((p) => p.key === startParams.get("project"));
+  goComputer(Math.max(wanted, 0));
 }
