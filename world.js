@@ -552,7 +552,11 @@ insideGroup.add(new THREE.HemisphereLight(0xffe6c8, 0xffcf9a, 0.55));
 
 // Vinyl crate — a browsable stack of records, one per catalog track
 const crateGroup = new THREE.Group();
-crateGroup.position.set(0, 0, -5.4);
+// The crate is scaled down and stands on top of a record desk, next to a turntable
+const CRATE_SCALE = 0.7;
+const DESK_TOP_Y = 0.78;
+crateGroup.position.set(-0.25, DESK_TOP_Y, -6.05);
+crateGroup.scale.setScalar(CRATE_SCALE);
 insideGroup.add(crateGroup);
 
 // Light pine box, sized like a real record crate (sleeves stand edge-on inside it)
@@ -593,7 +597,7 @@ crateGroup.add(handHold);
 const VINYL_COLORS = [PALETTE.rust, PALETTE.tan, PALETTE.olive];
 const VINYL_COUNT = THREE.MathUtils.clamp(RECORDS.length, 3, 12);
 const vinylPivots = [];
-const CRATE_POS = new THREE.Vector3(0, 0, -5.4);
+const CRATE_POS = new THREE.Vector3(-0.25, DESK_TOP_Y, -6.05);
 const PIVOT_Y = 0.7;
 
 const sleeveGeo = new THREE.BoxGeometry(0.86, 0.9, 0.03);
@@ -682,7 +686,7 @@ for (let i = 0; i < VINYL_COUNT; i++) {
   vinylPivots.push(pivot);
 }
 
-const crateLabel = makeLabel(insideGroup, "Music & Production", 0, 1.9, -5.4);
+const crateLabel = makeLabel(insideGroup, "Music & Production", -0.25, 2.05, -6.05);
 
 // Which crate slot shows record i (with more records than slots, they map proportionally)
 function vinylForRecord(i) {
@@ -738,17 +742,21 @@ const rbox = (w, h, d, r, material) => new THREE.Mesh(new RoundedBoxGeometry(w, 
 
 // Solid furniture footprints for walking collision (center x, z, half width, half depth)
 const FURNITURE = [
-  { x: -3.9, z: -1.9, hw: 2.1, hd: 0.7 }, // sofa
+  { x: -3.9, z: -1.9, hw: 2.1, hd: 0.7 }, // sofa facing the TV
   { x: -3.9, z: -4.2, hw: 0.85, hd: 0.6 }, // coffee table
-  { x: 3.9, z: 0.9, hw: 0.9, hd: 0.85 }, // armchair
+  { x: 2.0, z: 3.4, hw: 0.95, hd: 0.9 }, // armchair
+  { x: 5.35, z: 2.7, hw: 0.62, hd: 1.95 }, // sectional, long side
+  { x: 4.4, z: 1.55, hw: 1.0, hd: 0.75 }, // sectional, chaise
+  { x: 3.8, z: 3.4, hw: 0.5, hd: 0.5 }, // round coffee table
   { x: -1.25, z: -1.65, hw: 0.4, hd: 0.4 }, // globe lamp side table
-  { x: -5.5, z: -4.0, hw: 0.62, hd: 0.62 }, // beanbag
+  { x: -4.5, z: 3.1, hw: 0.62, hd: 0.62 }, // beanbag
+  { x: -3.6, z: 4.35, hw: 0.28, hd: 0.28 }, // songwriting stool
   { x: -3.9, z: -6.05, hw: 1.1, hd: 0.35 }, // TV console
   { x: 4.35, z: -5.85, hw: 0.9, hd: 0.42 }, // desk
+  { x: 0.35, z: -6.05, hw: 1.45, hd: 0.35 }, // record desk
   { x: -6.0, z: 1.6, hw: 0.3, hd: 1.45 }, // credenza on the left wall
-  { x: 0, z: -5.4, hw: 1.1, hd: 0.55 }, // record crate
   { x: -5.7, z: 3.7, hw: 0.4, hd: 0.3 }, // guitar stand
-  { x: 5.5, z: 0.4, hw: 0.42, hd: 0.42 }, // phone table
+  { x: 5.6, z: 0.0, hw: 0.42, hd: 0.42 }, // phone table
   { x: 2.95, z: -1.5, hw: 0.25, hd: 0.25 }, // plant
   { x: -5.8, z: -5.5, hw: 0.3, hd: 0.3 }, // plant
 ];
@@ -769,8 +777,8 @@ const boucleMat = new THREE.MeshLambertMaterial({ map: boucleTex });
 
 // Light over the crate so the records glow
 const crateSpot = new THREE.SpotLight(0xffe2b0, 2.4, 9, 0.72, 0.6, 1.4);
-crateSpot.position.set(0, 3.7, -3.3);
-crateSpot.target.position.set(0, 0.9, -5.4);
+crateSpot.position.set(0.1, 3.7, -3.6);
+crateSpot.target.position.set(0.1, 1.2, -6.05);
 insideGroup.add(crateSpot, crateSpot.target);
 
 // Floating shelf above the crate
@@ -793,6 +801,105 @@ const speakerCone = new THREE.Mesh(new THREE.CircleGeometry(0.09, 16), new THREE
 speakerCone.position.set(0.55, 2.73, -6.2);
 insideGroup.add(speakerCone);
 makePlant(1.0, 2.58, -6.32, 0.5, MC.blush);
+
+// Record desk: the crate and a turntable sit side by side on a low walnut desk
+const recordDesk = new THREE.Group();
+recordDesk.position.set(0.35, 0, -6.05);
+const rdTop = rbox(2.9, 0.06, 0.7, 0.02, walnutMat);
+rdTop.position.y = 0.75;
+recordDesk.add(rdTop);
+[
+  [-1.35, -0.28],
+  [1.35, -0.28],
+  [-1.35, 0.28],
+  [1.35, 0.28],
+].forEach(([x, z]) => {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.72, 0.06), blackMat);
+  leg.position.set(x, 0.36, z);
+  recordDesk.add(leg);
+});
+const rdShelf = rbox(2.7, 0.04, 0.56, 0.015, walnutMat);
+rdShelf.position.y = 0.22;
+recordDesk.add(rdShelf);
+[
+  [-0.95, MC.sage, 0.34],
+  [-0.88, MC.rust, 0.3],
+  [-0.81, MC.cream, 0.32],
+  [-0.74, MC.dusty, 0.28],
+].forEach(([x, color, h]) => {
+  const book = new THREE.Mesh(new THREE.BoxGeometry(0.06, h, 0.36), lambert(color));
+  book.position.set(x, 0.24 + h / 2, 0);
+  recordDesk.add(book);
+});
+insideGroup.add(recordDesk);
+
+// Turntable: plinth, spinning platter with a record, and a tonearm that swings onto it
+const turntable = new THREE.Group();
+turntable.position.set(1.15, DESK_TOP_Y, -6.05);
+const ttPlinth = rbox(0.86, 0.09, 0.62, 0.02, lambert(0x3a2a20));
+ttPlinth.position.y = 0.045;
+turntable.add(ttPlinth);
+[
+  [-0.38, -0.26],
+  [0.38, -0.26],
+  [-0.38, 0.26],
+  [0.38, 0.26],
+].forEach(([x, z]) => {
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.02, 10), blackMat);
+  foot.position.set(x, 0.01, z);
+  turntable.add(foot);
+});
+const platterGroup = new THREE.Group();
+platterGroup.position.set(-0.1, 0.1, 0.03);
+turntable.add(platterGroup);
+const platterBase = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.03, 32), charcoalMat);
+platterGroup.add(platterBase);
+const ttRecord = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.012, 32), lambert(0x161616));
+ttRecord.position.y = 0.02;
+platterGroup.add(ttRecord);
+[0.2, 0.15].forEach((r) => {
+  const groove = new THREE.Mesh(new THREE.RingGeometry(r, r + 0.006, 32), new THREE.MeshBasicMaterial({ color: 0x2a2a2a, side: THREE.DoubleSide }));
+  groove.rotation.x = -Math.PI / 2;
+  groove.position.y = 0.027;
+  platterGroup.add(groove);
+});
+const ttLabel = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.014, 20), lambert(MC.rust));
+ttLabel.position.y = 0.022;
+platterGroup.add(ttLabel);
+const ttSpindle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), brassMat);
+ttSpindle.position.y = 0.04;
+platterGroup.add(ttSpindle);
+// A tick on the label so the spin is visible
+const ttTick = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.004, 0.06), lambert(MC.cream));
+ttTick.position.set(0, 0.03, 0.045);
+platterGroup.add(ttTick);
+// Tonearm: pivots at the back right; the arm points along local -x, so rotation.y swings it
+const tonearm = new THREE.Group();
+tonearm.position.set(0.32, 0.12, -0.2);
+tonearm.rotation.y = 1.55;
+const armBase = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.07, 14), brassMat);
+armBase.position.y = -0.03;
+tonearm.add(armBase);
+const armRod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.4, 8), charcoalMat);
+armRod.rotation.z = Math.PI / 2;
+armRod.position.x = -0.2;
+tonearm.add(armRod);
+const headshell = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.014, 0.03), charcoalMat);
+headshell.position.set(-0.41, -0.005, 0.005);
+tonearm.add(headshell);
+const armWeight = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 10), charcoalMat);
+armWeight.rotation.z = Math.PI / 2;
+armWeight.position.x = 0.05;
+tonearm.add(armWeight);
+turntable.add(tonearm);
+// Speed knob and a start button on the front edge
+const ttKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 12), brassMat);
+ttKnob.position.set(0.34, 0.1, 0.24);
+turntable.add(ttKnob);
+const ttButton = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.04), lambert(MC.cream));
+ttButton.position.set(0.24, 0.097, 0.25);
+turntable.add(ttButton);
+insideGroup.add(turntable);
 
 // Brass wall clock
 const wallClock = new THREE.Group();
@@ -960,6 +1067,42 @@ sofa.add(sofaBack);
 });
 insideGroup.add(sofa);
 
+// Conversation corner (front right): an L-shaped sectional against the right wall, a round coffee
+// table and the armchair facing it. The sectional is the sofa above with a chaise added.
+const sectional = sofa.clone();
+sectional.position.set(5.35, 0, 2.7);
+sectional.rotation.y = -Math.PI / 2;
+const chaiseBase = rbox(1.02, 0.46, 1.55, 0.16, boucleMat);
+chaiseBase.position.set(-1.0, 0.32, 1.2);
+sectional.add(chaiseBase);
+const chaiseSeat = rbox(0.9, 0.28, 1.4, 0.13, boucleMat);
+chaiseSeat.position.set(-1.0, 0.66, 1.22);
+sectional.add(chaiseSeat);
+const chaiseArm = rbox(0.5, 0.7, 1.6, 0.22, boucleMat);
+chaiseArm.position.set(-1.62, 0.45, 1.15);
+sectional.add(chaiseArm);
+insideGroup.add(sectional);
+
+const coffeeRound = new THREE.Group();
+coffeeRound.position.set(3.8, 0, 3.4);
+const crTop = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 28), walnutMat);
+crTop.position.y = 0.42;
+coffeeRound.add(crTop);
+[0, 1, 2, 3].forEach((i) => {
+  const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.4, 8), blackMat);
+  leg.position.set(Math.cos(a) * 0.33, 0.2, Math.sin(a) * 0.33);
+  coffeeRound.add(leg);
+});
+const crBook = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.22), lambert(MC.rust));
+crBook.position.set(-0.1, 0.465, 0.05);
+crBook.rotation.y = 0.4;
+coffeeRound.add(crBook);
+const crMug = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.09, 12), lambert(MC.cream));
+crMug.position.set(0.18, 0.49, -0.1);
+coffeeRound.add(crMug);
+insideGroup.add(coffeeRound);
+
 // Ottoman with a magazine and glasses
 const ottoman = new THREE.Group();
 ottoman.position.set(-3.9, 0, -4.2);
@@ -993,8 +1136,8 @@ insideGroup.add(ottoman);
 
 // Armchair with a plaid throw and a sleeping cat
 const armchair = new THREE.Group();
-armchair.position.set(3.9, 0, 0.9);
-armchair.rotation.y = -0.5;
+armchair.position.set(2.0, 0, 3.4);
+armchair.rotation.y = Math.PI / 2 - 0.2;
 const chairBaseMesh = rbox(1.35, 0.5, 1.15, 0.18, boucleMat);
 chairBaseMesh.position.y = 0.32;
 armchair.add(chairBaseMesh);
@@ -1106,6 +1249,37 @@ guitarGroup.add(guitarRest);
 insideGroup.add(guitarGroup);
 makeLabel(insideGroup, "About", -5.7, 3.1, 3.7);
 
+// Songwriting corner: a stool with a lyric notebook, pencil and mug beside the guitar and beanbag
+const songStool = new THREE.Group();
+songStool.position.set(-3.6, 0, 4.35);
+const stoolTop = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 18), walnutMat);
+stoolTop.position.y = 0.52;
+songStool.add(stoolTop);
+[0, 1, 2].forEach((i) => {
+  const a = (i / 3) * Math.PI * 2 + 0.4;
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.014, 0.52, 8), blackMat);
+  leg.position.set(Math.cos(a) * 0.15, 0.26, Math.sin(a) * 0.15);
+  leg.rotation.z = -Math.cos(a) * 0.1;
+  leg.rotation.x = Math.sin(a) * 0.1;
+  songStool.add(leg);
+});
+const notebook = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.025, 0.19), lambert(MC.sage));
+notebook.position.set(-0.03, 0.565, 0.02);
+notebook.rotation.y = 0.35;
+songStool.add(notebook);
+const notebookPages = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.012, 0.17), lambert(MC.cream));
+notebookPages.position.set(-0.03, 0.583, 0.02);
+notebookPages.rotation.y = 0.35;
+songStool.add(notebookPages);
+const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 6), lambert(0xd9a441));
+pencil.rotation.set(Math.PI / 2, 0, 0.9);
+pencil.position.set(0.02, 0.6, 0.02);
+songStool.add(pencil);
+const songMug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.09, 12), lambert(MC.dusty));
+songMug.position.set(0.14, 0.595, -0.08);
+songStool.add(songMug);
+insideGroup.add(songStool);
+
 // Gaming corner — Featured Work
 const tvGroup = new THREE.Group();
 tvGroup.position.set(-3.9, 0, -6.05);
@@ -1195,7 +1369,7 @@ tvGroup.add(tvGlowPlane);
 insideGroup.add(tvGroup);
 const beanbag = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), lambert(MC.blush));
 beanbag.scale.set(1, 0.66, 1);
-beanbag.position.set(-5.5, 0.36, -4.0);
+beanbag.position.set(-4.5, 0.36, 3.1);
 insideGroup.add(beanbag);
 const tvGlow = new THREE.PointLight(0xa06bff, 1.0, 5, 1.6);
 tvGlow.position.set(-3.9, 1.3, -4.9);
@@ -1294,7 +1468,7 @@ makeLabel(insideGroup, "Coursework", 4.35, 1.95, -5.85);
 
 // Round walnut side table with a rotary phone — Contact
 const phoneGroup = new THREE.Group();
-phoneGroup.position.set(5.5, 0, 0.4);
+phoneGroup.position.set(5.6, 0, 0.0);
 const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 20), walnutMat);
 tableTop.position.y = 0.62;
 phoneGroup.add(tableTop);
@@ -1317,7 +1491,7 @@ handset.rotation.z = Math.PI / 2;
 handset.position.set(0, 0.83, -0.07);
 phoneGroup.add(handset);
 insideGroup.add(phoneGroup);
-makeLabel(insideGroup, "Contact", 5.5, 1.5, 0.4);
+makeLabel(insideGroup, "Contact", 5.6, 1.5, 0.0);
 
 // Woven doormat marking the exit back outside
 const exitMat = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.6), lambert(0xd8c8a4));
@@ -1410,8 +1584,8 @@ function roundRug(x, z, layers, scale = 1) {
   });
 }
 roundRug(
-  -5.5,
-  -4.0,
+  -4.5,
+  3.1,
   [
     [0, 1.2, 0xebdfc8, 0.016],
     [0.9, 1.05, MC.blush, 0.017],
@@ -1950,10 +2124,10 @@ const henryLegs = [];
 const HENRY_NODE_DEFS = {
   front: [0.3, 3.0],
   left: [-2.6, 2.8],
-  right: [2.7, 2.9],
+  right: [2.9, 1.3],
   mid: [0.2, -0.4],
   leftFront: [-3.9, 0.4],
-  beanApproach: [-5.5, -3.05],
+  beanApproach: [-3.4, 3.1],
   leftMid: [-2.2, -3.4],
   sideboardFront: [-3.9, -5.2],
   tvRight: [-2.3, -5.0],
@@ -1962,7 +2136,7 @@ const HENRY_NODE_DEFS = {
   sun: [5.75, -4.2],
   rightMid: [3.6, -2.8],
   eastStrip: [5.7, -1.5],
-  armApproach: [3.4, 2.4],
+  armApproach: [2.0, 1.8],
   sofaFrontL: [-2.9, -3.05],
   deskApproach: [4.35, -3.8],
   behindSofa: [0.5, -2.4],
@@ -1970,6 +2144,9 @@ const HENRY_NODE_DEFS = {
   ottApproach: [-4.0, -3.05],
   rugSpot: [-2.4, -3.9],
   crateSeat: [1.6, -4.3],
+  lowFront: [0.6, 4.8],
+  lowRight: [2.5, 5.0],
+  sectFront: [4.5, 4.1],
 };
 const nodeNames = Object.keys(HENRY_NODE_DEFS);
 const henryNodes = nodeNames.map((n) => new THREE.Vector3(HENRY_NODE_DEFS[n][0], 0, HENRY_NODE_DEFS[n][1]));
@@ -2029,10 +2206,11 @@ const HENRY_SPOTS = [
   { name: "sofaLeft", kind: "stretch", elevated: true, approach: nodeIndex.sofaFrontL, pos: worldOf(sofa, -0.99, 0.8, 0.1), heading: 0.3 },
   { name: "sofaRight", kind: "sit", elevated: true, approach: nodeIndex.sofaFrontR, pos: worldOf(sofa, 0.99, 0.8, 0.1), heading: -0.25 },
   { name: "ottoman", kind: "stretch", elevated: true, approach: nodeIndex.ottApproach, pos: new THREE.Vector3(-4.55, 0.7, -4.15), heading: 0.4 },
-  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-5.5, 0.74, -4.0), heading: 1.0 },
+  { name: "beanbag", kind: "sleep", elevated: true, approach: nodeIndex.beanApproach, pos: new THREE.Vector3(-4.5, 0.74, 3.1), heading: 1.0 },
   { name: "deskChair", kind: "sit", elevated: true, approach: nodeIndex.deskApproach, pos: worldOf(deskGroup, 0, 0.56, 0.95), heading: 0.2 },
   { name: "sunbeam", kind: "sleep", elevated: false, approach: nodeIndex.sun, pos: floorAt("sun"), heading: 2.2 },
   { name: "rug", kind: "stretch", elevated: false, approach: nodeIndex.rugSpot, pos: floorAt("rugSpot", 0.015), heading: -0.8 },
+  { name: "sectional", kind: "sit", elevated: true, approach: nodeIndex.sectFront, pos: worldOf(sectional, 0.5, 0.8, 0.1), heading: -1.3 },
   { name: "crateWatch", kind: "sit", elevated: false, approach: nodeIndex.crateSeat, pos: floorAt("crateSeat"), heading: Math.PI },
 ];
 
@@ -2171,6 +2349,7 @@ const SPOT_PERSONALITY = {
   ottoman: { weight: 0.9, likes: { sleep: 0.2, sit: 0.3, stretch: 0.5 } },
   deskChair: { weight: 0.9, likes: { sleep: 0.25, sit: 0.6, stretch: 0.15 } },
   rug: { weight: 1.1, likes: { sleep: 0.3, sit: 0.2, stretch: 0.5 } },
+  sectional: { weight: 1.1, likes: { sleep: 0.35, sit: 0.4, stretch: 0.25 } },
   crateWatch: { weight: 1, likes: { sleep: 0.1, sit: 0.75, stretch: 0.15 } },
 };
 HENRY_SPOTS.forEach((s) => Object.assign(s, SPOT_PERSONALITY[s.name]));
@@ -2469,7 +2648,7 @@ const ROOM_ITEMS = [
   {
     key: "music",
     label: "Music & Production",
-    position: new THREE.Vector3(0, 0, -5.4),
+    position: new THREE.Vector3(0.1, 0, -5.1),
     eyebrow: "Independent work",
     title: "Music & Production",
     body: "Writing, producing, and mixing my own music, with releases on Spotify. Current work runs through Reaper using FabFilter, Valhalla, and Serum 2.",
@@ -2751,6 +2930,8 @@ let spotifyApi = window.__spotifyApi || null;
 let spotifyController = null;
 let spotifyCreating = false;
 let spotifyWant = { uri: "", play: false };
+let spotifyPlaying = false; // reported by the player itself, drives the turntable
+let turntableSpin = 0;
 
 window.addEventListener("spotify-api-ready", () => {
   spotifyApi = window.__spotifyApi;
@@ -2766,6 +2947,9 @@ function ensureSpotifyController() {
   spotifyApi.createController(mount, { width: "100%", height: 152, uri: startUri }, (controller) => {
     spotifyController = controller;
     spotifyCreating = false;
+    controller.addListener("playback_update", (e) => {
+      spotifyPlaying = !!e.data && !e.data.isPaused;
+    });
     // A song may have been picked while the player was still starting up
     if (spotifyWant.uri && spotifyWant.uri !== startUri) controller.loadUri(spotifyWant.uri);
     if (spotifyWant.play) controller.play();
@@ -2844,6 +3028,7 @@ function exitBrowse() {
   clearTimeout(frameTimer);
   if (spotifyController) spotifyController.pause();
   else spotifyFrame.src = "";
+  spotifyPlaying = false;
   clearTimeout(faceTimer);
   vinylFaceEl.classList.remove("show");
   vinylFaceObj.removeFromParent();
@@ -3084,14 +3269,18 @@ function animate() {
       // fills the space above the bottom sheet, growing when the sheet is collapsed
       const visibleFrac = THREE.MathUtils.clamp(1 - crateSheet.offsetHeight / window.innerHeight, 0.4, 1);
       const fitTan = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const dist = Math.max(2.6 / (visibleFrac * fitTan), 1.3 / (camera.aspect * fitTan));
-      const recordZ = CRATE_POS.z + 0.95;
-      targetCamPos.set(CRATE_POS.x, 1.45 + dist * 0.1, recordZ + dist);
-      targetLookAt.set(CRATE_POS.x, 1.4, recordZ);
+      // (the crate is scaled down and stands on the desk, so the record is framed at that scale)
+      const S = CRATE_SCALE;
+      const dist = Math.max((2.6 * S) / (visibleFrac * fitTan), (1.3 * S) / (camera.aspect * fitTan));
+      const recordZ = CRATE_POS.z + 0.95 * S;
+      const centerY = CRATE_POS.y + 1.43 * S;
+      targetCamPos.set(CRATE_POS.x, centerY + 0.05 + dist * 0.1, recordZ + dist);
+      targetLookAt.set(CRATE_POS.x, centerY, recordZ);
     } else {
-      const dist = THREE.MathUtils.clamp(3.4 / camera.aspect, 3.6, 7.5);
-      targetCamPos.set(CRATE_POS.x, 2.2 + dist * 0.25, CRATE_POS.z + dist);
-      targetLookAt.set(CRATE_POS.x, 0.35, CRATE_POS.z);
+      // Wide enough to take in the crate and the turntable beside it
+      const dist = THREE.MathUtils.clamp(3.4 / camera.aspect, 3.6, 7.5) * 0.8;
+      targetCamPos.set(CRATE_POS.x + 0.35, CRATE_POS.y + 1.0 + dist * 0.25, CRATE_POS.z + dist);
+      targetLookAt.set(CRATE_POS.x + 0.35, CRATE_POS.y + 0.5, CRATE_POS.z);
     }
   } else {
     targetCamPos.set(
@@ -3123,6 +3312,13 @@ function animate() {
   } else if (camera.view && camera.view.enabled) {
     camera.clearViewOffset();
   }
+
+  // The turntable spins and its tonearm drops onto the record while a song is playing
+  const spinTarget = spotifyPlaying && browsing ? 3.4 : 0;
+  turntableSpin += (spinTarget - turntableSpin) * Math.min(delta * 2.5, 1);
+  platterGroup.rotation.y -= turntableSpin * delta;
+  const armTarget = spotifyPlaying && browsing ? 0.03 : 1.55;
+  tonearm.rotation.y += (armTarget - tonearm.rotation.y) * Math.min(delta * 2.2, 1);
 
   // Keep the on-record song list matched to the pulled-out disc's size on screen
   if (browsing && vinylFaceObj.parent) {
