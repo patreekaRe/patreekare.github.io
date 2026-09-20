@@ -792,7 +792,10 @@ const FURNITURE = [
   { x: -3.9, z: -6.05, hw: 1.1, hd: 0.35 }, // TV console
   { x: 4.35, z: -5.85, hw: 0.9, hd: 0.42 }, // desk
   { x: 0.35, z: -6.05, hw: 1.45, hd: 0.35 }, // record desk
-  { x: -3.9, z: -0.85, hw: 1.45, hd: 0.3 }, // credenza behind the sofa
+  { x: -3.9, z: -1.03, hw: 1.1, hd: 0.25 }, // credenza behind the sofa
+  { x: -5.4, z: 1.6, hw: 0.55, hd: 0.55 }, // dining table
+  { x: -5.4, z: 0.8, hw: 0.28, hd: 0.28 }, // dining chair
+  { x: -5.4, z: 2.4, hw: 0.28, hd: 0.28 }, // dining chair
   { x: -6.0, z: 4.4, hw: 0.35, hd: 0.35 }, // guitar stand
   { x: 5.5, z: 5.3, hw: 0.42, hd: 0.42 }, // phone table
   { x: 5.6, z: 0.0, hw: 0.28, hd: 0.28 }, // plant
@@ -1065,11 +1068,79 @@ const sideboardShift = new THREE.Group();
 sideboardShift.position.set(3.9, 0, 6.0);
 insideGroup.children.slice(sideboardStart).forEach((part) => sideboardShift.add(part));
 sideboardSet.add(sideboardShift);
-sideboardSet.position.set(-3.9, 0, -0.85);
+sideboardSet.position.set(-3.9, 0, -1.03);
+// Scaled down so it is narrower and lower and more of the sofa shows above it
+sideboardSet.scale.setScalar(0.78);
 insideGroup.add(sideboardSet);
 insideGroup.add(artFrame);
 artFrame.position.set(-6.46, 2.45, 1.6);
 artFrame.rotation.y = Math.PI / 2;
+
+// Dining nook for two under the art on the left wall: a small pedestal table and two chairs
+const diningSet = new THREE.Group();
+diningSet.position.set(-5.4, 0, 1.6);
+const dnTop = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.05, 28), walnutMat);
+dnTop.position.y = 0.74;
+diningSet.add(dnTop);
+const dnPedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.7, 12), blackMat);
+dnPedestal.position.y = 0.37;
+diningSet.add(dnPedestal);
+const dnBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.03, 20), blackMat);
+dnBase.position.y = 0.015;
+diningSet.add(dnBase);
+const makeDiningChair = (z, faceZ) => {
+  const chair = new THREE.Group();
+  chair.position.set(0, 0, z);
+  chair.rotation.y = faceZ > 0 ? 0 : Math.PI;
+  const seat = rbox(0.46, 0.05, 0.46, 0.02, walnutMat);
+  seat.position.y = 0.44;
+  chair.add(seat);
+  const cushion = rbox(0.4, 0.07, 0.4, 0.03, boucleMat);
+  cushion.position.y = 0.5;
+  chair.add(cushion);
+  [
+    [-0.19, -0.19],
+    [0.19, -0.19],
+    [-0.19, 0.19],
+    [0.19, 0.19],
+  ].forEach(([x, cz]) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.42, 0.035), blackMat);
+    leg.position.set(x, 0.21, cz);
+    chair.add(leg);
+  });
+  [-0.19, 0.19].forEach((x) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.42, 0.035), blackMat);
+    post.position.set(x, 0.66, -0.2);
+    chair.add(post);
+  });
+  const backRail = rbox(0.44, 0.16, 0.035, 0.015, walnutMat);
+  backRail.position.set(0, 0.8, -0.2);
+  chair.add(backRail);
+  return chair;
+};
+diningSet.add(makeDiningChair(-0.8, 1), makeDiningChair(0.8, -1));
+// Table setting: a little vase of flowers and two mugs
+const dnVase = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.13, 12), lambert(0xe6d3b3));
+dnVase.position.set(0, 0.82, 0);
+diningSet.add(dnVase);
+[0xd2562b, 0xe38a3a, 0xf0a04a].forEach((color, i) => {
+  const a = (i / 3) * Math.PI * 2;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.16, 5), lambert(0x6b7a3f));
+  stem.position.set(Math.cos(a) * 0.02, 0.96, Math.sin(a) * 0.02);
+  diningSet.add(stem);
+  const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), lambert(color));
+  bloom.position.set(Math.cos(a) * 0.035, 1.05 + i * 0.01, Math.sin(a) * 0.035);
+  diningSet.add(bloom);
+});
+[-0.28, 0.28].forEach((z, i) => {
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.036, 0.08, 12), lambert(i ? MC.dusty : MC.cream));
+  mug.position.set(0.12, 0.8, z);
+  diningSet.add(mug);
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.012, 16), lambert(MC.cream));
+  plate.position.set(-0.12, 0.775, z);
+  diningSet.add(plate);
+});
+insideGroup.add(diningSet);
 
 // Lounge: boucle sofa with throw pillows
 const sofa = new THREE.Group();
