@@ -47,6 +47,7 @@ const COURSEWORK_PROJECTS = [
     url: "https://patreekare.github.io/mayer-hawthorne-page/",
   },
   {
+    key: "product",
     title: "Product Landing Page",
     desc: "Sections, nav links, a form, and embedded video.",
     image: "images/product-landing.jpg",
