@@ -40,6 +40,7 @@ const RECORDS = [
 
 const COURSEWORK_PROJECTS = [
   {
+    key: "musician",
     title: "Musician Webpage",
     desc: "A favorite artist, embedded media, and custom styling.",
     image: "images/musician.jpg",
@@ -3246,10 +3247,16 @@ function buildComputerList() {
   COURSEWORK_PROJECTS.forEach((p, pi) => {
     const card = document.createElement("a");
     card.className = "computer-card";
-    card.href = p.url;
-    card.target = "_blank";
-    card.rel = "noopener";
     card.draggable = false;
+    if (p.url.startsWith("https://patreekare.github.io/")) {
+      // Our own pages open in this tab and know they came from the room, so their back link
+      // brings you straight back to this computer
+      card.href = `${p.url}?from=room`;
+    } else {
+      card.href = p.url;
+      card.target = "_blank";
+      card.rel = "noopener";
+    }
 
     const img = document.createElement("img");
     img.src = p.image;
@@ -3588,3 +3595,18 @@ function animate() {
 }
 
 animate();
+
+// Coming back from a coursework page (?open=coursework&project=musician): walk straight into the
+// house, stand at the desk and show that project on the computer
+const deepLink = new URLSearchParams(window.location.search);
+if (deepLink.get("open") === "coursework") {
+  history.replaceState(null, "", window.location.pathname);
+  enterHouse();
+  setTimeout(() => {
+    character.position.set(4.35, 0, -3.6);
+    character.rotation.y = Math.PI;
+    openPanel(ROOM_ITEMS.find((item) => item.key === "coursework"));
+    const wanted = COURSEWORK_PROJECTS.findIndex((p) => p.key === deepLink.get("project"));
+    goComputer(Math.max(wanted, 0));
+  }, 900);
+}
