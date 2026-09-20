@@ -792,7 +792,7 @@ const FURNITURE = [
   { x: -3.9, z: -6.05, hw: 1.1, hd: 0.35 }, // TV console
   { x: 4.35, z: -5.85, hw: 0.9, hd: 0.42 }, // desk
   { x: 0.35, z: -6.05, hw: 1.45, hd: 0.35 }, // record desk
-  { x: -6.0, z: 1.6, hw: 0.3, hd: 1.45 }, // credenza on the left wall
+  { x: -3.9, z: -0.85, hw: 1.45, hd: 0.3 }, // credenza behind the sofa
   { x: -6.0, z: 4.4, hw: 0.35, hd: 0.35 }, // guitar stand
   { x: 5.5, z: 5.3, hw: 0.42, hd: 0.42 }, // phone table
   { x: 5.6, z: 0.0, hw: 0.28, hd: 0.28 }, // plant
@@ -1058,16 +1058,18 @@ artPlane.position.z = 0.04;
 artFrame.add(artPlane);
 insideGroup.add(artFrame);
 
-// The whole set (credenza, decor and art) was built against the back wall; stand it along the
-// left wall instead, facing into the room, where it sits beside the guitar
+// The credenza and its decor stand behind the sofa, pushed up against its back and facing the room.
+// The art can't hang in mid-air there, so it stays on the left wall.
 const sideboardSet = new THREE.Group();
 const sideboardShift = new THREE.Group();
 sideboardShift.position.set(3.9, 0, 6.0);
 insideGroup.children.slice(sideboardStart).forEach((part) => sideboardShift.add(part));
 sideboardSet.add(sideboardShift);
-sideboardSet.position.set(-6.0, 0, 1.6);
-sideboardSet.rotation.y = Math.PI / 2;
+sideboardSet.position.set(-3.9, 0, -0.85);
 insideGroup.add(sideboardSet);
+insideGroup.add(artFrame);
+artFrame.position.set(-6.46, 2.45, 1.6);
+artFrame.rotation.y = Math.PI / 2;
 
 // Lounge: boucle sofa with throw pillows
 const sofa = new THREE.Group();
