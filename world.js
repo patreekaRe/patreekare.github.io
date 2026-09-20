@@ -524,7 +524,7 @@ function makePlant(x, y, z, scale = 1, potColor = 0xf2eee6) {
 
 // Brass globe chandelier
 const chandelier = new THREE.Group();
-chandelier.position.set(-2.6, 3.6, -3.6);
+chandelier.position.set(0, 3.6, 0);
 chandelier.scale.setScalar(0.75);
 const chRod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.6, 8), brassMat);
 chRod.position.y = 1.3;
@@ -552,7 +552,7 @@ const globeMat = new THREE.MeshBasicMaterial({ color: 0xfff3dc });
   chandelier.add(globe);
 });
 insideGroup.add(chandelier);
-lamp.position.set(-1.6, 3.4, -2.6);
+lamp.position.set(0, 3.4, 0);
 
 // Interior lighting: warm hemisphere fill plus the pools set up with each piece below
 insideGroup.add(new THREE.HemisphereLight(0xffe6c8, 0xffcf9a, 0.55));
