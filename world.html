@@ -567,7 +567,8 @@
 
     .computer-card img {
       width: 100%;
-      height: clamp(110px, 26vh, 210px);
+      aspect-ratio: 2 / 1;
+      max-height: 34vh;
       object-fit: cover;
       display: block;
       border-radius: 10px;
@@ -603,7 +604,7 @@
 
     .computer-nav {
       position: absolute;
-      top: clamp(50px, 13vh, 105px);
+      top: clamp(45px, 12vh, 85px);
       transform: translateY(-50%);
       width: 34px;
       height: 34px;

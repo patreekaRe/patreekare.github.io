@@ -40,16 +40,16 @@ const RECORDS = [
 
 const COURSEWORK_PROJECTS = [
   {
-    title: "Favorite City Website",
-    desc: "Downtown Chicago — layout, images, and navigation.",
-    image: "images/favorite-city.jpg",
-    url: "https://dgnhw2.csb.app/",
-  },
-  {
     title: "Musician Webpage",
     desc: "A favorite artist, embedded media, and custom styling.",
     image: "images/musician.jpg",
     url: "https://patreekare.github.io/mayer-hawthorne-page/",
+  },
+  {
+    title: "Favorite City Website",
+    desc: "Downtown Chicago — layout, images, and navigation.",
+    image: "images/favorite-city.jpg",
+    url: "https://dgnhw2.csb.app/",
   },
   {
     title: "Product Landing Page",
