@@ -416,8 +416,8 @@
     .vinyl-tracks {
       display: flex;
       flex-direction: column;
-      gap: 0.35em;
-      width: 60%;
+      gap: 0.3em;
+      width: 48%;
     }
 
     .vinyl-track {
@@ -427,9 +427,9 @@
       color: var(--ink);
       background: var(--cream);
       border: 2px solid var(--tan);
-      box-shadow: 0 0 0 2px rgba(254, 250, 224, 0.95);
+      box-shadow: 0 0 0 1.5px rgba(254, 250, 224, 0.95);
       border-radius: 999px;
-      padding: 0.3em 0.6em;
+      padding: 0.24em 0.55em;
       cursor: pointer;
       white-space: nowrap;
       overflow: hidden;
@@ -524,56 +524,167 @@
       font-family: monospace;
     }
 
-    .computer-list {
+    .computer-bar .computer-count {
+      margin-left: auto;
+      color: rgba(254, 250, 224, 0.55);
+      font-size: 0.72rem;
+      font-family: monospace;
+    }
+
+    .computer-stage {
+      position: relative;
       background: var(--cream);
-      max-height: 44vh;
-      overflow-y: auto;
-      padding: 0.75rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.6rem;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .computer-stage.dragging {
+      cursor: grabbing;
+    }
+
+    .computer-list {
+      display: flex;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .computer-stage.dragging .computer-list {
+      transition: none;
     }
 
     .computer-card {
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      text-decoration: none;
+      flex: 0 0 100%;
+      padding: 0.75rem 0.75rem 0.6rem;
       color: var(--ink);
+      text-decoration: none;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-      transition: transform 0.15s ease;
-    }
-
-    .computer-card:hover {
-      transform: translateY(-3px);
+      gap: 0.6rem;
+      -webkit-user-drag: none;
+      user-select: none;
     }
 
     .computer-card img {
       width: 100%;
-      height: 78px;
+      height: clamp(110px, 26vh, 210px);
       object-fit: cover;
       display: block;
+      border-radius: 10px;
       background: #ddd;
-    }
-
-    .computer-card .card-body {
-      padding: 0.55rem 0.6rem 0.7rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      pointer-events: none;
+      -webkit-user-drag: none;
     }
 
     .computer-card h4 {
-      font-size: 0.78rem;
+      font-size: 1.02rem;
       font-family: "Roboto Slab", serif;
       color: var(--rust);
-      margin-bottom: 0.2rem;
+      margin: 0;
     }
 
     .computer-card p {
-      font-size: 0.68rem;
+      font-size: 0.8rem;
       color: #5a4a35;
-      line-height: 1.35;
+      line-height: 1.4;
       margin: 0;
+    }
+
+    .computer-open {
+      align-self: flex-start;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--rust);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .computer-nav {
+      position: absolute;
+      top: clamp(50px, 13vh, 105px);
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--tan);
+      background: rgba(254, 250, 224, 0.92);
+      color: var(--ink);
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0 3px;
+      z-index: 2;
+    }
+
+    .computer-nav.prev { left: 1.1rem; }
+    .computer-nav.next { right: 1.1rem; }
+
+    .computer-nav:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .computer-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 0.15rem 0 0.7rem;
+      background: var(--cream);
+    }
+
+    .computer-dots button {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      background: rgba(96, 108, 56, 0.3);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .computer-dots button.active {
+      background: var(--rust);
+      transform: scale(1.3);
+    }
+
+    .play-nudge {
+      margin: 0 0 0.5rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 10px;
+      background: var(--cream);
+      border: 1.5px solid var(--tan);
+      color: var(--ink);
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .swipe-hint {
+      position: fixed;
+      top: 4.4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(40, 54, 24, 0.75);
+      color: var(--cream);
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .swipe-hint.show {
+      opacity: 1;
     }
 
     .touch-controls {
@@ -790,6 +901,8 @@
       <button class="interact-btn" id="interactBtn">E</button>
     </div>
 
+    <div class="swipe-hint" id="swipeHint">&#8249; swipe to flip records &#8250;</div>
+
     <div id="fade"></div>
 
     <div class="panel-overlay" id="panelOverlay">
@@ -804,8 +917,14 @@
             <span class="dot dot-yellow"></span>
             <span class="dot dot-green"></span>
             <span class="computer-title">coursework/</span>
+            <span class="computer-count" id="computerCount"></span>
           </div>
-          <div class="computer-list" id="computerList"></div>
+          <div class="computer-stage" id="computerStage">
+            <div class="computer-list" id="computerList"></div>
+            <button class="computer-nav prev" id="computerPrev" type="button" aria-label="Previous project">&#8249;</button>
+            <button class="computer-nav next" id="computerNext" type="button" aria-label="Next project">&#8250;</button>
+          </div>
+          <div class="computer-dots" id="computerDots"></div>
         </div>
 
         <button class="panel-close" id="panelClose">Close</button>
@@ -826,7 +945,8 @@
           <button class="crate-close" id="crateClose" type="button" aria-label="Close">&#10005;</button>
         </div>
       </div>
-      <p class="crate-hint">Flip records with &larr; / &rarr; or the buttons. Tap a song on the record to play it.</p>
+      <p class="crate-hint">Flip records with &larr; / &rarr;, a swipe, or the buttons. Tap a song on the record to play it.</p>
+      <p class="play-nudge" id="playNudge" hidden>Tap &#9654; once in the player to start. After that, songs play as soon as you tap them.</p>
       <div class="spotify-player" id="spotifyPlayer">
         <div class="spotify-embed" id="spotifyEmbed">
           <iframe

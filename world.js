@@ -102,6 +102,13 @@ const fadeEl = document.getElementById("fade");
 const hintEl = document.getElementById("hint-text");
 const computerScreen = document.getElementById("computerScreen");
 const computerList = document.getElementById("computerList");
+const computerStage = document.getElementById("computerStage");
+const computerPrevBtn = document.getElementById("computerPrev");
+const computerNextBtn = document.getElementById("computerNext");
+const computerDots = document.getElementById("computerDots");
+const computerCount = document.getElementById("computerCount");
+const playNudge = document.getElementById("playNudge");
+const swipeHint = document.getElementById("swipeHint");
 const crateSheet = document.getElementById("crateSheet");
 const crateCloseBtn = document.getElementById("crateClose");
 const crateToggleBtn = document.getElementById("crateToggle");
@@ -613,6 +620,37 @@ const SLOT_COUNT = 46;
 const slotX = (s) => THREE.MathUtils.lerp(-0.92, 0.92, s / (SLOT_COUNT - 1));
 const recordSlots = new Set();
 const recordSlotList = [];
+// Vinyl surface: dark plastic with fine concentric grooves and two soft sheens, so the disc still
+// reads as a record behind the song list
+const vinylTopTex = canvasTexture(512, 512, (g, w, h) => {
+  const c = w / 2;
+  g.fillStyle = "#151515";
+  g.fillRect(0, 0, w, h);
+  for (let r = c * 0.36; r < c * 0.98; r += 3.2) {
+    g.strokeStyle = `rgba(255, 255, 255, ${0.035 + 0.03 * Math.abs(Math.sin(r * 0.37))})`;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(c, c, r, 0, Math.PI * 2);
+    g.stroke();
+  }
+  [0.55, 0.55 + Math.PI].forEach((a0) => {
+    g.fillStyle = "rgba(255, 255, 255, 0.09)";
+    g.beginPath();
+    g.moveTo(c, c);
+    g.arc(c, c, c * 0.98, a0, a0 + 0.42);
+    g.closePath();
+    g.fill();
+  });
+  g.strokeStyle = "rgba(255, 255, 255, 0.14)";
+  g.lineWidth = 3;
+  g.beginPath();
+  g.arc(c, c, c * 0.985, 0, Math.PI * 2);
+  g.stroke();
+});
+const vinylSideMat = new THREE.MeshLambertMaterial({ color: 0x151515 });
+const vinylTopMat = new THREE.MeshLambertMaterial({ map: vinylTopTex });
+const discMaterials = [vinylSideMat, vinylTopMat, vinylSideMat];
+
 for (let i = 0; i < VINYL_COUNT; i++) {
   const s = Math.round(THREE.MathUtils.lerp(4, SLOT_COUNT - 5, (i + 0.5) / VINYL_COUNT));
   recordSlots.add(s);
@@ -655,7 +693,7 @@ for (let i = 0; i < VINYL_COUNT; i++) {
   pivot.rotation.set(0, Math.PI / 2, baseTilt);
   crateGroup.add(pivot);
 
-  const disc = new THREE.Mesh(discGeo, new THREE.MeshLambertMaterial({ color: 0x1c1c1c }));
+  const disc = new THREE.Mesh(discGeo, discMaterials);
   disc.rotation.x = Math.PI / 2;
   disc.position.set(0, 0, -0.03);
   pivot.add(disc);
@@ -2805,6 +2843,13 @@ const KEY_MAP = {
 };
 
 window.addEventListener("keydown", (e) => {
+  // With the coursework screen open, the arrow keys flip through the projects instead of walking
+  if (panelOverlay.classList.contains("open") && !computerScreen.hidden) {
+    if (e.code === "ArrowLeft" || e.code === "KeyA") goComputer(computerIndex - 1);
+    else if (e.code === "ArrowRight" || e.code === "KeyD") goComputer(computerIndex + 1);
+    else if (e.code === "Escape") closePanel();
+    return;
+  }
   if (browsing) {
     if (e.code === "ArrowLeft" || e.code === "KeyA") loadTrack(recordIndex - 1);
     else if (e.code === "ArrowRight" || e.code === "KeyD") loadTrack(recordIndex + 1);
@@ -2932,6 +2977,8 @@ let spotifyCreating = false;
 let spotifyWant = { uri: "", play: false };
 let spotifyPlaying = false; // reported by the player itself, drives the turntable
 let turntableSpin = 0;
+let hasPlayedOnce = false;
+let nudgeTimer = null;
 
 window.addEventListener("spotify-api-ready", () => {
   spotifyApi = window.__spotifyApi;
@@ -2949,6 +2996,11 @@ function ensureSpotifyController() {
     spotifyCreating = false;
     controller.addListener("playback_update", (e) => {
       spotifyPlaying = !!e.data && !e.data.isPaused;
+      if (spotifyPlaying) {
+        hasPlayedOnce = true;
+        clearTimeout(nudgeTimer);
+        playNudge.hidden = true;
+      }
     });
     // A song may have been picked while the player was still starting up
     if (spotifyWant.uri && spotifyWant.uri !== startUri) controller.loadUri(spotifyWant.uri);
@@ -2983,6 +3035,14 @@ function loadTrack(r, t = 0, autoplay = false) {
   if (autoplay) {
     // Straight away, so the play call stays as close as possible to the tap that chose the song
     setSpotifyTrack(id, true);
+    // Browsers only let a player start itself after the first time you press play inside it. If
+    // nothing is playing a moment after choosing a song, say so instead of leaving it silent.
+    clearTimeout(nudgeTimer);
+    if (!hasPlayedOnce) {
+      nudgeTimer = setTimeout(() => {
+        if (!spotifyPlaying && browsing) playNudge.hidden = false;
+      }, 1500);
+    }
   } else {
     // Wait for flipping to settle so quick flips don't leave the player on an earlier song
     frameTimer = setTimeout(() => {
@@ -3005,6 +3065,41 @@ spotifyPrevBtn.addEventListener("click", () => loadTrack(recordIndex - 1));
 spotifyNextBtn.addEventListener("click", () => loadTrack(recordIndex + 1));
 
 let browseOpenedAt = 0;
+let swipeHintTimer = null;
+
+// Swipe left or right to flip through the records (anywhere above the player sheet)
+const recordSwipe = { id: null, x: 0, y: 0, t: 0 };
+let swipeHappenedAt = 0;
+window.addEventListener("pointerdown", (e) => {
+  if (!browsing || e.target.closest(".crate-sheet, .proto-badge")) return;
+  recordSwipe.id = e.pointerId;
+  recordSwipe.x = e.clientX;
+  recordSwipe.y = e.clientY;
+  recordSwipe.t = performance.now();
+});
+window.addEventListener("pointerup", (e) => {
+  if (!browsing || recordSwipe.id !== e.pointerId) return;
+  recordSwipe.id = null;
+  const dx = e.clientX - recordSwipe.x;
+  const dy = e.clientY - recordSwipe.y;
+  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5 && performance.now() - recordSwipe.t < 900) {
+    swipeHappenedAt = performance.now();
+    swipeHint.classList.remove("show");
+    loadTrack(recordIndex + (dx < 0 ? 1 : -1));
+  }
+});
+window.addEventListener("pointercancel", () => (recordSwipe.id = null));
+// A swipe that starts or ends on a song pill must not also count as tapping it
+window.addEventListener(
+  "click",
+  (e) => {
+    if (performance.now() - swipeHappenedAt < 350) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  },
+  true
+);
 
 function enterBrowse() {
   browsing = true;
@@ -3017,6 +3112,13 @@ function enterBrowse() {
   ensureSpotifyController();
   loadTrack(recordIndex, trackIndex);
   crateSheet.classList.add("open");
+
+  // Touch devices get a short reminder that swiping flips records
+  if (window.matchMedia("(pointer: coarse)").matches) {
+    swipeHint.classList.add("show");
+    clearTimeout(swipeHintTimer);
+    swipeHintTimer = setTimeout(() => swipeHint.classList.remove("show"), 4000);
+  }
 }
 
 function exitBrowse() {
@@ -3029,6 +3131,9 @@ function exitBrowse() {
   if (spotifyController) spotifyController.pause();
   else spotifyFrame.src = "";
   spotifyPlaying = false;
+  clearTimeout(nudgeTimer);
+  playNudge.hidden = true;
+  swipeHint.classList.remove("show");
   clearTimeout(faceTimer);
   vinylFaceEl.classList.remove("show");
   vinylFaceObj.removeFromParent();
@@ -3049,34 +3154,105 @@ crateToggleBtn.addEventListener("click", () => {
 });
 
 let computerBuilt = false;
+let computerIndex = 0;
 
+function goComputer(i) {
+  const last = COURSEWORK_PROJECTS.length - 1;
+  computerIndex = THREE.MathUtils.clamp(i, 0, last);
+  computerList.style.transform = `translateX(${-computerIndex * 100}%)`;
+  computerCount.textContent = `${computerIndex + 1} / ${COURSEWORK_PROJECTS.length}`;
+  computerPrevBtn.disabled = computerIndex === 0;
+  computerNextBtn.disabled = computerIndex === last;
+  [...computerDots.children].forEach((dot, di) => dot.classList.toggle("active", di === computerIndex));
+}
+
+// One project per slide: swipe (or drag, arrows, dots, or ← / →) to move through all of them
 function buildComputerList() {
   if (computerBuilt) return;
   computerBuilt = true;
-  COURSEWORK_PROJECTS.forEach((p) => {
+  COURSEWORK_PROJECTS.forEach((p, pi) => {
     const card = document.createElement("a");
     card.className = "computer-card";
     card.href = p.url;
     card.target = "_blank";
     card.rel = "noopener";
+    card.draggable = false;
 
     const img = document.createElement("img");
     img.src = p.image;
     img.alt = p.title;
-    img.loading = "lazy";
+    img.draggable = false;
     card.appendChild(img);
 
-    const body = document.createElement("div");
-    body.className = "card-body";
     const h4 = document.createElement("h4");
     h4.textContent = p.title;
     const desc = document.createElement("p");
     desc.textContent = p.desc;
-    body.append(h4, desc);
-    card.appendChild(body);
-
+    const open = document.createElement("span");
+    open.className = "computer-open";
+    open.textContent = "Open site \u2197";
+    card.append(h4, desc, open);
     computerList.appendChild(card);
+
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.setAttribute("aria-label", `Show ${p.title}`);
+    dot.addEventListener("click", () => goComputer(pi));
+    computerDots.appendChild(dot);
   });
+
+  computerPrevBtn.addEventListener("click", () => goComputer(computerIndex - 1));
+  computerNextBtn.addEventListener("click", () => goComputer(computerIndex + 1));
+
+  // Drag or swipe the slides; a drag must not also open the link under the finger
+  const drag = { id: null, x: 0, dx: 0, moved: false };
+  computerStage.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".computer-nav")) return;
+    drag.id = e.pointerId;
+    drag.x = e.clientX;
+    drag.dx = 0;
+    drag.moved = false;
+  });
+  computerStage.addEventListener("pointermove", (e) => {
+    if (drag.id !== e.pointerId) return;
+    drag.dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(drag.dx) > 8) {
+      drag.moved = true;
+      computerStage.classList.add("dragging");
+      try {
+        computerStage.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore — synthetic pointers can't always be captured
+      }
+    }
+    if (drag.moved) {
+      const atEdge = (computerIndex === 0 && drag.dx > 0) || (computerIndex === COURSEWORK_PROJECTS.length - 1 && drag.dx < 0);
+      const shown = atEdge ? drag.dx * 0.3 : drag.dx;
+      computerList.style.transform = `translateX(calc(${-computerIndex * 100}% + ${shown}px))`;
+    }
+  });
+  const endDrag = (e) => {
+    if (drag.id !== e.pointerId) return;
+    drag.id = null;
+    computerStage.classList.remove("dragging");
+    if (drag.moved) {
+      const threshold = Math.min(computerStage.clientWidth * 0.2, 70);
+      goComputer(computerIndex + (drag.dx < -threshold ? 1 : drag.dx > threshold ? -1 : 0));
+    }
+  };
+  computerStage.addEventListener("pointerup", endDrag);
+  computerStage.addEventListener("pointercancel", endDrag);
+  computerStage.addEventListener(
+    "click",
+    (e) => {
+      if (drag.moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        drag.moved = false;
+      }
+    },
+    true
+  );
 }
 
 function openPanel(item) {
@@ -3094,6 +3270,7 @@ function openPanel(item) {
 
   if (item.key === "coursework") {
     buildComputerList();
+    goComputer(0);
     computerScreen.hidden = false;
     panelBox.classList.add("wide");
   }
@@ -3330,7 +3507,7 @@ function animate() {
     const radiusPx = Math.abs(faceEdge.x - faceCenter.x) * 0.5 * window.innerWidth;
     vinylFaceEl.style.width = `${radiusPx * 2}px`;
     vinylFaceEl.style.height = `${radiusPx * 2}px`;
-    vinylFaceEl.style.fontSize = `${Math.max(radiusPx * 0.11, 8)}px`;
+    vinylFaceEl.style.fontSize = `${Math.max(radiusPx * 0.085, 8)}px`;
   }
 
   renderer.render(scene, camera);
