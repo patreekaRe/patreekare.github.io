@@ -183,7 +183,7 @@
         </div>
       </article>
 
-      <article class="featured-card">
+      <article class="featured-card featured-music" id="music">
         <div class="featured-icon" aria-hidden="true">🎧</div>
         <div class="featured-body">
           <div class="tag-row">
@@ -199,6 +199,16 @@
             iterative problem-solving I bring to code: get the structure right, then
             refine until it holds up.
           </p>
+
+          <div class="music-player" id="musicPlayer">
+            <div class="music-embed" id="musicEmbed"></div>
+            <div class="music-picker">
+              <p class="music-picker-label">Pick a record, then a song</p>
+              <div class="music-covers" id="musicCovers" role="group" aria-label="Records"></div>
+              <div class="music-songs" id="musicSongs" role="group" aria-label="Songs"></div>
+              <p class="music-note" id="musicNote" hidden>Press &#9654; once in the player. After that, songs start as soon as you pick them.</p>
+            </div>
+          </div>
         </div>
       </article>
 

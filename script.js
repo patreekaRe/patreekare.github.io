@@ -133,7 +133,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 
 if (finePointer && !reduceMotion) {
   // Cards tilt toward the cursor and a warm glow follows it
-  document.querySelectorAll('.featured-card, .project-tile').forEach((card) => {
+  document.querySelectorAll('.featured-card:not(.featured-music), .project-tile').forEach((card) => {
     let frame = 0;
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
@@ -198,4 +198,152 @@ if (moreToggle && moreProjects) {
       document.getElementById('coursework').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     }
   });
+}
+
+// ---------- Music: a Spotify player inside the Featured card ----------
+const MUSIC_RECORDS = [
+  {
+    cover: 'images/covers/record-1.jpg',
+    songs: [
+      { id: '084YxThHOrmrM5YC0tyZEY', title: 'Sofia' },
+      { id: '2PDIfFHHKklyycN0paspsF', title: 'Someone' },
+      { id: '0A8uNXnfohqdCVXCfKPrSA', title: 'Time Machine' },
+      { id: '6PXw0fITgSiBnRWFszSpAS', title: 'Growing' },
+    ],
+  },
+  { cover: 'images/covers/record-2.jpg', songs: [{ id: '1AffuacdDfxEh0ZQWFdAfm', title: '151' }] },
+  { cover: 'images/covers/record-3.jpg', songs: [{ id: '1xBTI8q5lTUHf3hXRg2BAp', title: 'Wait' }] },
+  {
+    cover: 'images/covers/record-4.jpg',
+    songs: [
+      { id: '5s71EMi5MNKD82SIBhkBC0', title: 'Erased' },
+      { id: '45hsEjHz0wsxX5t2mDXzhr', title: 'She Said' },
+      { id: '3Z6qc0I5JDUol2PGF6WAek', title: 'Herz' },
+      { id: '4o1HNJ4RTT0ZipPDGyQrTq', title: 'Falcon' },
+    ],
+  },
+];
+
+const musicPlayerEl = document.getElementById('musicPlayer');
+if (musicPlayerEl) {
+  const embedEl = document.getElementById('musicEmbed');
+  const coversEl = document.getElementById('musicCovers');
+  const songsEl = document.getElementById('musicSongs');
+  const noteEl = document.getElementById('musicNote');
+  let recordIdx = 0;
+  let songIdx = 0;
+  let controller = null;
+  let fallbackFrame = null;
+  let started = false;
+  let playing = false;
+  let playedOnce = false;
+  let nudgeTimer = null;
+
+  const currentSong = () => MUSIC_RECORDS[recordIdx].songs[songIdx];
+
+  const renderCovers = () => {
+    coversEl.replaceChildren();
+    MUSIC_RECORDS.forEach((record, ri) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-pressed', String(ri === recordIdx));
+      btn.setAttribute('aria-label', `Record ${ri + 1}: ${record.songs.map((s) => s.title).join(', ')}`);
+      const img = document.createElement('img');
+      img.src = record.cover;
+      img.alt = '';
+      img.loading = 'lazy';
+      btn.appendChild(img);
+      btn.addEventListener('click', () => {
+        recordIdx = ri;
+        songIdx = 0;
+        renderCovers();
+        renderSongs();
+        // Choosing a record only loads its first song; playing needs a deliberate tap on a song
+        setTrack(false);
+      });
+      coversEl.appendChild(btn);
+    });
+  };
+
+  const renderSongs = () => {
+    songsEl.replaceChildren();
+    MUSIC_RECORDS[recordIdx].songs.forEach((song, si) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = song.title;
+      btn.setAttribute('aria-pressed', String(si === songIdx));
+      btn.addEventListener('click', () => {
+        songIdx = si;
+        renderSongs();
+        setTrack(true);
+      });
+      songsEl.appendChild(btn);
+    });
+  };
+
+  const setTrack = (autoplay) => {
+    if (!started) return;
+    const song = currentSong();
+    if (controller) {
+      controller.loadUri(`spotify:track:${song.id}`);
+      if (autoplay) controller.play();
+    } else if (fallbackFrame) {
+      fallbackFrame.src = `https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0`;
+    }
+    // Browsers only let the player start itself after you have pressed play in it once
+    clearTimeout(nudgeTimer);
+    if (autoplay && controller && !playedOnce) {
+      nudgeTimer = setTimeout(() => {
+        if (!playing) noteEl.hidden = false;
+      }, 1500);
+    }
+  };
+
+  const startPlayer = () => {
+    if (started) return;
+    started = true;
+    const mount = document.createElement('div');
+    embedEl.appendChild(mount);
+    window.onSpotifyIframeApiReady = (api) => {
+      api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${currentSong().id}` }, (ctl) => {
+        controller = ctl;
+        ctl.addListener('playback_update', (e) => {
+          playing = !!e.data && !e.data.isPaused;
+          if (playing) {
+            playedOnce = true;
+            noteEl.hidden = true;
+          }
+        });
+      });
+    };
+    const script = document.createElement('script');
+    script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+    script.async = true;
+    document.body.appendChild(script);
+    // If Spotify's player script is blocked or slow, fall back to a plain embed
+    setTimeout(() => {
+      if (controller || embedEl.querySelector('iframe')) return;
+      fallbackFrame = document.createElement('iframe');
+      fallbackFrame.title = 'Spotify player';
+      fallbackFrame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+      fallbackFrame.src = `https://open.spotify.com/embed/track/${currentSong().id}?utm_source=generator&theme=0`;
+      embedEl.replaceChildren(fallbackFrame);
+    }, 5000);
+  };
+
+  renderCovers();
+  renderSongs();
+
+  // Load Spotify's player only once the card is close to being on screen
+  if ('IntersectionObserver' in window) {
+    const musicObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        musicObserver.disconnect();
+        startPlayer();
+      }
+    }, { rootMargin: '300px 0px' });
+    musicObserver.observe(musicPlayerEl);
+  } else {
+    startPlayer();
+  }
 }

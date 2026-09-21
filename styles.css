@@ -1212,3 +1212,126 @@ h3 {
   border-color: var(--rust-dark);
   gap: 0.6rem;
 }
+
+/* Music card with a built-in Spotify player */
+.featured-music {
+  grid-column: 1 / -1;
+}
+
+.featured-music .featured-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  align-items: start;
+}
+
+.music-embed iframe {
+  display: block;
+  width: 100%;
+  height: 152px;
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+.music-embed:empty {
+  height: 152px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(120deg, var(--cream-dim), var(--cream));
+}
+
+.music-picker-label {
+  margin-bottom: 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--olive);
+}
+
+.music-covers {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.music-covers button {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--cream);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.music-covers button:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.music-covers button[aria-pressed="true"] {
+  border-color: var(--rust);
+}
+
+.music-covers img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.music-songs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.music-songs button {
+  padding: 0.4rem 0.95rem;
+  border: 2px solid var(--tan);
+  border-radius: var(--radius-pill);
+  background: var(--cream);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.music-songs button:hover {
+  background: #f3d9a4;
+  transform: translateY(-1px);
+}
+
+.music-songs button[aria-pressed="true"] {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #fff;
+}
+
+.music-note {
+  margin-top: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 800px) {
+  .music-player {
+    grid-template-columns: 1fr;
+  }
+}
+
+.featured-music:hover {
+  transform: none;
+}
