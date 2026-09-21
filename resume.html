@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Résumé | Patrick Rosal</title>
+  <meta name="description" content="Patrick Rosal — Web Developer résumé. Music educator transitioning into front-end/full-stack development.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+
+<body>
+
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html#welcome-section"><span class="dot" aria-hidden="true"></span>Patrick Rosal</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+      <ul id="navLinks">
+        <li><a href="index.html#welcome-section">Home</a></li>
+        <li><a href="index.html#featured-work">Work</a></li>
+        <li><a href="index.html#coursework">Coursework</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="resume.html" class="active">Resume</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div class="scroll-progress" aria-hidden="true"></div>
+  </nav>
+
+  <section id="resume-hero">
+    <div class="section-head">
+      <p class="eyebrow">Résumé</p>
+      <h1 class="resume-name">Patrick Rosal</h1>
+      <p class="resume-role">Web Developer</p>
+      <p class="section-intro">
+        Music educator and self-taught web developer transitioning into front-end/full-stack
+        development, backed by a working Unity/C# application and ongoing formal coursework
+        toward an A.S. in Web Development.
+      </p>
+
+      <div class="hero-links resume-links">
+        <a class="btn btn-primary" href="resume.pdf" download>Download PDF</a>
+        <a class="btn btn-secondary" href="https://github.com/patreekaRe/patreekare.github.io/blob/main/resume.md" target="_blank" rel="noopener">
+          View Source on GitHub
+        </a>
+      </div>
+
+      <p class="resume-contact-row">
+        <span>Carson, CA</span>
+        <span>&middot;</span>
+        <span>(310) 721-3750</span>
+        <span>&middot;</span>
+        <a href="mailto:patricklawrosal@gmail.com">patricklawrosal@gmail.com</a>
+        <span>&middot;</span>
+        <a href="https://github.com/patreekaRe" target="_blank" rel="noopener">github.com/patreekaRe</a>
+        <span>&middot;</span>
+        <a href="https://patreekare.github.io">patreekare.github.io</a>
+      </p>
+    </div>
+  </section>
+
+  <div class="resume-section-wrap">
+
+    <div class="resume-card">
+      <h2>Summary</h2>
+      <p>
+        Music educator and self-taught web developer transitioning into front-end/full-stack
+        development, backed by a working Unity/C# application and ongoing formal coursework
+        toward an A.S. in Web Development. Skilled at breaking complex systems into manageable
+        parts &mdash; the same discipline used to build a rules-accurate card game app from
+        scratch and to design curriculum for students of all levels. Looking for an entry-level
+        developer role where structured problem-solving and fast learning translate directly
+        into shipped work.
+      </p>
+    </div>
+
+    <div class="resume-card">
+      <h2>Skills</h2>
+      <div class="skills-row"><span class="skills-label">Languages &amp; Tools:</span> HTML5, CSS3 (Flexbox, Grid, responsive design, animations/transitions), C#, Git/GitHub, VS Code, Unity 6</div>
+      <div class="skills-row"><span class="skills-label">Currently Learning:</span> JavaScript (LBCC COSW 200), SQL/Database Design (LBCC COSP 38), PHP/MySQL, front-end frameworks</div>
+      <div class="skills-row"><span class="skills-label">Concepts:</span> OOP, state management, singleton architecture, responsive/mobile-first layout, accessibility basics</div>
+      <div class="skills-row"><span class="skills-label">Transferable:</span> Breaking down complex systems for different audiences, structured curriculum design, project/event coordination, calm execution under time pressure, clear communication across skill levels</div>
+    </div>
+
+    <div class="resume-card">
+      <h2>Projects</h2>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Marvel Champions: Spider-Man vs. Rhino &mdash; Unity/C# Game</span>
+          <span class="resume-entry-date">In development</span>
+        </div>
+        <p>Self-directed digital solo app for Marvel Champions: The Card Game, built from the ground up while learning Unity and C#. Singleton manager architecture (CardEffectManager, PlayerDeckManager, VillainManager, EncounterManager, and others) with UI views subscribing to game state, effectId-based routing, and async callbacks for player decisions like targeting. Past a dozen implementation milestones.</p>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Personal Portfolio Site</span>
+          <span class="resume-entry-date"><a href="https://patreekare.github.io">patreekare.github.io</a></span>
+        </div>
+        <p>Designed and built with HTML/CSS/JS, deployed via GitHub Pages. Responsive layout, custom design system, a Three.js hero animation, and a walkable 3D room built with Three.js.</p>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Coursework Projects</span>
+          <span class="resume-entry-date">LBCC COSW 10/20</span>
+        </div>
+        <p>Responsive Web Design, CSS Grid layout, Product Landing Page (forms, embedded media, FreeCodeCamp spec), CSS Animations &amp; Transitions &mdash; demos linked from portfolio site.</p>
+      </div>
+    </div>
+
+    <div class="resume-card">
+      <h2>Experience</h2>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Music Instructor <span class="resume-entry-sub">&mdash; Jammin&rsquo; Music, Long Beach, CA</span></span>
+          <span class="resume-entry-date">Jan 2020 &ndash; Present</span>
+        </div>
+        <ul>
+          <li>Designed and iteratively refined a structured curriculum across guitar, voice, piano, and ukulele for a 30+ student roster with varied learning styles</li>
+          <li>Independently planned and executed monthly recital events end-to-end &mdash; scheduling, logistics, performance readiness</li>
+          <li>Collaborated with fellow instructors to debug and improve curriculum based on real student outcomes</li>
+        </ul>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Music Instructor <span class="resume-entry-sub">&mdash; Arts Alive, Carson, CA</span></span>
+          <span class="resume-entry-date">Jun 2020 &ndash; Jun 2023</span>
+        </div>
+        <ul>
+          <li>Built and delivered structured, age-appropriate lesson plans for K&ndash;8 group classes across guitar, bass, ukulele, drums, and voice at multiple school sites</li>
+          <li>Organized recurring student showcases, managing logistics and cross-team coordination</li>
+        </ul>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Private Music Instructor <span class="resume-entry-sub">&mdash; Independent, CA</span></span>
+          <span class="resume-entry-date">Jan 2017 &ndash; Present</span>
+        </div>
+        <ul>
+          <li>Maintain a 9+ year independent client base by customizing instruction to individual goals and adapting communication style across a wide range of ages</li>
+          <li>Prepare students for time-boxed deliverables (recitals, auditions, competitions) through structured, detail-oriented planning</li>
+        </ul>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Steward, Guest Service &amp; Crowd Control <span class="resume-entry-sub">&mdash; Disneyland Resort, Anaheim, CA</span></span>
+          <span class="resume-entry-date">2018 &ndash; 2020</span>
+        </div>
+        <ul>
+          <li>Maintained smooth operations and solved problems in real time during sustained high-traffic, high-pressure conditions at one of the resort's busiest locations</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="resume-card">
+      <h2>Education</h2>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">Web Development, A.S. (in progress) <span class="resume-entry-sub">&mdash; Long Beach City College</span></span>
+          <span class="resume-entry-date">Expected Fall 2027</span>
+        </div>
+        <p>Completed: COSW 10, COSW 20 &nbsp;&middot;&nbsp; In Progress: COSP 38, COSW 200 &nbsp;&middot;&nbsp; Remaining: COSP 7, COSW 30, COSW 230, COSW 240</p>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">100Devs Full-Stack Web Development Program <span class="resume-entry-sub">&mdash; Self-directed</span></span>
+          <span class="resume-entry-date">2024</span>
+        </div>
+        <p>Completed roughly half of the 60+ course curriculum (HTML/CSS/JS fundamentals).</p>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">BM in Music Education &ndash; Choral/Vocal Studies <span class="resume-entry-sub">&mdash; CSULB, Bob Cole Conservatory of Music</span></span>
+          <span class="resume-entry-date">2017 &ndash; 2020</span>
+        </div>
+      </div>
+
+      <div class="resume-entry">
+        <div class="resume-entry-head">
+          <span class="resume-entry-title">AA-T in Music <span class="resume-entry-sub">&mdash; Long Beach City College</span></span>
+          <span class="resume-entry-date">2014 &ndash; 2017</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year"></span> Patrick Rosal</p>
+  </footer>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

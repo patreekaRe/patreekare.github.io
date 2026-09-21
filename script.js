@@ -69,7 +69,12 @@ const setActiveLink = () => {
   });
 
   navAnchors.forEach((anchor) => {
-    anchor.classList.toggle('active', anchor.getAttribute('href') === `#${current}`);
+    const href = anchor.getAttribute('href');
+    // Only same-page hash links get scroll-driven highlighting; a link to another
+    // page (e.g. Resume) keeps whatever active state is already in its markup.
+    if (href.startsWith('#')) {
+      anchor.classList.toggle('active', href === `#${current}`);
+    }
   });
 };
 
@@ -104,7 +109,7 @@ updateOnScroll();
 // Reveal sections and cards as they scroll into view, staggered within each group
 if (!reduceMotion && 'IntersectionObserver' in window) {
   const targets = document.querySelectorAll(
-    '.section-head, .walkthrough-card, .featured-card, .project-tile, .about-block, .contact-card'
+    '.section-head, .walkthrough-card, .featured-card, .project-tile, .about-block, .contact-card, .resume-card'
   );
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -118,7 +123,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
   }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
 
   targets.forEach((el) => {
-    const siblings = [...el.parentElement.children].filter((c) => c.matches('.featured-card, .project-tile, .about-block'));
+    const siblings = [...el.parentElement.children].filter((c) => c.matches('.featured-card, .project-tile, .about-block, .resume-card'));
     const index = siblings.indexOf(el);
     el.style.setProperty('--d', `${index < 0 ? 0 : (index % 4) * 0.09}s`);
     el.classList.add('reveal');

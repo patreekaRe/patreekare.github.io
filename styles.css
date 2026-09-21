@@ -1044,3 +1044,148 @@ h3 {
     transition: none;
   }
 }
+
+/* ---------- Resume page ---------- */
+
+#resume-hero {
+  padding-top: calc(var(--nav-h) + 4rem);
+  padding-bottom: 3rem;
+}
+
+.resume-name {
+  margin-top: 0.5rem;
+}
+
+.resume-role {
+  color: var(--olive);
+  font-weight: 600;
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  margin: 0.4rem 0 1.1rem;
+}
+
+.resume-links {
+  justify-content: center;
+  margin-top: 1.6rem;
+  margin-bottom: 1.6rem;
+}
+
+.resume-contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.85rem;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.resume-contact-row a {
+  color: var(--rust-dark);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.resume-contact-row a:hover {
+  text-decoration: underline;
+}
+
+.resume-section-wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 2rem 6rem;
+}
+
+.resume-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(96, 108, 56, 0.08);
+  padding: 2.25rem 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.resume-card:last-child {
+  margin-bottom: 0;
+}
+
+.resume-card h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--tan);
+}
+
+.resume-card > p {
+  color: var(--ink-soft);
+}
+
+.skills-row {
+  color: var(--ink-soft);
+  margin-bottom: 0.6rem;
+}
+
+.skills-row:last-child {
+  margin-bottom: 0;
+}
+
+.skills-label {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.resume-entry {
+  margin-bottom: 1.5rem;
+}
+
+.resume-entry:last-child {
+  margin-bottom: 0;
+}
+
+.resume-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.3rem 1rem;
+}
+
+.resume-entry-title {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.resume-entry-sub {
+  font-style: italic;
+  color: var(--olive);
+  font-size: 0.92rem;
+}
+
+.resume-entry-date {
+  font-size: 0.85rem;
+  color: var(--rust-dark);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.resume-entry p {
+  color: var(--ink-soft);
+  margin-top: 0.45rem;
+}
+
+.resume-entry ul {
+  margin: 0.6rem 0 0 1.15rem;
+  color: var(--ink-soft);
+}
+
+.resume-entry li {
+  margin-bottom: 0.4rem;
+}
+
+.resume-entry li:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .resume-card {
+    padding: 1.75rem 1.5rem;
+  }
+}
