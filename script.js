@@ -133,7 +133,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 
 if (finePointer && !reduceMotion) {
   // Cards tilt toward the cursor and a warm glow follows it
-  document.querySelectorAll('.featured-card:not(.featured-music), .project-tile').forEach((card) => {
+  document.querySelectorAll('.featured-card, .project-tile').forEach((card) => {
     let frame = 0;
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
@@ -199,8 +199,31 @@ if (moreToggle && moreProjects) {
     }
   });
 }
+// ---------- Dark / light theme ----------
+// The saved choice is applied in the page <head> before first paint; this is just the toggle.
+const themeRoot = document.documentElement;
+const themeToggle = document.getElementById('themeToggle');
+if (themeToggle) {
+  const syncThemeLabel = () => {
+    const dark = themeRoot.getAttribute('data-theme') === 'dark';
+    themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  };
+  themeToggle.addEventListener('click', () => {
+    const dark = themeRoot.getAttribute('data-theme') !== 'dark';
+    if (dark) themeRoot.setAttribute('data-theme', 'dark');
+    else themeRoot.removeAttribute('data-theme');
+    try {
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    } catch (e) {
+      // storage blocked: the choice just won't be remembered
+    }
+    syncThemeLabel();
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
+  });
+  syncThemeLabel();
+}
 
-// ---------- Music: a Spotify player inside the Featured card ----------
+// ---------- Music: a shelf of records that flip to show their songs ----------
 const MUSIC_RECORDS = [
   {
     cover: 'images/covers/record-1.jpg',
@@ -224,66 +247,49 @@ const MUSIC_RECORDS = [
   },
 ];
 
-const musicPlayerEl = document.getElementById('musicPlayer');
-if (musicPlayerEl) {
+const musicShelf = document.getElementById('musicShelf');
+if (musicShelf) {
   const embedEl = document.getElementById('musicEmbed');
-  const coversEl = document.getElementById('musicCovers');
-  const songsEl = document.getElementById('musicSongs');
+  const nowEl = document.getElementById('musicNow');
   const noteEl = document.getElementById('musicNote');
-  let recordIdx = 0;
-  let songIdx = 0;
+  const cards = [];
   let controller = null;
   let fallbackFrame = null;
   let started = false;
   let playing = false;
   let playedOnce = false;
   let nudgeTimer = null;
+  let selected = null; // { ri, si }
 
-  const currentSong = () => MUSIC_RECORDS[recordIdx].songs[songIdx];
+  const songLabel = (ri) => MUSIC_RECORDS[ri].songs.map((s) => s.title).join(', ');
 
-  const renderCovers = () => {
-    coversEl.replaceChildren();
-    MUSIC_RECORDS.forEach((record, ri) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.setAttribute('aria-pressed', String(ri === recordIdx));
-      btn.setAttribute('aria-label', `Record ${ri + 1}: ${record.songs.map((s) => s.title).join(', ')}`);
-      const img = document.createElement('img');
-      img.src = record.cover;
-      img.alt = '';
-      img.loading = 'lazy';
-      btn.appendChild(img);
-      btn.addEventListener('click', () => {
-        recordIdx = ri;
-        songIdx = 0;
-        renderCovers();
-        renderSongs();
-        // Choosing a record only loads its first song; playing needs a deliberate tap on a song
-        setTrack(false);
-      });
-      coversEl.appendChild(btn);
-    });
+  // Only the visible face of a card can be focused or read out
+  const setFlipped = (ri, flipped) => {
+    const card = cards[ri];
+    card.el.classList.toggle('flipped', flipped);
+    card.front.inert = flipped;
+    card.back.inert = !flipped;
+    card.front.setAttribute('aria-expanded', String(flipped));
   };
 
-  const renderSongs = () => {
-    songsEl.replaceChildren();
-    MUSIC_RECORDS[recordIdx].songs.forEach((song, si) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = song.title;
-      btn.setAttribute('aria-pressed', String(si === songIdx));
-      btn.addEventListener('click', () => {
-        songIdx = si;
-        renderSongs();
-        setTrack(true);
-      });
-      songsEl.appendChild(btn);
-    });
+  const flipRecord = (ri) => {
+    cards.forEach((_, i) => setFlipped(i, i === ri));
   };
 
-  const setTrack = (autoplay) => {
-    if (!started) return;
-    const song = currentSong();
+  const setNow = () => {
+    if (!selected) return;
+    const song = MUSIC_RECORDS[selected.ri].songs[selected.si];
+    nowEl.textContent = `${playing ? 'Now playing' : 'Selected'}: ${song.title}`;
+  };
+
+  const markPlaying = () => {
+    cards.forEach((card, i) => card.el.classList.toggle('playing', playing && selected && selected.ri === i));
+    setNow();
+  };
+
+  const load = (autoplay) => {
+    if (!started || !selected) return;
+    const song = MUSIC_RECORDS[selected.ri].songs[selected.si];
     if (controller) {
       controller.loadUri(`spotify:track:${song.id}`);
       if (autoplay) controller.play();
@@ -299,13 +305,95 @@ if (musicPlayerEl) {
     }
   };
 
+  const chooseSong = (ri, si) => {
+    selected = { ri, si };
+    cards.forEach((card, i) => {
+      card.el.classList.toggle('active', i === ri);
+      card.buttons.forEach((btn, bi) => btn.setAttribute('aria-current', String(i === ri && bi === si)));
+    });
+    playing = false;
+    markPlaying();
+    load(true);
+  };
+
+  MUSIC_RECORDS.forEach((record, ri) => {
+    const el = document.createElement('div');
+    el.className = 'record';
+    el.setAttribute('role', 'listitem');
+
+    const disc = document.createElement('div');
+    disc.className = 'record-disc';
+    disc.setAttribute('aria-hidden', 'true');
+
+    const flip = document.createElement('div');
+    flip.className = 'record-flip';
+
+    const front = document.createElement('button');
+    front.type = 'button';
+    front.className = 'record-face record-front';
+    front.setAttribute('aria-label', `Record ${ri + 1}: ${songLabel(ri)}. Flip to see the songs.`);
+    front.setAttribute('aria-expanded', 'false');
+    const img = document.createElement('img');
+    img.src = record.cover;
+    img.alt = '';
+    img.loading = 'lazy';
+    const hint = document.createElement('span');
+    hint.className = 'record-hint';
+    hint.textContent = 'Flip';
+    front.append(img, hint);
+    front.addEventListener('click', () => flipRecord(ri));
+
+    const back = document.createElement('div');
+    back.className = 'record-face record-back';
+    back.inert = true;
+    const title = document.createElement('p');
+    title.className = 'record-back-title';
+    title.textContent = record.songs.length > 1 ? `Record ${ri + 1} · ${record.songs.length} songs` : `Record ${ri + 1} · single`;
+    const list = document.createElement('ol');
+    list.className = 'record-songs';
+    const buttons = record.songs.map((song, si) => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = song.title;
+      btn.addEventListener('click', () => chooseSong(ri, si));
+      li.appendChild(btn);
+      list.appendChild(li);
+      return btn;
+    });
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'record-flip-back';
+    backBtn.textContent = '← Back to the cover';
+    backBtn.addEventListener('click', () => {
+      setFlipped(ri, false);
+      front.focus();
+    });
+    back.append(title, list, backBtn);
+
+    flip.append(front, back);
+    el.append(disc, flip);
+    musicShelf.appendChild(el);
+    cards.push({ el, front, back, buttons });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = cards.findIndex((card) => card.el.classList.contains('flipped'));
+    if (open >= 0) {
+      setFlipped(open, false);
+      cards[open].front.focus();
+    }
+  });
+
   const startPlayer = () => {
     if (started) return;
     started = true;
+    const first = MUSIC_RECORDS[0].songs[0];
     const mount = document.createElement('div');
     embedEl.appendChild(mount);
     window.onSpotifyIframeApiReady = (api) => {
-      api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${currentSong().id}` }, (ctl) => {
+      api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${first.id}` }, (ctl) => {
         controller = ctl;
         ctl.addListener('playback_update', (e) => {
           playing = !!e.data && !e.data.isPaused;
@@ -313,7 +401,10 @@ if (musicPlayerEl) {
             playedOnce = true;
             noteEl.hidden = true;
           }
+          markPlaying();
         });
+        // A song may have been picked while the player was still starting up
+        if (selected) load(true);
       });
     };
     const script = document.createElement('script');
@@ -326,15 +417,13 @@ if (musicPlayerEl) {
       fallbackFrame = document.createElement('iframe');
       fallbackFrame.title = 'Spotify player';
       fallbackFrame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-      fallbackFrame.src = `https://open.spotify.com/embed/track/${currentSong().id}?utm_source=generator&theme=0`;
+      const current = selected ? MUSIC_RECORDS[selected.ri].songs[selected.si] : first;
+      fallbackFrame.src = `https://open.spotify.com/embed/track/${current.id}?utm_source=generator&theme=0`;
       embedEl.replaceChildren(fallbackFrame);
     }, 5000);
   };
 
-  renderCovers();
-  renderSongs();
-
-  // Load Spotify's player only once the card is close to being on screen
+  // Load Spotify's player only once the section is close to being on screen
   if ('IntersectionObserver' in window) {
     const musicObserver = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
@@ -342,7 +431,7 @@ if (musicPlayerEl) {
         startPlayer();
       }
     }, { rootMargin: '300px 0px' });
-    musicObserver.observe(musicPlayerEl);
+    musicObserver.observe(musicShelf);
   } else {
     startPlayer();
   }

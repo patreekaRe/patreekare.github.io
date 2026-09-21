@@ -7,11 +7,14 @@ if (mount && window.WebGLRenderingContext) {
 
   const BAR_COUNT = 48;
   const BASE_RADIUS = 1.55;
-  const COLOR_STOPS = [
-    new THREE.Color("#bc6c25"), // rust
-    new THREE.Color("#dda15e"), // tan
-    new THREE.Color("#606c38"), // olive
-  ];
+  // Two palettes: warm earth tones by day, glowing amber by night. The page's theme toggle
+  // dispatches a "themechange" event and the bars are recolored to match.
+  const PALETTES = {
+    light: ["#bc6c25", "#dda15e", "#606c38"],
+    dark: ["#ffcf8a", "#f0a352", "#d9822f"],
+  };
+  const isDark = () => document.documentElement.getAttribute("data-theme") === "dark";
+  let COLOR_STOPS = PALETTES[isDark() ? "dark" : "light"].map((c) => new THREE.Color(c));
 
   const colorAt = (t) => {
     const scaled = (t % 1) * COLOR_STOPS.length;
@@ -50,7 +53,7 @@ if (mount && window.WebGLRenderingContext) {
   }
 
   const coreGeo = new THREE.CircleGeometry(0.22, 32);
-  const coreMat = new THREE.MeshBasicMaterial({ color: "#283618", transparent: true, opacity: 0.15 });
+  const coreMat = new THREE.MeshBasicMaterial({ color: isDark() ? "#ffcf8a" : "#283618", transparent: true, opacity: isDark() ? 0.2 : 0.15 });
   const core = new THREE.Mesh(coreGeo, coreMat);
   scene.add(core);
 
@@ -103,6 +106,14 @@ if (mount && window.WebGLRenderingContext) {
   let rafId = null;
   const clock = new THREE.Clock();
   let lastT = 0;
+
+  window.addEventListener("themechange", () => {
+    COLOR_STOPS = PALETTES[isDark() ? "dark" : "light"].map((c) => new THREE.Color(c));
+    bars.forEach((bar, i) => bar.material.color.copy(colorAt(i / BAR_COUNT)));
+    coreMat.color.set(isDark() ? "#ffcf8a" : "#283618");
+    coreMat.opacity = isDark() ? 0.2 : 0.15;
+    if (prefersReducedMotion) renderer.render(scene, camera);
+  });
 
   const renderStaticFrame = () => {
     bars.forEach((bar) => {

@@ -9,8 +9,16 @@
   --tan: #dda15e;
   --white: #ffffff;
 
+  /* Theme tokens: light values here, dark values in html[data-theme="dark"] below */
+  --on-dark: #fefae0;
+  --on-accent: #283618;
+  --deep: #283618;
+  --nav-bg: rgba(40, 54, 24, 0.85);
+  --nav-bg-solid: rgba(40, 54, 24, 0.97);
+  --edge: rgba(96, 108, 56, 0.08);
+
   --font-body: "Poppins", sans-serif;
-  --font-head: "Roboto Slab", serif;
+  --font-head: "Fraunces", "Roboto Slab", serif;
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -87,7 +95,7 @@ body::before {
   left: 0;
   width: 100%;
   height: var(--nav-h);
-  background: rgba(40, 54, 24, 0.85);
+  background: var(--nav-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(221, 161, 94, 0.25);
@@ -113,7 +121,7 @@ body::before {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--cream);
+  color: var(--on-dark);
   font-family: var(--font-head);
   font-weight: 700;
   font-size: 1.25rem;
@@ -149,12 +157,12 @@ body::before {
 }
 
 #navbar a:not(.nav-brand):hover {
-  color: var(--white);
+  color: var(--on-dark);
   background: rgba(221, 161, 94, 0.15);
 }
 
 #navbar a.active {
-  color: var(--ink);
+  color: var(--on-accent);
   background: var(--tan);
 }
 
@@ -174,7 +182,7 @@ body::before {
   display: block;
   height: 2px;
   width: 100%;
-  background: var(--cream);
+  background: var(--on-dark);
   border-radius: 2px;
   transition: transform .25s var(--ease), opacity .25s var(--ease);
 }
@@ -385,8 +393,8 @@ h1 {
   max-width: var(--container);
   margin: 0 auto;
   padding: 2.5rem;
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--deep);
+  color: var(--on-dark);
   border-radius: var(--radius-lg);
   text-decoration: none;
   box-shadow: var(--shadow-md);
@@ -407,7 +415,7 @@ h1 {
 }
 
 .walkthrough-text h2 {
-  color: var(--cream);
+  color: var(--on-dark);
   margin-bottom: 0.6rem;
 }
 
@@ -510,7 +518,7 @@ h3 {
   display: flex;
   gap: 1.5rem;
   align-items: flex-start;
-  border: 1px solid rgba(96, 108, 56, 0.08);
+  border: 1px solid var(--edge);
   transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s var(--ease);
 }
 
@@ -570,7 +578,7 @@ h3 {
   padding: 1rem;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(96, 108, 56, 0.08);
+  border: 1px solid var(--edge);
   transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s var(--ease);
 }
 
@@ -673,15 +681,15 @@ h3 {
 .contact-card {
   max-width: 620px;
   margin: 0 auto;
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--deep);
+  color: var(--on-dark);
   border-radius: var(--radius-lg);
   padding: 3rem 2.5rem;
   box-shadow: var(--shadow-lg);
 }
 
 .contact-card h2 {
-  color: var(--cream);
+  color: var(--on-dark);
 }
 
 .contact-card .section-intro {
@@ -707,7 +715,7 @@ h3 {
   background: rgba(254, 250, 224, 0.06);
   border: 1px solid rgba(254, 250, 224, 0.12);
   text-decoration: none;
-  color: var(--cream);
+  color: var(--on-dark);
   font-weight: 500;
   transition: background .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
 }
@@ -781,7 +789,7 @@ h3 {
     flex-direction: column;
     align-items: stretch;
     gap: 0;
-    background: rgba(40, 54, 24, 0.97);
+    background: var(--nav-bg-solid);
     backdrop-filter: blur(10px);
     max-height: 0;
     overflow: hidden;
@@ -1098,7 +1106,7 @@ h3 {
   background: var(--white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(96, 108, 56, 0.08);
+  border: 1px solid var(--edge);
   padding: 2.25rem 2.5rem;
   margin-bottom: 1.5rem;
 }
@@ -1213,22 +1221,283 @@ h3 {
   gap: 0.6rem;
 }
 
-/* Music card with a built-in Spotify player */
-.featured-music {
-  grid-column: 1 / -1;
+/* ================================================================
+   Nav: theme toggle
+   ================================================================ */
+
+.nav-inner {
+  gap: 0.5rem;
 }
 
-.featured-music .featured-body {
-  flex: 1;
-  min-width: 0;
+.nav-brand {
+  margin-right: auto;
 }
 
-.music-player {
+#navLinks {
+  order: 1;
+}
+
+.theme-toggle {
+  order: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 1px solid rgba(254, 250, 224, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-dark);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.theme-toggle:hover {
+  background-color: var(--tan);
+  border-color: var(--tan);
+  color: #1d140c;
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--tan);
+  outline-offset: 3px;
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.theme-toggle .icon-sun,
+html[data-theme="dark"] .theme-toggle .icon-moon {
+  display: none;
+}
+
+html[data-theme="dark"] .theme-toggle .icon-sun {
+  display: block;
+}
+
+.nav-toggle {
+  order: 3;
+}
+
+/* ================================================================
+   Music: a shelf of records. Click a cover to flip it and see its songs.
+   ================================================================ */
+
+.music-tags {
+  justify-content: center;
+  margin: 1rem 0 0;
+}
+
+.crate-shelf {
+  display: flex;
+  justify-content: safe center;
   gap: 1.5rem;
-  margin-top: 1.5rem;
-  align-items: start;
+  padding: 3.25rem 0.75rem 1.5rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.record {
+  position: relative;
+  flex: 0 0 clamp(200px, 21vw, 245px);
+  aspect-ratio: 1;
+  scroll-snap-align: center;
+  perspective: 1100px;
+}
+
+/* The vinyl tucked behind the sleeve: it peeks out on hover and spins while its song plays */
+.record-disc {
+  position: absolute;
+  inset: 5% 6% auto 6%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--rust) 0 15%, #1a1510 15.5% 17%, transparent 17.5%),
+    repeating-radial-gradient(circle at 50% 50%, #17130f 0 2px, #241d17 2px 4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.55s var(--ease);
+}
+
+.record:hover .record-disc,
+.record:focus-within .record-disc,
+.record.active .record-disc {
+  transform: translateY(-17%);
+}
+
+.record.flipped .record-disc {
+  transform: translateY(-4%);
+}
+
+.record.playing .record-disc {
+  animation: disc-spin 3.2s linear infinite;
+}
+
+@keyframes disc-spin {
+  from { transform: translateY(-17%) rotate(0deg); }
+  to { transform: translateY(-17%) rotate(360deg); }
+}
+
+.record-flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.8s var(--ease);
+}
+
+.record.flipped .record-flip {
+  transform: rotateY(180deg);
+}
+
+.record-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.record-front {
+  padding: 0;
+  border: 0;
+  background: var(--deep);
+  cursor: pointer;
+}
+
+.record-front img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.record-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 14, 9, 0.78);
+  color: #f6ecd6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+.record:hover .record-hint,
+.record-front:focus-visible .record-hint {
+  opacity: 1;
+  transform: none;
+}
+
+.record-front:focus-visible {
+  outline: 3px solid var(--tan);
+  outline-offset: 3px;
+}
+
+.record.active .record-front::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px var(--rust);
+  pointer-events: none;
+}
+
+.record-back {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem 0.7rem;
+  transform: rotateY(180deg);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 190, 130, 0.05) 0 2px, transparent 2px 14px),
+    var(--deep);
+  color: var(--on-dark);
+  border: 1px solid rgba(255, 190, 130, 0.18);
+}
+
+.record-back-title {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tan);
+}
+
+.record-songs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-songs button {
+  width: 100%;
+  padding: 0.38rem 0.75rem;
+  border: 1.5px solid rgba(255, 190, 130, 0.3);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 246, 225, 0.06);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.record-songs button:hover {
+  background: rgba(255, 190, 130, 0.18);
+  transform: translateX(3px);
+}
+
+.record-songs button[aria-current="true"] {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #fff;
+}
+
+.record-songs button:focus-visible,
+.record-flip-back:focus-visible {
+  outline: 3px solid var(--tan);
+  outline-offset: 2px;
+}
+
+.record-flip-back {
+  align-self: flex-start;
+  padding: 0.15rem 0;
+  border: 0;
+  background: none;
+  color: rgba(254, 250, 224, 0.7);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.record-flip-back:hover {
+  color: var(--tan);
+}
+
+.music-stage {
+  max-width: 720px;
+  margin: 1.5rem auto 0;
 }
 
 .music-embed iframe {
@@ -1245,93 +1514,190 @@ h3 {
   background: linear-gradient(120deg, var(--cream-dim), var(--cream));
 }
 
-.music-picker-label {
-  margin-bottom: 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--olive);
-}
-
-.music-covers {
-  display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.9rem;
-}
-
-.music-covers button {
-  width: 64px;
-  height: 64px;
-  padding: 0;
-  border: 3px solid transparent;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--cream);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
-}
-
-.music-covers button:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-.music-covers button[aria-pressed="true"] {
-  border-color: var(--rust);
-}
-
-.music-covers img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  pointer-events: none;
-}
-
-.music-songs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.music-songs button {
-  padding: 0.4rem 0.95rem;
-  border: 2px solid var(--tan);
-  border-radius: var(--radius-pill);
-  background: var(--cream);
-  color: var(--ink);
-  font-family: inherit;
+.music-now {
+  margin-top: 0.9rem;
+  text-align: center;
   font-size: 0.85rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
-}
-
-.music-songs button:hover {
-  background: #f3d9a4;
-  transform: translateY(-1px);
-}
-
-.music-songs button[aria-pressed="true"] {
-  background: var(--rust);
-  border-color: var(--rust);
-  color: #fff;
+  color: var(--ink-soft);
 }
 
 .music-note {
-  margin-top: 0.8rem;
+  margin-top: 0.4rem;
+  text-align: center;
   font-size: 0.78rem;
   color: var(--ink-soft);
 }
 
-@media (max-width: 800px) {
-  .music-player {
-    grid-template-columns: 1fr;
+@media (prefers-reduced-motion: reduce) {
+  .record-flip,
+  .record-disc {
+    transition: none;
+  }
+
+  .record.playing .record-disc {
+    animation: none;
   }
 }
 
-.featured-music:hover {
-  transform: none;
+/* ================================================================
+   Dark theme: a studio at night. Warm walnut-black, amber lamp light.
+   ================================================================ */
+
+@media not print {
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --cream: #15100c;
+    --cream-dim: #1c1611;
+    --ink: #f2e8d4;
+    --ink-soft: #c9bba2;
+    --olive: #a9b878;
+    --rust: #d9822f;
+    --rust-dark: #f0a352;
+    --tan: #e3a55b;
+    --white: #211a14;
+
+    --on-dark: #f6ecd6;
+    --on-accent: #1d140c;
+    --deep: #0e0a07;
+    --nav-bg: rgba(14, 10, 7, 0.82);
+    --nav-bg-solid: rgba(14, 10, 7, 0.97);
+    --edge: rgba(255, 190, 130, 0.1);
+
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 22px 50px rgba(0, 0, 0, 0.55);
+  }
+
+  html[data-theme="dark"] body::before {
+    background:
+      radial-gradient(640px 460px at 88% 4%, rgba(255, 176, 92, 0.16), transparent 62%),
+      radial-gradient(520px 420px at 6% 40%, rgba(217, 130, 47, 0.08), transparent 60%),
+      radial-gradient(560px 420px at 70% 96%, rgba(217, 130, 47, 0.08), transparent 60%);
+  }
+
+  html[data-theme="dark"] h1,
+  html[data-theme="dark"] h2 {
+    color: #f8eed9;
+  }
+
+  html[data-theme="dark"] .subtitle {
+    color: var(--tan);
+  }
+
+  html[data-theme="dark"] #welcome-section {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* Walnut slats fade in from the left like the wall in the studio, with a lamp glow behind the portrait */
+  html[data-theme="dark"] #welcome-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(520px 520px at 74% 46%, rgba(255, 176, 92, 0.2), transparent 68%),
+      repeating-linear-gradient(90deg, rgba(255, 190, 130, 0.055) 0 2px, transparent 2px 26px);
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+  }
+
+  html[data-theme="dark"] .hero-visual::before {
+    opacity: 0.55;
+    filter: blur(6px);
+  }
+
+  html[data-theme="dark"] .profile-ring {
+    background: #2a2018;
+    box-shadow: 0 0 0 1px rgba(255, 190, 130, 0.25), 0 0 60px rgba(255, 176, 92, 0.25), var(--shadow-lg);
+  }
+
+  html[data-theme="dark"] .profile-image {
+    border-color: #f1e2c4;
+  }
+
+  html[data-theme="dark"] .btn-primary {
+    box-shadow: 0 8px 26px rgba(217, 130, 47, 0.4);
+  }
+
+  html[data-theme="dark"] .btn-secondary {
+    border-color: rgba(246, 236, 214, 0.5);
+  }
+
+  html[data-theme="dark"] .btn-secondary:hover {
+    border-color: var(--ink);
+  }
+
+  html[data-theme="dark"] .walkthrough-card,
+  html[data-theme="dark"] .contact-card {
+    border: 1px solid rgba(255, 190, 130, 0.16);
+    background:
+      radial-gradient(420px 220px at 90% 0%, rgba(255, 176, 92, 0.13), transparent 70%),
+      var(--deep);
+  }
+
+  html[data-theme="dark"] .featured-icon {
+    background: linear-gradient(155deg, #2b2119, #3a2a1a);
+  }
+
+  html[data-theme="dark"] .featured-card,
+  html[data-theme="dark"] .project-tile,
+  html[data-theme="dark"] #about {
+    border: 1px solid var(--edge);
+  }
+
+  html[data-theme="dark"] .featured-card:hover,
+  html[data-theme="dark"] .project-tile:hover {
+    border-color: rgba(227, 165, 91, 0.45);
+  }
+
+  html[data-theme="dark"] .project-tile img {
+    background: #2a2118;
+  }
+
+  html[data-theme="dark"] .tag {
+    background: #1c1611;
+    border-color: rgba(227, 165, 91, 0.45);
+    color: var(--tan);
+  }
+
+  html[data-theme="dark"] .tag-wip {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: #1d140c;
+  }
+
+  html[data-theme="dark"] .more-toggle {
+    background: #211a14;
+    border-color: rgba(227, 165, 91, 0.5);
+  }
+
+  html[data-theme="dark"] .more-toggle:hover {
+    background: #2b2119;
+  }
+
+  html[data-theme="dark"] .more-count {
+    color: #1d140c;
+  }
+
+  html[data-theme="dark"] .music-embed:empty {
+    background: linear-gradient(120deg, #1c1611, #241b14);
+  }
+
+  html[data-theme="dark"] .record-back {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 190, 130, 0.05) 0 2px, transparent 2px 14px),
+      #120d09;
+  }
+
+  html[data-theme="dark"] .site-footer {
+    color: var(--ink-soft);
+  }
+}
+
+/* Featured cards sit three across, so the icon goes above the text instead of beside it */
+.featured-card {
+  flex-direction: column;
+  gap: 1.1rem;
 }
