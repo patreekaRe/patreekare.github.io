@@ -89,10 +89,32 @@ const heroVisual = document.querySelector('.hero-visual');
 const scrollCue = document.querySelector('.scroll-cue');
 let scrollTicking = false;
 
+// The tonearm in the corner: it rests beside the record, drops on after a moment, then tracks
+// toward the label as you scroll down the page. Clicking it goes back to the top.
+const ARM_REST = -24; // degrees: needle hovering beside the record
+const ARM_SWEEP = 28; // degrees: outer groove to inner groove
+const tonearmArm = document.getElementById('tonearmArm');
+let armDropped = reduceMotion;
+if (tonearmArm && !reduceMotion) {
+  setTimeout(() => {
+    armDropped = true;
+    updateOnScroll();
+    setTimeout(() => tonearmArm.classList.add('tracking'), 1100);
+  }, 1400);
+}
+const toTop = document.getElementById('toTop');
+if (toTop) {
+  toTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
+}
+
 const updateOnScroll = () => {
   scrollTicking = false;
   const max = document.documentElement.scrollHeight - window.innerHeight;
-  if (progressBar) progressBar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+  const progress = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+  if (progressBar) progressBar.style.transform = `scaleX(${progress})`;
+  if (tonearmArm) tonearmArm.style.transform = `rotate(${armDropped ? progress * ARM_SWEEP : ARM_REST}deg)`;
   if (!reduceMotion && window.scrollY < window.innerHeight * 1.5) {
     if (heroVisual) heroVisual.style.translate = `0 ${window.scrollY * 0.1}px`;
     if (scrollCue) scrollCue.style.opacity = Math.max(0, 0.75 - window.scrollY / 260);
@@ -251,14 +273,11 @@ const musicShelf = document.getElementById('musicShelf');
 if (musicShelf) {
   const embedEl = document.getElementById('musicEmbed');
   const nowEl = document.getElementById('musicNow');
-  const noteEl = document.getElementById('musicNote');
   const cards = [];
   let controller = null;
   let fallbackFrame = null;
   let started = false;
   let playing = false;
-  let playedOnce = false;
-  let nudgeTimer = null;
   let selected = null; // { ri, si }
 
   const songLabel = (ri) => MUSIC_RECORDS[ri].songs.map((s) => s.title).join(', ');
@@ -295,13 +314,6 @@ if (musicShelf) {
       if (autoplay) controller.play();
     } else if (fallbackFrame) {
       fallbackFrame.src = `https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0`;
-    }
-    // Browsers only let the player start itself after you have pressed play in it once
-    clearTimeout(nudgeTimer);
-    if (autoplay && controller && !playedOnce) {
-      nudgeTimer = setTimeout(() => {
-        if (!playing) noteEl.hidden = false;
-      }, 1500);
     }
   };
 
@@ -397,10 +409,6 @@ if (musicShelf) {
         controller = ctl;
         ctl.addListener('playback_update', (e) => {
           playing = !!e.data && !e.data.isPaused;
-          if (playing) {
-            playedOnce = true;
-            noteEl.hidden = true;
-          }
           markPlaying();
         });
         // A song may have been picked while the player was still starting up
