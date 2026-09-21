@@ -131,7 +131,7 @@ updateOnScroll();
 // Reveal sections and cards as they scroll into view, staggered within each group
 if (!reduceMotion && 'IntersectionObserver' in window) {
   const targets = document.querySelectorAll(
-    '.section-head, .walkthrough-card, .featured-card, .project-tile, .about-block, .contact-card, .resume-card'
+    '.section-head, .walkthrough-card, .showcase, .project-tile, .about-block, .contact-card, .resume-card'
   );
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -145,7 +145,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
   }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
 
   targets.forEach((el) => {
-    const siblings = [...el.parentElement.children].filter((c) => c.matches('.featured-card, .project-tile, .about-block, .resume-card'));
+    const siblings = [...el.parentElement.children].filter((c) => c.matches('.project-tile, .about-block, .resume-card'));
     const index = siblings.indexOf(el);
     el.style.setProperty('--d', `${index < 0 ? 0 : (index % 4) * 0.09}s`);
     el.classList.add('reveal');
@@ -155,7 +155,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 
 if (finePointer && !reduceMotion) {
   // Cards tilt toward the cursor and a warm glow follows it
-  document.querySelectorAll('.featured-card, .project-tile').forEach((card) => {
+  document.querySelectorAll('.project-tile').forEach((card) => {
     let frame = 0;
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
@@ -204,6 +204,133 @@ if (finePointer && !reduceMotion) {
     });
   }
 }
+
+// Featured projects: one at a time, cycling on its own until you touch it
+(() => {
+  const root = document.getElementById('showcase');
+  if (!root) return;
+  const viewport = document.getElementById('showcaseViewport');
+  const slides = [...root.querySelectorAll('.slide')];
+  const pips = document.getElementById('showcasePips');
+  const pathEl = document.getElementById('showcasePath');
+  const countEl = document.getElementById('showcaseCount');
+  const CYCLE = 8000;
+  let index = 0;
+  let timer = 0;
+  let hovering = false;
+  let stopped = false; // once someone interacts, stop auto-cycling for good
+  let onScreen = true;
+
+  const pipButtons = slides.map((slide, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'showcase-pip';
+    b.setAttribute('aria-label', `Show project ${i + 1}: ${slide.querySelector('h3').textContent}`);
+    b.addEventListener('click', () => { stopped = true; show(i); });
+    pips.appendChild(b);
+    return b;
+  });
+
+  const pad = (n) => String(n).padStart(2, '0');
+
+  function show(next, dir) {
+    next = (next + slides.length) % slides.length;
+    if (dir === undefined) dir = next >= index ? 1 : -1;
+    slides.forEach((slide, i) => {
+      const active = i === next;
+      // Park the incoming slide on the side it enters from, without animating there
+      if (active && i !== index) {
+        slide.style.transition = 'none';
+        slide.classList.toggle('from-left', dir < 0);
+        void slide.offsetWidth;
+        slide.style.transition = '';
+      }
+      slide.classList.toggle('is-active', active);
+      slide.toggleAttribute('inert', !active);
+      slide.setAttribute('aria-hidden', String(!active));
+      if (!active && i === index) slide.classList.toggle('from-left', dir > 0);
+    });
+    index = next;
+    pipButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === next)));
+    pathEl.textContent = slides[next].dataset.path;
+    countEl.textContent = `${pad(next + 1)} / ${pad(slides.length)}`;
+    restart();
+  }
+
+  // Restart the fill animation on the active pip and the timer
+  function restart() {
+    clearTimeout(timer);
+    root.classList.remove('auto');
+    void root.offsetWidth;
+    if (stopped || reduceMotion) return;
+    root.classList.add('auto');
+    root.style.setProperty('--cycle', `${CYCLE}ms`);
+    if (!hovering && onScreen) timer = setTimeout(() => show(index + 1, 1), CYCLE);
+  }
+
+  function pause(on) {
+    root.classList.toggle('paused', on);
+    if (on) clearTimeout(timer);
+    else if (!stopped && !reduceMotion) restart();
+  }
+
+  root.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hovering = true; pause(true); } });
+  root.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { hovering = false; pause(false); } });
+  root.addEventListener('focusin', () => pause(true));
+  root.addEventListener('focusout', () => { if (!hovering) pause(false); });
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      if (onScreen) { if (!hovering) pause(false); } else clearTimeout(timer);
+    }, { threshold: 0.3 }).observe(root);
+  }
+
+  document.getElementById('showcasePrev').addEventListener('click', () => { stopped = true; show(index - 1, -1); });
+  document.getElementById('showcaseNext').addEventListener('click', () => { stopped = true; show(index + 1, 1); });
+
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { stopped = true; show(index - 1, -1); }
+    if (e.key === 'ArrowRight') { stopped = true; show(index + 1, 1); }
+  });
+
+  // Swipe or drag sideways to change project. A drag never counts as a click on the link.
+  let startX = 0;
+  let startY = 0;
+  let dragging = false;
+  let moved = false;
+  viewport.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    dragging = true;
+    moved = false;
+  });
+  viewport.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    if (Math.abs(e.clientX - startX) > 10 && Math.abs(e.clientX - startX) > Math.abs(e.clientY - startY)) {
+      moved = true;
+      viewport.classList.add('dragging');
+    }
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    viewport.classList.remove('dragging');
+    const dx = e.clientX - startX;
+    if (moved && Math.abs(dx) > 50) {
+      stopped = true;
+      show(index + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    }
+  };
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', () => { dragging = false; viewport.classList.remove('dragging'); });
+  viewport.addEventListener('click', (e) => {
+    if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+  }, true);
+
+  show(0, 1);
+})();
 
 // Coursework: two highlights up front, the rest tucked behind a "More projects" button
 const moreToggle = document.getElementById('moreToggle');

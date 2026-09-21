@@ -159,65 +159,82 @@
       </p>
     </div>
 
-    <div class="featured-grid">
+    <div class="showcase" id="showcase" role="region" aria-roledescription="carousel" aria-label="Featured projects">
 
-      <article class="featured-card">
-        <div class="featured-icon" aria-hidden="true">🃏</div>
-        <div class="featured-body">
-          <div class="tag-row">
-            <span class="tag">JavaScript</span>
-            <span class="tag">Game Design</span>
-            <span class="tag">Roguelike</span>
-          </div>
-          <h3>PokéDB: Roguelike Deck Battler</h3>
-          <p>
-            A browser deck-battler in plain HTML, CSS and JavaScript. Pick a starter,
-            climb a branching Slay-the-Spire-style map, grow your deck with new moves
-            and relics, evolve, and beat three bosses. Every enemy is a real Pokémon
-            with its own move pattern. A free, non-commercial fan project.
-          </p>
-          <a class="featured-link" href="https://patreekare.github.io/pokeDB-3/" target="_blank" rel="noopener">Play it live</a>
-        </div>
-      </article>
+      <div class="showcase-bar" aria-hidden="true">
+        <span class="showcase-lights"><i></i><i></i><i></i></span>
+        <span class="showcase-path" id="showcasePath">~/projects/pokedb</span>
+        <span class="showcase-count" id="showcaseCount">01 / 04</span>
+      </div>
 
-      <article class="featured-card">
-        <div class="featured-icon" aria-hidden="true">🐴</div>
-        <div class="featured-body">
-          <div class="tag-row">
-            <span class="tag">JavaScript</span>
-            <span class="tag">localStorage</span>
-            <span class="tag">Responsive</span>
-          </div>
-          <h3>WoW Weekly Mount Tracker</h3>
-          <p>
-            A weekly checklist for World of Warcraft mount hunters. Track 50 mounts
-            across all your characters, with per-raid progress, search and filters, and
-            an automatic weekly reset with a live countdown. Everything saves in the
-            browser, and it works on a phone.
-          </p>
-          <a class="featured-link" href="https://patreekare.github.io/WoWTracker/" target="_blank" rel="noopener">Open the tracker</a>
-        </div>
-      </article>
+      <div class="showcase-viewport" id="showcaseViewport">
 
-      <article class="featured-card">
-        <div class="featured-icon" aria-hidden="true">🕷️</div>
-        <div class="featured-body">
-          <div class="tag-row">
-            <span class="tag tag-wip">In development</span>
-            <span class="tag">Unity 6</span>
-            <span class="tag">C#</span>
-            <span class="tag">Game Architecture</span>
+        <article class="slide is-active" data-path="~/projects/pokedb" aria-label="1 of 4">
+          <div class="slide-shot"><img src="images/featured/pokemon.jpg" alt="PokéDB title screen" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-live"></span>Live</p>
+            <h3>PokéDB: Roguelike Deck Battler</h3>
+            <p class="slide-desc">
+              Pick a starter, climb a branching Slay-the-Spire-style map, grow your deck with
+              new moves and relics, and beat three bosses. Every enemy is a real Pokémon with
+              its own move pattern. A free, non-commercial fan project.
+            </p>
+            <ul class="slide-tags"><li>JavaScript</li><li>Game design</li><li>Roguelike</li></ul>
+            <a class="slide-link" href="https://patreekare.github.io/pokeDB-3/" target="_blank" rel="noopener">Play it live</a>
           </div>
-          <h3>Marvel Champions: Spider-Man vs. Rhino</h3>
-          <p>
-            A digital solo app for Marvel Champions: The Card Game, built from scratch
-            in Unity and C#. I play the physical game, and this is me turning real rules
-            knowledge into working game logic: singleton managers, card effects routed by
-            effectId, and async callbacks for player choices like targeting. Past a dozen
-            implementation milestones and still in active development.
-          </p>
-        </div>
-      </article>
+        </article>
+
+        <article class="slide" data-path="~/projects/wow-tracker" aria-label="2 of 4">
+          <div class="slide-shot"><img src="images/featured/wow.jpg" alt="WoW Weekly Mount Tracker screenshot" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-live"></span>Live</p>
+            <h3>WoW Weekly Mount Tracker</h3>
+            <p class="slide-desc">
+              A weekly checklist for World of Warcraft mount hunters. Track 50 mounts across
+              all your characters, with per-raid progress, search and filters, and an automatic
+              weekly reset with a live countdown. It saves in the browser and works on a phone.
+            </p>
+            <ul class="slide-tags"><li>JavaScript</li><li>localStorage</li><li>Responsive</li></ul>
+            <a class="slide-link" href="https://patreekare.github.io/WoWTracker/" target="_blank" rel="noopener">Open the tracker</a>
+          </div>
+        </article>
+
+        <article class="slide" data-path="~/projects/marvel-champions" aria-label="3 of 4">
+          <div class="slide-shot"><img src="images/featured/marvel.jpg" alt="Marvel Champions title card" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-wip"></span>In development</p>
+            <h3>Marvel Champions: Spider-Man vs. Rhino</h3>
+            <p class="slide-desc">
+              A digital solo app for the card game, built from scratch in Unity and C#. I play
+              the physical game, and this turns real rules knowledge into working game logic:
+              singleton managers, card effects routed by effectId, and async callbacks for
+              player choices like targeting.
+            </p>
+            <ul class="slide-tags"><li>Unity 6</li><li>C#</li><li>Game architecture</li></ul>
+          </div>
+        </article>
+
+        <article class="slide" data-path="~/projects/slay-the-web" aria-label="4 of 4">
+          <div class="slide-shot"><img src="images/featured/slay.jpg" alt="Slay the Web Spider-Man reskin title card" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coming soon</p>
+            <h3>Slay the Web: Spider-Man Reskin</h3>
+            <p class="slide-desc">
+              A Marvel Champions-flavored reskin of the open-source Slay the Web deck-builder,
+              with Spider-Man as the starting hero. Built on the AGPL-licensed original by
+              Oskar Rough.
+            </p>
+            <ul class="slide-tags"><li>JavaScript</li><li>Reskin</li><li>Open source</li></ul>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="showcase-controls">
+        <button type="button" class="showcase-arrow" id="showcasePrev" aria-label="Previous project">&larr;</button>
+        <div class="showcase-pips" id="showcasePips"></div>
+        <button type="button" class="showcase-arrow" id="showcaseNext" aria-label="Next project">&rarr;</button>
+      </div>
 
     </div>
   </section>
