@@ -404,6 +404,8 @@ if (musicShelf) {
   let controller = null;
   let fallbackFrame = null;
   let started = false;
+  let creating = false;
+  let startPlayer = () => {};
   let playing = false;
   let selected = null; // { ri, si }
 
@@ -419,6 +421,7 @@ if (musicShelf) {
   };
 
   const flipRecord = (ri) => {
+    startPlayer();
     cards.forEach((_, i) => setFlipped(i, i === ri));
   };
 
@@ -433,88 +436,26 @@ if (musicShelf) {
     setNow();
   };
 
-  // Songs with a `file` play through a plain <audio> element started by the tap itself, which is the
-  // only kind of playback every phone allows. Songs without one use Spotify's embedded player.
-  const audio = new Audio();
-  audio.preload = 'none';
-  let localActive = false;
-  let wantPlay = false; // Spotify was asked to play and hasn't started yet
+  // Same approach as the record browser in the studio: the song you tap is what gets loaded and played.
+  let want = { id: '', play: false };
+  let loadedId = '';
 
-  const bar = document.createElement('div');
-  bar.className = 'music-bar';
-  bar.hidden = true;
-  const barPlay = document.createElement('button');
-  barPlay.type = 'button';
-  barPlay.className = 'music-bar-play';
-  barPlay.setAttribute('aria-label', 'Play or pause');
-  const barTitle = document.createElement('span');
-  barTitle.className = 'music-bar-title';
-  const barSeek = document.createElement('input');
-  barSeek.type = 'range';
-  barSeek.className = 'music-bar-seek';
-  barSeek.min = '0';
-  barSeek.max = '1000';
-  barSeek.value = '0';
-  barSeek.setAttribute('aria-label', 'Seek');
-  const barSpotify = document.createElement('a');
-  barSpotify.className = 'music-bar-spotify';
-  barSpotify.target = '_blank';
-  barSpotify.rel = 'noopener';
-  barSpotify.textContent = 'Spotify ↗';
-  bar.append(barPlay, barTitle, barSeek, barSpotify);
-  embedEl.before(bar);
-
-  barPlay.addEventListener('click', () => (audio.paused ? audio.play() : audio.pause()));
-  barSeek.addEventListener('input', () => {
-    if (audio.duration) audio.currentTime = (barSeek.value / 1000) * audio.duration;
-  });
-  audio.addEventListener('timeupdate', () => {
-    if (audio.duration) barSeek.value = String(Math.round((audio.currentTime / audio.duration) * 1000));
-  });
-  ['play', 'pause', 'ended'].forEach((type) => audio.addEventListener(type, () => {
-    if (!localActive) return;
-    playing = !audio.paused && !audio.ended;
-    bar.classList.toggle('is-playing', playing);
-    barPlay.textContent = playing ? '❚❚' : '▶';
-    markPlaying();
-  }));
-
-  const stopLocal = () => {
-    if (!localActive) return;
-    localActive = false;
-    audio.pause();
-    bar.hidden = true;
-    embedEl.hidden = false;
-  };
-
-  const playLocal = (song) => {
-    if (controller) controller.pause();
-    wantPlay = false;
-    localActive = true;
-    embedEl.hidden = true;
-    bar.hidden = false;
-    barTitle.textContent = song.title;
-    barSpotify.href = `https://open.spotify.com/track/${song.id}`;
-    barSeek.value = '0';
-    audio.src = song.file;
-    // Called straight from the tap, so phones allow it
-    audio.play().catch(() => {});
+  const sendToPlayer = () => {
+    if (!controller) return;
+    if (want.id !== loadedId) {
+      loadedId = want.id;
+      controller.loadUri(`spotify:track:${want.id}`);
+    }
+    if (want.play) controller.play();
   };
 
   const load = (autoplay) => {
-    if (!started || !selected) return;
+    if (!selected) return;
     const song = MUSIC_RECORDS[selected.ri].songs[selected.si];
-    if (controller) {
-      wantPlay = !!autoplay;
-      controller.loadUri(`spotify:track:${song.id}`);
-      if (autoplay) {
-        controller.play();
-        // Some browsers drop a play() sent before the new track is ready, so send it again then
-        setTimeout(() => { if (wantPlay && !localActive) controller.play(); }, 600);
-      }
-    } else if (fallbackFrame) {
-      fallbackFrame.src = `https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0`;
-    }
+    want = { id: song.id, play: autoplay };
+    startPlayer();
+    if (controller) sendToPlayer();
+    else if (fallbackFrame) fallbackFrame.src = `https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0`;
   };
 
   const chooseSong = (ri, si) => {
@@ -525,13 +466,7 @@ if (musicShelf) {
     });
     playing = false;
     markPlaying();
-    const song = MUSIC_RECORDS[ri].songs[si];
-    if (song.file) {
-      playLocal(song);
-    } else {
-      stopLocal();
-      load(true);
-    }
+    load(true);
   };
 
   MUSIC_RECORDS.forEach((record, ri) => {
@@ -604,54 +539,71 @@ if (musicShelf) {
     }
   });
 
-  const startPlayer = () => {
-    if (started) return;
-    started = true;
+  // Spotify's script loads as the section nears the screen. The player itself is created by the first
+  // tap on a record, because browsers are far more willing to let a player start itself when it was
+  // made in response to a tap (this is also how the studio's record browser does it).
+  let api = null;
+  let apiRequested = false;
+
+  const createController = () => {
+    if (!api || controller || creating) return;
+    creating = true;
     const first = MUSIC_RECORDS[0].songs[0];
     const mount = document.createElement('div');
-    embedEl.appendChild(mount);
-    window.onSpotifyIframeApiReady = (api) => {
-      api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${first.id}` }, (ctl) => {
-        controller = ctl;
-        ctl.addListener('playback_update', (e) => {
-          if (localActive) return;
-          playing = !!e.data && !e.data.isPaused;
-          if (playing) wantPlay = false;
-          markPlaying();
-        });
-        ctl.addListener('ready', () => {
-          if (wantPlay && !localActive) ctl.play();
-        });
-        // A song may have been picked while the player was still starting up
-        if (selected && !localActive) load(true);
+    embedEl.replaceChildren(mount);
+    loadedId = first.id;
+    api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${first.id}` }, (ctl) => {
+      controller = ctl;
+      creating = false;
+      ctl.addListener('playback_update', (e) => {
+        playing = !!e.data && !e.data.isPaused;
+        markPlaying();
       });
+      // A song may have been picked while the player was still starting up
+      if (want.id) sendToPlayer();
+    });
+  };
+
+  const loadApi = () => {
+    if (apiRequested) return;
+    apiRequested = true;
+    window.onSpotifyIframeApiReady = (a) => {
+      api = a;
+      if (started) createController();
     };
     const script = document.createElement('script');
     script.src = 'https://open.spotify.com/embed/iframe-api/v1';
     script.async = true;
     document.body.appendChild(script);
+  };
+
+  startPlayer = () => {
+    if (started) return;
+    started = true;
+    loadApi();
+    createController();
     // If Spotify's player script is blocked or slow, fall back to a plain embed
     setTimeout(() => {
-      if (controller || embedEl.querySelector('iframe')) return;
+      if (controller || creating || embedEl.querySelector('iframe')) return;
       fallbackFrame = document.createElement('iframe');
       fallbackFrame.title = 'Spotify player';
       fallbackFrame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-      const current = selected ? MUSIC_RECORDS[selected.ri].songs[selected.si] : first;
+      const current = selected ? MUSIC_RECORDS[selected.ri].songs[selected.si] : MUSIC_RECORDS[0].songs[0];
       fallbackFrame.src = `https://open.spotify.com/embed/track/${current.id}?utm_source=generator&theme=0`;
       embedEl.replaceChildren(fallbackFrame);
     }, 5000);
   };
 
-  // Load Spotify's player only once the section is close to being on screen
+  // Get Spotify's script ready as the section nears the screen
   if ('IntersectionObserver' in window) {
     const musicObserver = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
         musicObserver.disconnect();
-        startPlayer();
+        loadApi();
       }
-    }, { rootMargin: '300px 0px' });
+    }, { rootMargin: '600px 0px' });
     musicObserver.observe(musicShelf);
   } else {
-    startPlayer();
+    loadApi();
   }
 }
