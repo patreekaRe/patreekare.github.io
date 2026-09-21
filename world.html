@@ -592,6 +592,31 @@
       margin: 0;
     }
 
+    .computer-note {
+      align-self: flex-start;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--olive);
+      background: rgba(96, 108, 56, 0.12);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .tv-chip {
+      align-self: flex-start;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--olive);
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .tv-chip.wip { background: var(--rust); }
+    .tv-chip.soon { background: #7a5a2f; }
+
     .computer-open {
       align-self: flex-start;
       font-size: 0.78rem;
@@ -926,6 +951,22 @@
             <button class="computer-nav next" id="computerNext" type="button" aria-label="Next project">&#8250;</button>
           </div>
           <div class="computer-dots" id="computerDots"></div>
+        </div>
+
+        <div class="computer-screen" id="tvPanel" hidden>
+          <div class="computer-bar">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+            <span class="computer-title">channel guide</span>
+            <span class="computer-count" id="tvCount"></span>
+          </div>
+          <div class="computer-stage" id="tvStage">
+            <div class="computer-list" id="tvList"></div>
+            <button class="computer-nav prev" id="tvPrev" type="button" aria-label="Previous channel">&#8249;</button>
+            <button class="computer-nav next" id="tvNext" type="button" aria-label="Next channel">&#8250;</button>
+          </div>
+          <div class="computer-dots" id="tvDots"></div>
         </div>
 
         <button class="panel-close" id="panelClose">Close</button>

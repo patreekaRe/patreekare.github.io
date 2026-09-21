@@ -1189,3 +1189,26 @@ h3 {
     padding: 1.75rem 1.5rem;
   }
 }
+
+/* Link at the bottom of a featured card */
+.featured-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  color: var(--rust-dark);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s var(--ease), gap 0.2s var(--ease);
+}
+
+.featured-link::after {
+  content: "\2197";
+}
+
+.featured-link:hover {
+  border-color: var(--rust-dark);
+  gap: 0.6rem;
+}

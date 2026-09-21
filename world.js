@@ -38,6 +38,86 @@ const RECORDS = [
   },
 ];
 
+// The projects shown on the TV and in the Featured Work screen, one per "channel".
+// Projects with an `image` use a screenshot; the others get a title card drawn in code (`art`).
+const FEATURED_PROJECTS = [
+  {
+    key: "pokemon",
+    title: "PokéDB: Roguelike Deck Battler",
+    desc: "Pick a starter, climb a branching map, grow your deck with moves and relics, and beat three bosses. Plain HTML, CSS and JavaScript; every enemy is a real Pokémon. A fan project.",
+    image: "images/featured/pokemon.jpg",
+    url: "https://patreekare.github.io/pokeDB-3/",
+    status: "live",
+  },
+  {
+    key: "wow",
+    title: "WoW Weekly Mount Tracker",
+    desc: "A weekly checklist for mount hunters: 50 mounts across all your characters, per-raid progress, filters, and an automatic weekly reset with a live countdown.",
+    image: "images/featured/wow.jpg",
+    url: "https://patreekare.github.io/WoWTracker/",
+    status: "live",
+  },
+  {
+    key: "marvel",
+    title: "Marvel Champions: Spider-Man vs. Rhino",
+    desc: "A digital solo app for the card game, built from scratch in Unity and C#. A work in progress: singleton managers, interrupt-driven card effects and async player choices.",
+    art: "marvel",
+    status: "wip",
+  },
+  {
+    key: "slay",
+    title: "Slay the Web: Spider-Man Reskin",
+    desc: "A Marvel Champions-flavored reskin of the open-source Slay the Web deck-builder, with Spider-Man as the starting hero. Coming soon.",
+    art: "slay",
+    status: "soon",
+  },
+];
+
+const FEATURED_STATUS_LABEL = { live: "Live", wip: "In development", soon: "Coming soon" };
+
+// Title cards for projects without a screenshot. Drawn to any size by scaling from 512 x 288.
+function drawFeaturedArt(g, w, h, kind) {
+  const s = w / 512;
+  const bg = g.createLinearGradient(0, 0, w, h);
+  if (kind === "slay") {
+    bg.addColorStop(0, "#3a0f1e");
+    bg.addColorStop(1, "#141a44");
+  } else {
+    bg.addColorStop(0, "#1a2350");
+    bg.addColorStop(1, "#4a1f52");
+  }
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "rgba(255, 255, 255, 0.07)";
+  for (let i = 0; i < 10; i++) g.fillRect(0, i * 30 * s, w, s);
+  g.textAlign = "center";
+  if (kind === "slay") {
+    g.fillStyle = "#ff5a6e";
+    g.font = `800 ${44 * s}px 'Poppins', sans-serif`;
+    g.fillText("SLAY THE WEB", w / 2, 78 * s);
+    g.fillStyle = "#e9f0ff";
+    g.font = `700 ${24 * s}px 'Poppins', sans-serif`;
+    g.fillText("SPIDER-MAN RESKIN", w / 2, 112 * s);
+  } else {
+    g.fillStyle = "#ff5a6e";
+    g.font = `800 ${44 * s}px 'Poppins', sans-serif`;
+    g.fillText("MARVEL", w / 2, 78 * s);
+    g.fillStyle = "#e9f0ff";
+    g.font = `700 ${30 * s}px 'Poppins', sans-serif`;
+    g.fillText("CHAMPIONS", w / 2, 116 * s);
+  }
+  const cards = ["#e4574d", "#3f6fd8", "#f0c05a", "#7fbf8a", "#c77dd6"];
+  cards.forEach((c, i) => {
+    const x = (40 + i * 92) * s;
+    g.fillStyle = c;
+    g.beginPath();
+    g.roundRect(x, 150 * s, 72 * s, 100 * s, 8 * s);
+    g.fill();
+    g.fillStyle = "rgba(255,255,255,0.3)";
+    g.fillRect(x + 8 * s, 160 * s, 56 * s, 40 * s);
+  });
+}
+
 const COURSEWORK_PROJECTS = [
   {
     key: "musician",
@@ -111,6 +191,13 @@ const computerPrevBtn = document.getElementById("computerPrev");
 const computerNextBtn = document.getElementById("computerNext");
 const computerDots = document.getElementById("computerDots");
 const computerCount = document.getElementById("computerCount");
+const tvPanelEl = document.getElementById("tvPanel");
+const tvStage = document.getElementById("tvStage");
+const tvList = document.getElementById("tvList");
+const tvPrevBtn = document.getElementById("tvPrev");
+const tvNextBtn = document.getElementById("tvNext");
+const tvDots = document.getElementById("tvDots");
+const tvCount = document.getElementById("tvCount");
 const playNudge = document.getElementById("playNudge");
 const swipeHint = document.getElementById("swipeHint");
 const crateSheet = document.getElementById("crateSheet");
@@ -1411,39 +1498,115 @@ tvGroup.add(consoleBody);
   leg.position.set(x, 0.165, z);
   tvGroup.add(leg);
 });
-const gameTex = canvasTexture(512, 288, (g, w, h) => {
-  const bg = g.createLinearGradient(0, 0, w, h);
-  bg.addColorStop(0, "#1a2350");
-  bg.addColorStop(1, "#4a1f52");
-  g.fillStyle = bg;
+// The TV shows one featured project per channel: a screenshot (or title card), a channel number
+// and a lower-third with the project name. Changing channel flashes a little static.
+const tvCanvas = document.createElement("canvas");
+tvCanvas.width = 512;
+tvCanvas.height = 288;
+const tvCtx = tvCanvas.getContext("2d");
+const tvTexture = new THREE.CanvasTexture(tvCanvas);
+tvTexture.colorSpace = THREE.SRGBColorSpace;
+tvTexture.anisotropy = 8;
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let tvChannel = 0;
+let tvFlipToken = 0;
+const tvArt = {};
+
+function drawTvChannel(staticAmount = 0) {
+  const g = tvCtx;
+  const w = tvCanvas.width;
+  const h = tvCanvas.height;
+  const project = FEATURED_PROJECTS[tvChannel];
+  g.fillStyle = "#0b0b12";
   g.fillRect(0, 0, w, h);
-  g.fillStyle = "rgba(255, 255, 255, 0.08)";
-  for (let i = 0; i < 10; i++) g.fillRect(0, i * 30, w, 1);
-  g.fillStyle = "#ff5a6e";
-  g.font = "800 44px 'Poppins', sans-serif";
-  g.textAlign = "center";
-  g.fillText("MARVEL", w / 2, 78);
-  g.fillStyle = "#e9f0ff";
-  g.font = "700 30px 'Poppins', sans-serif";
-  g.fillText("CHAMPIONS", w / 2, 116);
+
+  const art = tvArt[project.key];
+  if (art) {
+    // Fill the screen, cropping the picture's edges if its shape differs from the TV's
+    const aw = art.naturalWidth || art.width;
+    const ah = art.naturalHeight || art.height;
+    const scale = Math.max(w / aw, h / ah);
+    g.drawImage(art, (w - aw * scale) / 2, (h - ah * scale) / 2, aw * scale, ah * scale);
+  }
+
+  // Lower third with the channel number, name and status
+  g.fillStyle = "rgba(8, 8, 18, 0.82)";
+  g.fillRect(0, h - 62, w, 62);
   g.fillStyle = "#f0c05a";
-  g.font = "700 20px 'Poppins', sans-serif";
-  g.fillText("WORK IN PROGRESS", w / 2, 138);
-  const cards = ["#e4574d", "#3f6fd8", "#f0c05a", "#7fbf8a", "#c77dd6"];
-  cards.forEach((c, i) => {
-    const x = 40 + i * 92;
-    g.fillStyle = c;
-    g.beginPath();
-    g.roundRect(x, 150, 72, 100, 8);
-    g.fill();
-    g.fillStyle = "rgba(255,255,255,0.3)";
-    g.fillRect(x + 8, 160, 56, 40);
-  });
+  g.fillRect(0, h - 62, w, 3);
+  g.textAlign = "left";
+  g.font = "700 13px 'Poppins', sans-serif";
+  g.fillText(`CH ${tvChannel + 1}`, 16, h - 40);
+  g.textAlign = "right";
+  g.fillStyle = project.status === "live" ? "#7fe0a0" : "#f0c05a";
+  g.fillText(FEATURED_STATUS_LABEL[project.status].toUpperCase(), w - 16, h - 40);
+  g.textAlign = "left";
+  g.fillStyle = "#ffffff";
+  let size = 22;
+  g.font = `700 ${size}px 'Poppins', sans-serif`;
+  while (g.measureText(project.title).width > w - 32 && size > 12) {
+    size -= 1;
+    g.font = `700 ${size}px 'Poppins', sans-serif`;
+  }
+  g.fillText(project.title, 16, h - 14);
+
+  // CRT scanlines
+  g.fillStyle = "rgba(0, 0, 0, 0.13)";
+  for (let y = 0; y < h; y += 3) g.fillRect(0, y, w, 1);
+
+  if (staticAmount > 0) {
+    for (let i = 0; i < 2200; i++) {
+      const v = Math.floor(Math.random() * 255);
+      g.fillStyle = `rgba(${v}, ${v}, ${v}, ${0.35 + 0.6 * staticAmount})`;
+      g.fillRect(Math.random() * w, Math.random() * h, 5 + Math.random() * 14, 2 + Math.random() * 3);
+    }
+  }
+  tvTexture.needsUpdate = true;
+}
+
+function setTvChannel(index, flash = true) {
+  const n = FEATURED_PROJECTS.length;
+  tvChannel = ((index % n) + n) % n;
+  const token = ++tvFlipToken;
+  if (!flash || prefersReducedMotion) {
+    drawTvChannel();
+    return;
+  }
+  let frames = 4;
+  const step = () => {
+    if (token !== tvFlipToken) return;
+    if (frames-- > 0) {
+      drawTvChannel(frames / 4 + 0.25);
+      setTimeout(step, 55);
+    } else {
+      drawTvChannel();
+    }
+  };
+  step();
+}
+
+FEATURED_PROJECTS.forEach((p) => {
+  if (p.image) {
+    const img = new Image();
+    img.onload = () => {
+      tvArt[p.key] = img;
+      if (FEATURED_PROJECTS[tvChannel].key === p.key) drawTvChannel();
+    };
+    img.src = p.image;
+  } else {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 288;
+    drawFeaturedArt(c.getContext("2d"), 512, 288, p.art);
+    tvArt[p.key] = c;
+  }
 });
+drawTvChannel();
+if (document.fonts?.ready) document.fonts.ready.then(() => drawTvChannel());
 const tvBezel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.92, 0.05), charcoalMat);
 tvBezel.position.set(0, 1.2, 0);
 tvGroup.add(tvBezel);
-const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.82), new THREE.MeshBasicMaterial({ map: gameTex }));
+const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.82), new THREE.MeshBasicMaterial({ map: tvTexture }));
 tvScreen.position.set(0, 1.2, 0.03);
 tvGroup.add(tvScreen);
 const tvFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.2), charcoalMat);
@@ -2757,9 +2920,9 @@ const ROOM_ITEMS = [
     key: "work",
     label: "Featured Work",
     position: new THREE.Vector3(-3.9, 0, -4.9),
-    eyebrow: "Selected work · In development",
-    title: "Marvel Champions: Spider-Man vs. Rhino",
-    body: "A work in progress: a digital solo app for Marvel Champions: The Card Game, built from scratch while learning Unity and C#. So far it's a singleton manager architecture with interrupt-driven card effects and async player choices, with more of the rules still to come.",
+    eyebrow: "Featured work",
+    title: "Channel-surf my projects",
+    body: "Flip through what I've been building. Swipe, use the arrows, or press ← / →, and the TV in the room changes channel with you.",
   },
   {
     key: "music",
@@ -2931,9 +3094,10 @@ const KEY_MAP = {
 
 window.addEventListener("keydown", (e) => {
   // With the coursework screen open, the arrow keys flip through the projects instead of walking
-  if (panelOverlay.classList.contains("open") && !computerScreen.hidden) {
-    if (e.code === "ArrowLeft" || e.code === "KeyA") goComputer(computerIndex - 1);
-    else if (e.code === "ArrowRight" || e.code === "KeyD") goComputer(computerIndex + 1);
+  const carousel = !tvPanelEl.hidden ? tvCarousel : !computerScreen.hidden ? computerCarousel : null;
+  if (panelOverlay.classList.contains("open") && carousel) {
+    if (e.code === "ArrowLeft" || e.code === "KeyA") carousel.go(carousel.index - 1);
+    else if (e.code === "ArrowRight" || e.code === "KeyD") carousel.go(carousel.index + 1);
     else if (e.code === "Escape") closePanel();
     return;
   }
@@ -3240,102 +3404,72 @@ crateToggleBtn.addEventListener("click", () => {
   crateToggleBtn.setAttribute("aria-label", collapsed ? "Expand player" : "Collapse player");
 });
 
-let computerBuilt = false;
-let computerIndex = 0;
+// A swipeable one-at-a-time carousel shared by the coursework computer and the TV. Swipe or drag
+// the slides, use the arrows or dots, or press the arrow keys (handled in the keydown listener).
+function createCarousel({ stage, list, prevBtn, nextBtn, dotsEl, countEl, labels, onChange }) {
+  const total = labels.length;
+  let index = 0;
 
-function goComputer(i) {
-  const last = COURSEWORK_PROJECTS.length - 1;
-  computerIndex = THREE.MathUtils.clamp(i, 0, last);
-  computerList.style.transform = `translateX(${-computerIndex * 100}%)`;
-  computerCount.textContent = `${computerIndex + 1} / ${COURSEWORK_PROJECTS.length}`;
-  computerPrevBtn.disabled = computerIndex === 0;
-  computerNextBtn.disabled = computerIndex === last;
-  [...computerDots.children].forEach((dot, di) => dot.classList.toggle("active", di === computerIndex));
-}
-
-// One project per slide: swipe (or drag, arrows, dots, or ← / →) to move through all of them
-function buildComputerList() {
-  if (computerBuilt) return;
-  computerBuilt = true;
-  COURSEWORK_PROJECTS.forEach((p, pi) => {
-    const card = document.createElement("a");
-    card.className = "computer-card";
-    card.draggable = false;
-    if (p.hasReturn) {
-      // Pages with their own back link open in this tab and know they came from the room, so the
-      // link brings you straight back to this computer
-      card.href = `${p.url}?from=room`;
-    } else {
-      card.href = p.url;
-      card.target = "_blank";
-      card.rel = "noopener";
-    }
-
-    const img = document.createElement("img");
-    img.src = p.image;
-    img.alt = p.title;
-    img.draggable = false;
-    card.appendChild(img);
-
-    const h4 = document.createElement("h4");
-    h4.textContent = p.title;
-    const desc = document.createElement("p");
-    desc.textContent = p.desc;
-    const open = document.createElement("span");
-    open.className = "computer-open";
-    open.textContent = "Open site \u2197";
-    card.append(h4, desc, open);
-    computerList.appendChild(card);
-
+  labels.forEach((label, i) => {
     const dot = document.createElement("button");
     dot.type = "button";
-    dot.setAttribute("aria-label", `Show ${p.title}`);
-    dot.addEventListener("click", () => goComputer(pi));
-    computerDots.appendChild(dot);
+    dot.setAttribute("aria-label", label);
+    dot.addEventListener("click", () => go(i));
+    dotsEl.appendChild(dot);
   });
 
-  computerPrevBtn.addEventListener("click", () => goComputer(computerIndex - 1));
-  computerNextBtn.addEventListener("click", () => goComputer(computerIndex + 1));
+  function go(i, notify = true) {
+    index = THREE.MathUtils.clamp(i, 0, total - 1);
+    list.style.transform = `translateX(${-index * 100}%)`;
+    countEl.textContent = `${index + 1} / ${total}`;
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+    [...dotsEl.children].forEach((dot, di) => dot.classList.toggle("active", di === index));
+    if (notify) onChange?.(index);
+  }
+
+  prevBtn.addEventListener("click", () => go(index - 1));
+  nextBtn.addEventListener("click", () => go(index + 1));
 
   // Drag or swipe the slides; a drag must not also open the link under the finger
   const drag = { id: null, x: 0, dx: 0, moved: false };
-  computerStage.addEventListener("pointerdown", (e) => {
+  stage.addEventListener("pointerdown", (e) => {
     if (e.target.closest(".computer-nav")) return;
     drag.id = e.pointerId;
     drag.x = e.clientX;
     drag.dx = 0;
     drag.moved = false;
   });
-  computerStage.addEventListener("pointermove", (e) => {
+  stage.addEventListener("pointermove", (e) => {
     if (drag.id !== e.pointerId) return;
     drag.dx = e.clientX - drag.x;
     if (!drag.moved && Math.abs(drag.dx) > 8) {
       drag.moved = true;
-      computerStage.classList.add("dragging");
+      stage.classList.add("dragging");
       try {
-        computerStage.setPointerCapture(e.pointerId);
+        stage.setPointerCapture(e.pointerId);
       } catch {
         // ignore — synthetic pointers can't always be captured
       }
     }
     if (drag.moved) {
-      const atEdge = (computerIndex === 0 && drag.dx > 0) || (computerIndex === COURSEWORK_PROJECTS.length - 1 && drag.dx < 0);
+      const atEdge = (index === 0 && drag.dx > 0) || (index === total - 1 && drag.dx < 0);
       const shown = atEdge ? drag.dx * 0.3 : drag.dx;
-      computerList.style.transform = `translateX(calc(${-computerIndex * 100}% + ${shown}px))`;
+      list.style.transform = `translateX(calc(${-index * 100}% + ${shown}px))`;
     }
   });
   const endDrag = (e) => {
     if (drag.id !== e.pointerId) return;
     drag.id = null;
-    computerStage.classList.remove("dragging");
+    stage.classList.remove("dragging");
     if (drag.moved) {
-      const threshold = Math.min(computerStage.clientWidth * 0.2, 70);
-      goComputer(computerIndex + (drag.dx < -threshold ? 1 : drag.dx > threshold ? -1 : 0));
+      const threshold = Math.min(stage.clientWidth * 0.2, 70);
+      go(index + (drag.dx < -threshold ? 1 : drag.dx > threshold ? -1 : 0));
     }
   };
-  computerStage.addEventListener("pointerup", endDrag);
-  computerStage.addEventListener("pointercancel", endDrag);
-  computerStage.addEventListener(
+  stage.addEventListener("pointerup", endDrag);
+  stage.addEventListener("pointercancel", endDrag);
+  stage.addEventListener(
     "click",
     (e) => {
       if (drag.moved) {
@@ -3346,6 +3480,108 @@ function buildComputerList() {
     },
     true
   );
+
+  return {
+    go,
+    get index() {
+      return index;
+    },
+  };
+}
+
+// One slide: a screenshot, a title, a line about it, and (if it has one) a link
+function makeSlide({ image, title, desc, url, chip, chipClass, footer }) {
+  const slide = document.createElement(url ? "a" : "div");
+  slide.className = "computer-card";
+  if (url) {
+    slide.href = url;
+    slide.target = "_blank";
+    slide.rel = "noopener";
+    slide.draggable = false;
+  }
+  const img = document.createElement("img");
+  img.src = image;
+  img.alt = title;
+  img.draggable = false;
+  slide.appendChild(img);
+  if (chip) {
+    const tag = document.createElement("span");
+    tag.className = `tv-chip ${chipClass || ""}`;
+    tag.textContent = chip;
+    slide.appendChild(tag);
+  }
+  const h4 = document.createElement("h4");
+  h4.textContent = title;
+  const p = document.createElement("p");
+  p.textContent = desc;
+  slide.append(h4, p);
+  if (footer) {
+    const foot = document.createElement("span");
+    foot.className = url ? "computer-open" : "computer-note";
+    foot.textContent = footer;
+    slide.appendChild(foot);
+  }
+  return slide;
+}
+
+// ---- Coursework computer ----
+let computerCarousel = null;
+const goComputer = (i) => computerCarousel?.go(i);
+
+function buildComputerList() {
+  if (computerCarousel) return;
+  COURSEWORK_PROJECTS.forEach((p) => {
+    computerList.appendChild(
+      makeSlide({ image: p.image, title: p.title, desc: p.desc, url: p.url, footer: "Open site \u2197" })
+    );
+  });
+  computerCarousel = createCarousel({
+    stage: computerStage,
+    list: computerList,
+    prevBtn: computerPrevBtn,
+    nextBtn: computerNextBtn,
+    dotsEl: computerDots,
+    countEl: computerCount,
+    labels: COURSEWORK_PROJECTS.map((p) => `Show ${p.title}`),
+  });
+}
+
+// ---- Featured work on the TV: flipping the channel also changes the TV in the room ----
+let tvCarousel = null;
+
+function buildTvList() {
+  if (tvCarousel) return;
+  FEATURED_PROJECTS.forEach((p, i) => {
+    let image = p.image;
+    if (!image) {
+      const c = document.createElement("canvas");
+      c.width = 1024;
+      c.height = 512;
+      drawFeaturedArt(c.getContext("2d"), 1024, 512, p.art);
+      image = c.toDataURL("image/jpeg", 0.9);
+    }
+    tvList.appendChild(
+      makeSlide({
+        image,
+        title: p.title,
+        desc: p.desc,
+        url: p.url,
+        chip: `CH ${i + 1} \u00b7 ${FEATURED_STATUS_LABEL[p.status]}`,
+        chipClass: p.status,
+        footer: p.url ? "Open project \u2197" : p.status === "wip" ? "Still being built" : "Not released yet",
+      })
+    );
+  });
+  tvCarousel = createCarousel({
+    stage: tvStage,
+    list: tvList,
+    prevBtn: tvPrevBtn,
+    nextBtn: tvNextBtn,
+    dotsEl: tvDots,
+    countEl: tvCount,
+    labels: FEATURED_PROJECTS.map((p, i) => `Channel ${i + 1}: ${p.title}`),
+    onChange: (i) => setTvChannel(i),
+  });
 }
 
 function openPanel(item) {
@@ -3359,12 +3595,21 @@ function openPanel(item) {
   panelBody.textContent = item.body;
 
   computerScreen.hidden = true;
+  tvPanelEl.hidden = true;
   panelBox.classList.remove("wide");
 
   if (item.key === "coursework") {
     buildComputerList();
     goComputer(0);
     computerScreen.hidden = false;
+    panelBox.classList.add("wide");
+  }
+
+  if (item.key === "work") {
+    // Open on whatever channel the TV is showing right now
+    buildTvList();
+    tvCarousel.go(tvChannel, false);
+    tvPanelEl.hidden = false;
     panelBox.classList.add("wide");
   }
 
@@ -3630,3 +3875,10 @@ if (startParams.get("open") === "coursework") {
   const wanted = COURSEWORK_PROJECTS.findIndex((p) => p.key === startParams.get("project"));
   goComputer(Math.max(wanted, 0));
 }
+
+// The TV channel-surfs on its own while nobody is using it
+setInterval(() => {
+  if (prefersReducedMotion || document.hidden || area !== "inside" || browsing) return;
+  if (panelOverlay.classList.contains("open")) return;
+  setTvChannel(tvChannel + 1);
+}, 9000);
