@@ -433,12 +433,85 @@ if (musicShelf) {
     setNow();
   };
 
+  // Songs with a `file` play through a plain <audio> element started by the tap itself, which is the
+  // only kind of playback every phone allows. Songs without one use Spotify's embedded player.
+  const audio = new Audio();
+  audio.preload = 'none';
+  let localActive = false;
+  let wantPlay = false; // Spotify was asked to play and hasn't started yet
+
+  const bar = document.createElement('div');
+  bar.className = 'music-bar';
+  bar.hidden = true;
+  const barPlay = document.createElement('button');
+  barPlay.type = 'button';
+  barPlay.className = 'music-bar-play';
+  barPlay.setAttribute('aria-label', 'Play or pause');
+  const barTitle = document.createElement('span');
+  barTitle.className = 'music-bar-title';
+  const barSeek = document.createElement('input');
+  barSeek.type = 'range';
+  barSeek.className = 'music-bar-seek';
+  barSeek.min = '0';
+  barSeek.max = '1000';
+  barSeek.value = '0';
+  barSeek.setAttribute('aria-label', 'Seek');
+  const barSpotify = document.createElement('a');
+  barSpotify.className = 'music-bar-spotify';
+  barSpotify.target = '_blank';
+  barSpotify.rel = 'noopener';
+  barSpotify.textContent = 'Spotify ↗';
+  bar.append(barPlay, barTitle, barSeek, barSpotify);
+  embedEl.before(bar);
+
+  barPlay.addEventListener('click', () => (audio.paused ? audio.play() : audio.pause()));
+  barSeek.addEventListener('input', () => {
+    if (audio.duration) audio.currentTime = (barSeek.value / 1000) * audio.duration;
+  });
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration) barSeek.value = String(Math.round((audio.currentTime / audio.duration) * 1000));
+  });
+  ['play', 'pause', 'ended'].forEach((type) => audio.addEventListener(type, () => {
+    if (!localActive) return;
+    playing = !audio.paused && !audio.ended;
+    bar.classList.toggle('is-playing', playing);
+    barPlay.textContent = playing ? '❚❚' : '▶';
+    markPlaying();
+  }));
+
+  const stopLocal = () => {
+    if (!localActive) return;
+    localActive = false;
+    audio.pause();
+    bar.hidden = true;
+    embedEl.hidden = false;
+  };
+
+  const playLocal = (song) => {
+    if (controller) controller.pause();
+    wantPlay = false;
+    localActive = true;
+    embedEl.hidden = true;
+    bar.hidden = false;
+    barTitle.textContent = song.title;
+    barSpotify.href = `https://open.spotify.com/track/${song.id}`;
+    barSeek.value = '0';
+    audio.src = song.file;
+    // Called straight from the tap, so phones allow it
+    audio.play().catch(() => {});
+  };
+
   const load = (autoplay) => {
     if (!started || !selected) return;
     const song = MUSIC_RECORDS[selected.ri].songs[selected.si];
     if (controller) {
+      wantPlay = !!autoplay;
       controller.loadUri(`spotify:track:${song.id}`);
-      if (autoplay) controller.play();
+      if (autoplay) {
+        controller.play();
+        // Some browsers drop a play() sent before the new track is ready, so send it again then
+        setTimeout(() => { if (wantPlay && !localActive) controller.play(); }, 600);
+      }
     } else if (fallbackFrame) {
       fallbackFrame.src = `https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0`;
     }
@@ -452,7 +525,13 @@ if (musicShelf) {
     });
     playing = false;
     markPlaying();
-    load(true);
+    const song = MUSIC_RECORDS[ri].songs[si];
+    if (song.file) {
+      playLocal(song);
+    } else {
+      stopLocal();
+      load(true);
+    }
   };
 
   MUSIC_RECORDS.forEach((record, ri) => {
@@ -535,11 +614,16 @@ if (musicShelf) {
       api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${first.id}` }, (ctl) => {
         controller = ctl;
         ctl.addListener('playback_update', (e) => {
+          if (localActive) return;
           playing = !!e.data && !e.data.isPaused;
+          if (playing) wantPlay = false;
           markPlaying();
         });
+        ctl.addListener('ready', () => {
+          if (wantPlay && !localActive) ctl.play();
+        });
         // A song may have been picked while the player was still starting up
-        if (selected) load(true);
+        if (selected && !localActive) load(true);
       });
     };
     const script = document.createElement('script');
