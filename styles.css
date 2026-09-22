@@ -1810,6 +1810,7 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
 .showcase-arrow {
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   width: 38px;
   height: 38px;
   padding: 0;
@@ -1828,9 +1829,21 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   color: #1d140c;
 }
 
+/* Scrolls internally instead of squeezing the arrow buttons out when there isn't room
+   for every pip — a showcase with many slides (coursework has 8) would otherwise push
+   the prev/next arrows off the edge of a narrow phone screen */
 .showcase-pips {
   display: flex;
   gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.showcase-pips::-webkit-scrollbar {
+  display: none;
 }
 
 .showcase-pip {
@@ -1878,6 +1891,21 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
     grid-template-columns: 1fr;
     align-items: start;
     gap: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-controls {
+    gap: 0.6rem;
+    padding-inline: 0.9rem;
+  }
+
+  .showcase-pips {
+    gap: 0.35rem;
+  }
+
+  .showcase-pip {
+    width: 20px;
   }
 }
 
@@ -2016,10 +2044,16 @@ html[data-theme="dark"] .skill-chip:nth-child(4) {
   .showcase-text .slide {
     padding-left: 0;
     padding-top: 3rem;
+    text-align: center;
   }
 
   .showcase-text .slide-num {
-    top: 0;
-    left: 0;
+    position: static;
+    display: block;
+    margin: 0 0 0.5rem;
+  }
+
+  .showcase-text .slide-desc {
+    margin-inline: auto;
   }
 }

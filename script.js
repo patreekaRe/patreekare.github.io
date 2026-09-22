@@ -218,16 +218,25 @@ function initShowcase(root) {
   const CYCLE = Number(root.dataset.cycle) || 8000;
   let index = 0;
   let timer = 0;
+  let resumeTimer = 0;
   let hovering = false;
-  let stopped = false; // once someone interacts, stop auto-cycling for good
   let onScreen = true;
+
+  // Picking a slide yourself (pip, arrow, keyboard, or swipe) pauses the auto-cycle briefly so
+  // it doesn't yank away what you just chose, then resumes on its own a moment later
+  function interact(fn) {
+    fn();
+    pause(true);
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => { if (!hovering) pause(false); }, 1200);
+  }
 
   const pipButtons = slides.map((slide, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'showcase-pip';
     b.setAttribute('aria-label', `Show ${i + 1}: ${slide.querySelector('h3').textContent}`);
-    b.addEventListener('click', () => { stopped = true; show(i); });
+    b.addEventListener('click', () => interact(() => show(i)));
     pips.appendChild(b);
     return b;
   });
@@ -253,6 +262,9 @@ function initShowcase(root) {
     });
     index = next;
     pipButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === next)));
+    // The pip strip scrolls on narrow screens when there are more pips than fit; keep the
+    // current one in view as it cycles
+    pipButtons[next].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
     if (pathEl) pathEl.textContent = slides[next].dataset.path;
     if (countEl) countEl.textContent = `${pad(next + 1)} / ${pad(slides.length)}`;
     restart();
@@ -263,7 +275,7 @@ function initShowcase(root) {
     clearTimeout(timer);
     root.classList.remove('auto');
     void root.offsetWidth;
-    if (stopped || reduceMotion) return;
+    if (reduceMotion) return;
     root.classList.add('auto');
     root.style.setProperty('--cycle', `${CYCLE}ms`);
     if (!hovering && onScreen) timer = setTimeout(() => show(index + 1, 1), CYCLE);
@@ -272,7 +284,7 @@ function initShowcase(root) {
   function pause(on) {
     root.classList.toggle('paused', on);
     if (on) clearTimeout(timer);
-    else if (!stopped && !reduceMotion) restart();
+    else if (!reduceMotion) restart();
   }
 
   root.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hovering = true; pause(true); } });
@@ -287,12 +299,12 @@ function initShowcase(root) {
     }, { threshold: 0.3 }).observe(root);
   }
 
-  prevBtn.addEventListener('click', () => { stopped = true; show(index - 1, -1); });
-  nextBtn.addEventListener('click', () => { stopped = true; show(index + 1, 1); });
+  prevBtn.addEventListener('click', () => interact(() => show(index - 1, -1)));
+  nextBtn.addEventListener('click', () => interact(() => show(index + 1, 1)));
 
   root.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { stopped = true; show(index - 1, -1); }
-    if (e.key === 'ArrowRight') { stopped = true; show(index + 1, 1); }
+    if (e.key === 'ArrowLeft') interact(() => show(index - 1, -1));
+    if (e.key === 'ArrowRight') interact(() => show(index + 1, 1));
   });
 
   // Swipe or drag sideways to change item. A drag never counts as a click on the link.
@@ -320,8 +332,7 @@ function initShowcase(root) {
     viewport.classList.remove('dragging');
     const dx = e.clientX - startX;
     if (moved && Math.abs(dx) > 50) {
-      stopped = true;
-      show(index + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+      interact(() => show(index + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1));
     }
   };
   viewport.addEventListener('pointerup', endDrag);
