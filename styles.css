@@ -493,28 +493,29 @@ section {
   border-top: 1px solid var(--edge);
 }
 
-/* Each section gets its own faint wash, mixed from its own theme's page color so it
-   reads correctly in both light and dark without a separate override */
+/* Each section gets its own faint wash, mixed from its own theme's *card* color (crisp white in
+   light, warm brown in dark) rather than the page color — mixing into the page's own warm cream
+   compounded the warmth into a muddy peach in light mode, instead of a clean pastel */
 #featured-work::before {
-  background: color-mix(in srgb, var(--rust) 7%, var(--cream));
+  background: color-mix(in srgb, var(--rust) 5%, var(--white));
 }
 
 #music::before {
-  background: color-mix(in srgb, var(--tan) 9%, var(--cream));
+  background: color-mix(in srgb, var(--tan) 6%, var(--white));
 }
 
 #coursework::before {
-  background: color-mix(in srgb, var(--olive) 7%, var(--cream));
+  background: color-mix(in srgb, var(--olive) 5%, var(--white));
 }
 
 #about::before {
-  background: color-mix(in srgb, var(--plum) 8%, var(--cream));
+  background: color-mix(in srgb, var(--plum) 6%, var(--white));
 }
 
 #contact::before {
   background:
-    radial-gradient(600px 280px at 50% 0%, color-mix(in srgb, var(--rust) 16%, transparent), transparent 70%),
-    color-mix(in srgb, var(--rust) 9%, var(--cream));
+    radial-gradient(600px 280px at 50% 0%, color-mix(in srgb, var(--rust) 10%, transparent), transparent 70%),
+    color-mix(in srgb, var(--rust) 5%, var(--white));
 }
 
 .section-head {
