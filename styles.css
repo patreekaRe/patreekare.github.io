@@ -16,6 +16,7 @@
   --nav-bg: rgba(40, 54, 24, 0.85);
   --nav-bg-solid: rgba(40, 54, 24, 0.97);
   --edge: rgba(96, 108, 56, 0.08);
+  --band-tint: rgba(96, 108, 56, 0.05);
 
   --font-body: "Poppins", sans-serif;
   --font-head: "Fraunces", "Roboto Slab", serif;
@@ -466,9 +467,46 @@ h1 {
 /* ---------- Shared section layout ---------- */
 
 section {
+  position: relative;
+  isolation: isolate;
   padding: 6rem 2rem;
   max-width: var(--container);
   margin: auto;
+}
+
+/* Full-bleed background bands so sections read as distinct rooms rather than empty gaps.
+   The section itself stays centered and max-width; the band is a full-viewport-width
+   pseudo-element behind it, using the classic "break out of a centered container" trick. */
+#featured-work::before,
+#music::before,
+#coursework::before,
+#about::before,
+#contact::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  translate: -50% 0;
+  z-index: -1;
+  border-top: 1px solid var(--edge);
+}
+
+#featured-work::before,
+#coursework::before {
+  background: var(--white);
+}
+
+#music::before,
+#about::before {
+  background: var(--band-tint);
+}
+
+#contact::before {
+  background:
+    radial-gradient(600px 280px at 50% 0%, rgba(255, 176, 92, 0.1), transparent 70%),
+    var(--white);
 }
 
 .section-head {
@@ -1011,7 +1049,8 @@ html[data-theme="dark"] .theme-toggle .icon-sun {
   perspective: 1100px;
 }
 
-/* The vinyl tucked behind the sleeve: it peeks out on hover and spins while its song plays */
+/* The vinyl tucked behind the sleeve: it always peeks a little, pops out further on hover,
+   and spins while its song plays */
 .record-disc {
   position: absolute;
   inset: 5% 6% auto 6%;
@@ -1020,18 +1059,19 @@ html[data-theme="dark"] .theme-toggle .icon-sun {
   background:
     radial-gradient(circle at 50% 50%, var(--rust) 0 15%, #1a1510 15.5% 17%, transparent 17.5%),
     repeating-radial-gradient(circle at 50% 50%, #17130f 0 2px, #241d17 2px 4px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  transition: transform 0.55s var(--ease);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform: translateY(-14%);
+  transition: transform 0.55s var(--ease), box-shadow 0.3s var(--ease);
 }
 
 .record:hover .record-disc,
 .record:focus-within .record-disc,
 .record.active .record-disc {
-  transform: translateY(-17%);
+  transform: translateY(-26%);
 }
 
 .record.flipped .record-disc {
-  transform: translateY(-4%);
+  transform: translateY(-16%);
 }
 
 .record.playing .record-disc {
@@ -1039,8 +1079,17 @@ html[data-theme="dark"] .theme-toggle .icon-sun {
 }
 
 @keyframes disc-spin {
-  from { transform: translateY(-17%) rotate(0deg); }
-  to { transform: translateY(-17%) rotate(360deg); }
+  from { transform: translateY(-26%) rotate(0deg); }
+  to { transform: translateY(-26%) rotate(360deg); }
+}
+
+/* In the dark studio-at-night theme a near-black disc on a near-black page all but disappears,
+   so it gets a warmer, lighter groove tone and a soft glowing rim instead */
+html[data-theme="dark"] .record-disc {
+  background:
+    radial-gradient(circle at 50% 50%, var(--tan) 0 15%, #2a1d10 15.5% 17%, transparent 17.5%),
+    repeating-radial-gradient(circle at 50% 50%, #4a3a26 0 2px, #5e4b32 2px 4px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(227, 165, 91, 0.65), 0 0 26px rgba(227, 165, 91, 0.3);
 }
 
 .record-flip {
@@ -1256,6 +1305,7 @@ html[data-theme="dark"] .theme-toggle .icon-sun {
     --nav-bg: rgba(14, 10, 7, 0.82);
     --nav-bg-solid: rgba(14, 10, 7, 0.97);
     --edge: rgba(255, 190, 130, 0.1);
+    --band-tint: rgba(227, 165, 91, 0.055);
 
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
@@ -1803,89 +1853,113 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
 }
 
 /* ================================================================
-   Music section: interactive "what I use" chips
+   Music section: "what I use" chips — decorative, not interactive
    ================================================================ */
 
 .skill-chips {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.6rem;
-  margin: 1.4rem 0 0;
+  gap: 0.7rem;
+  margin: 1.6rem 0 0;
+  list-style: none;
 }
 
 .skill-chip {
+  --chip-accent: var(--rust);
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.1rem;
+  gap: 0.6rem;
+  padding: 0.4rem 1.2rem 0.4rem 0.4rem;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--tan);
-  background: var(--cream);
-  color: var(--olive);
-  font-family: inherit;
+  border: 1px solid var(--edge);
+  background: var(--white);
+  color: var(--ink);
   font-size: 0.82rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+/* Fade the chips in slightly after the section heading (classes added by script.js, so
+   content is never hidden without JS: see the shared .reveal rule above) */
+.section-head.reveal .skill-chip {
+  opacity: 0;
+  translate: 0 10px;
+}
+
+.section-head.in .skill-chip {
+  opacity: 1;
+  translate: 0 0;
+  transition: opacity 0.5s var(--ease) calc(var(--ci, 0) * 0.08s), translate 0.5s var(--ease) calc(var(--ci, 0) * 0.08s);
+}
+
+.skill-chip:nth-child(1) { --ci: 1; --chip-accent: var(--rust); }
+.skill-chip:nth-child(2) { --ci: 2; --chip-accent: var(--olive); }
+.skill-chip:nth-child(3) { --ci: 3; --chip-accent: var(--tan); }
+.skill-chip:nth-child(4) { --ci: 4; --chip-accent: var(--rust-dark); }
+
+.skill-chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--chip-accent) 22%, transparent) 50%, transparent 70%);
+  translate: -140% 0;
+  transition: translate 0.7s var(--ease);
+}
+
+.skill-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--chip-accent);
+}
+
+.skill-chip:hover::before {
+  translate: 140% 0;
+}
+
+.skill-chip-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chip-accent) 16%, transparent);
+  color: var(--chip-accent);
+  transition: transform 0.3s var(--ease);
+}
+
+.skill-chip:hover .skill-chip-icon {
+  transform: scale(1.1) rotate(-6deg);
 }
 
 .skill-chip svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.75;
 }
 
 .skill-chip .knob {
   fill: currentColor;
   stroke: none;
-  opacity: 1;
-}
-
-.skill-chip:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.skill-chip.is-active {
-  background: var(--rust);
-  border-color: var(--rust);
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(188, 108, 37, 0.3);
-}
-
-.skill-chip.is-active svg {
-  opacity: 1;
-}
-
-.skill-chip:focus-visible {
-  outline: 3px solid var(--tan);
-  outline-offset: 3px;
-}
-
-.skill-detail {
-  margin-top: 0.9rem;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-  min-height: 1.3em;
 }
 
 html[data-theme="dark"] .skill-chip {
   background: #1c1611;
-  border-color: rgba(227, 165, 91, 0.45);
-  color: var(--tan);
+  border-color: rgba(227, 165, 91, 0.16);
 }
 
-html[data-theme="dark"] .skill-chip.is-active {
-  background: var(--rust);
-  border-color: var(--rust);
-  color: #1d140c;
+html[data-theme="dark"] .skill-chip:nth-child(4) {
+  --chip-accent: var(--tan);
 }
 
 /* ================================================================

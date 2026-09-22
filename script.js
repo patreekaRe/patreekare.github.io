@@ -335,21 +335,6 @@ function initShowcase(root) {
 
 document.querySelectorAll('.showcase').forEach(initShowcase);
 
-// Music section: tapping a chip shows what that tool is for
-const skillChips = document.getElementById('skillChips');
-if (skillChips) {
-  const detailEl = document.getElementById('skillDetail');
-  const chips = [...skillChips.querySelectorAll('.skill-chip')];
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      chips.forEach((c) => {
-        c.classList.toggle('is-active', c === chip);
-        c.setAttribute('aria-pressed', String(c === chip));
-      });
-      detailEl.textContent = chip.dataset.detail;
-    });
-  });
-}
 // ---------- Dark / light theme ----------
 // The saved choice is applied in the page <head> before first paint; this is just the toggle.
 const themeRoot = document.documentElement;
