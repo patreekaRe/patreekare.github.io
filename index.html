@@ -23,6 +23,12 @@
     }
     // Always open at the top instead of wherever the browser last had you scrolled to
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // A URL that still carries a #hash (Safari can resume a tab, or autocomplete an address,
+    // with one still attached from an earlier visit) makes the browser jump straight to that
+    // section on load. Drop it before that happens so a plain visit always lands at the top.
+    if (location.hash) {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    }
   </script>
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js');</script>

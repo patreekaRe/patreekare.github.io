@@ -5,6 +5,15 @@ window.addEventListener('pageshow', (e) => {
   if (e.persisted) window.scrollTo(0, 0);
 });
 
+// Backstop for the #hash fix in <head>: the browser scrolls to a URL's fragment using the
+// hash it started the navigation with, even after that script strips it, and it can do that
+// scroll *after* this script has already run once. So correct it here, then once more after
+// everything (including images) has finished loading and could have shifted the page.
+const forceScrollTop = () => { if (window.scrollY > 0) window.scrollTo(0, 0); };
+forceScrollTop();
+window.addEventListener('load', forceScrollTop);
+window.addEventListener('load', () => requestAnimationFrame(() => requestAnimationFrame(forceScrollTop)));
+
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
