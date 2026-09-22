@@ -2,14 +2,24 @@
 // that was never actually reloaded), it keeps whatever scroll position the tab had. Snap back
 // to the top instead, matching a fresh visit.
 window.addEventListener('pageshow', (e) => {
-  if (e.persisted) window.scrollTo(0, 0);
+  if (e.persisted) forceScrollTop();
 });
 
 // Backstop for the #hash fix in <head>: the browser scrolls to a URL's fragment using the
 // hash it started the navigation with, even after that script strips it, and it can do that
 // scroll *after* this script has already run once. So correct it here, then once more after
 // everything (including images) has finished loading and could have shifted the page.
-const forceScrollTop = () => { if (window.scrollY > 0) window.scrollTo(0, 0); };
+// The jump itself must be instant: with the page's smooth-scroll CSS still in effect, this
+// correction (and Safari's own initial jump to the section) plays as a visible scroll
+// animation instead of the page just starting at the top.
+function forceScrollTop() {
+  if (window.scrollY === 0 && window.scrollX === 0) return;
+  const root = document.documentElement;
+  const prevBehavior = root.style.scrollBehavior;
+  root.style.scrollBehavior = 'auto';
+  window.scrollTo(0, 0);
+  root.style.scrollBehavior = prevBehavior;
+}
 forceScrollTop();
 window.addEventListener('load', forceScrollTop);
 window.addEventListener('load', () => requestAnimationFrame(() => requestAnimationFrame(forceScrollTop)));
