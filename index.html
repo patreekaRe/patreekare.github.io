@@ -159,15 +159,15 @@
       </p>
     </div>
 
-    <div class="showcase" id="showcase" role="region" aria-roledescription="carousel" aria-label="Featured projects">
+    <div class="showcase" data-cycle="8000" role="region" aria-roledescription="carousel" aria-label="Featured projects">
 
       <div class="showcase-bar" aria-hidden="true">
         <span class="showcase-lights"><i></i><i></i><i></i></span>
-        <span class="showcase-path" id="showcasePath">~/projects/pokedb</span>
-        <span class="showcase-count" id="showcaseCount">01 / 04</span>
+        <span class="showcase-path">~/projects/pokedb</span>
+        <span class="showcase-count">01 / 04</span>
       </div>
 
-      <div class="showcase-viewport" id="showcaseViewport">
+      <div class="showcase-viewport">
 
         <article class="slide is-active" data-path="~/projects/pokedb" aria-label="1 of 4">
           <div class="slide-shot"><img src="images/featured/pokemon.jpg" alt="PokéDB title screen" width="1600" height="800" draggable="false"></div>
@@ -180,7 +180,7 @@
               its own move pattern. A free, non-commercial fan project.
             </p>
             <ul class="slide-tags"><li>JavaScript</li><li>Game design</li><li>Roguelike</li></ul>
-            <a class="slide-link" href="https://patreekare.github.io/pokeDB-3/" target="_blank" rel="noopener">Play it live</a>
+            <a class="slide-link" href="https://patreekare.github.io/pokeDB-3/" target="_blank" rel="noopener"><span>Play it live</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
           </div>
         </article>
 
@@ -195,7 +195,7 @@
               weekly reset with a live countdown. It saves in the browser and works on a phone.
             </p>
             <ul class="slide-tags"><li>JavaScript</li><li>localStorage</li><li>Responsive</li></ul>
-            <a class="slide-link" href="https://patreekare.github.io/WoWTracker/" target="_blank" rel="noopener">Open the tracker</a>
+            <a class="slide-link" href="https://patreekare.github.io/WoWTracker/" target="_blank" rel="noopener"><span>Open the tracker</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
           </div>
         </article>
 
@@ -231,9 +231,9 @@
       </div>
 
       <div class="showcase-controls">
-        <button type="button" class="showcase-arrow" id="showcasePrev" aria-label="Previous project">&larr;</button>
-        <div class="showcase-pips" id="showcasePips"></div>
-        <button type="button" class="showcase-arrow" id="showcaseNext" aria-label="Next project">&rarr;</button>
+        <button type="button" class="showcase-arrow showcase-prev" aria-label="Previous project">&larr;</button>
+        <div class="showcase-pips"></div>
+        <button type="button" class="showcase-arrow showcase-next" aria-label="Next project">&rarr;</button>
       </div>
 
     </div>
@@ -249,12 +249,25 @@
         on Spotify. My work runs through Reaper using FabFilter, Valhalla, and
         Serum 2 for mixing and sound design. Flip a record to see its songs.
       </p>
-      <div class="tag-row music-tags">
-        <span class="tag">Reaper</span>
-        <span class="tag">Mixing &amp; Production</span>
-        <span class="tag">Sound Design</span>
-        <span class="tag">Songwriting</span>
+      <div class="skill-chips" id="skillChips" role="group" aria-label="What I use">
+        <button type="button" class="skill-chip is-active" aria-pressed="true" data-detail="My DAW. Every song I write is tracked, edited, and mixed here.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2.5l2-6 3 12 3-15 2.5 9 1.5-3H21"/></svg>
+          Reaper
+        </button>
+        <button type="button" class="skill-chip" aria-pressed="false" data-detail="Balancing, shaping, and finishing songs, mostly with FabFilter and Valhalla.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" class="knob"/><circle cx="12" cy="15" r="2" class="knob"/><circle cx="18" cy="8" r="2" class="knob"/></svg>
+          Mixing &amp; Production
+        </button>
+        <button type="button" class="skill-chip" aria-pressed="false" data-detail="Building synth patches and textures from scratch in Serum 2.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12c2.5-8 5.5-8 8 0s5.5 8 8 0 3-6 4-6"/></svg>
+          Sound Design
+        </button>
+        <button type="button" class="skill-chip" aria-pressed="false" data-detail="Lyrics, melody, and arrangement: the part that starts every record.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+          Songwriting
+        </button>
       </div>
+      <p class="skill-detail" id="skillDetail" aria-live="polite">My DAW. Every song I write is tracked, edited, and mixed here.</p>
     </div>
 
     <div class="crate-shelf" id="musicShelf" role="list" aria-label="My records"></div>
@@ -272,110 +285,142 @@
       <p class="eyebrow">Fundamentals</p>
       <h2>Coursework Projects</h2>
       <p class="section-intro">
-        Two highlights from my web development coursework, with the rest one
-        click away.
+        The pages I built while learning web development, starting with my
+        favorite. Swipe or tap through them.
       </p>
     </div>
 
-    <div class="project-grid">
+    <div class="showcase" data-cycle="7000" role="region" aria-roledescription="carousel" aria-label="Coursework projects">
 
-      <article class="project-tile">
-        <div class="thumb"><img src="images/musician.jpg" alt="Musician Webpage" loading="lazy"></div>
-        <h3>Musician Webpage</h3>
-        <p>
-          A retro-soul tribute to Mayer Hawthorne, with a Spotify player, a
-          discography, a scrolling lookbook, and scroll-driven motion. It connected
-          my love of music with web design.
-        </p>
-        <a href="https://patreekare.github.io/mayer-hawthorne-page/" target="_blank" rel="noopener">View Project</a>
-      </article>
+      <div class="showcase-bar" aria-hidden="true">
+        <span class="showcase-lights"><i></i><i></i><i></i></span>
+        <span class="showcase-path">~/coursework/mayer-hawthorne</span>
+        <span class="showcase-count">01 / 08</span>
+      </div>
 
-      <article class="project-tile">
-        <div class="thumb"><img src="images/product-landing.jpg" alt="Product Landing Page" loading="lazy"></div>
-        <h3>Product Landing Page</h3>
-        <p>
-          A product landing page focused on sections, navigation links, a form,
-          and embedded video. This project also practiced FreeCodeCamp requirements.
-        </p>
-        <a href="https://patreekare.github.io/product-landing-page/" target="_blank" rel="noopener">View Project</a>
-      </article>
+      <div class="showcase-viewport">
 
-    </div>
+        <article class="slide is-active" data-path="~/coursework/mayer-hawthorne" aria-label="1 of 8">
+          <div class="slide-shot"><img src="images/musician.jpg" alt="Musician Webpage" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-wip"></span>Highlight</p>
+            <h3>Musician Webpage</h3>
+            <p class="slide-desc">
+              A retro-soul tribute to Mayer Hawthorne, with a Spotify player, a discography,
+              a scrolling lookbook, and scroll-driven motion. It connected my love of music
+              with web design.
+            </p>
+            <ul class="slide-tags"><li>Spotify player</li><li>Scroll motion</li><li>Design</li></ul>
+            <a class="slide-link" href="https://patreekare.github.io/mayer-hawthorne-page/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-    <div class="more-projects" id="moreProjects">
-      <div class="more-inner">
-        <div class="project-grid">
+        <article class="slide" data-path="~/coursework/product-landing" aria-label="2 of 8">
+          <div class="slide-shot"><img src="images/product-landing.jpg" alt="Product Landing Page" width="1600" height="800" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-wip"></span>Highlight</p>
+            <h3>Product Landing Page</h3>
+            <p class="slide-desc">
+              A product landing page focused on sections, navigation links, a form, and
+              embedded video. This project also practiced FreeCodeCamp requirements.
+            </p>
+            <ul class="slide-tags"><li>Forms</li><li>Navigation</li><li>Embedded video</li></ul>
+            <a class="slide-link" href="https://patreekare.github.io/product-landing-page/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/favorite-city.jpg" alt="Favorite City Website" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/favorite-city" aria-label="3 of 8">
+          <div class="slide-shot"><img src="images/favorite-city.jpg" alt="Favorite City Website" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>Favorite City Website</h3>
-            <p>
-              A website highlighting Downtown Chicago. This project helped me practice
-              images, page layout, navigation, and organizing information for visitors.
+            <p class="slide-desc">
+              A website highlighting Downtown Chicago. This project helped me practice images,
+              page layout, navigation, and organizing information for visitors.
             </p>
-            <a href="https://dgnhw2.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>Images</li><li>Layout</li><li>Navigation</li></ul>
+            <a class="slide-link" href="https://dgnhw2.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/technical-doc.jpg" alt="Technical Documentation Page" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/technical-docs" aria-label="4 of 8">
+          <div class="slide-shot"><img src="images/technical-doc.jpg" alt="Technical Documentation Page" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>Technical Documentation Page</h3>
-            <p>
-              A single-page documentation site using internal navigation, headings,
-              code examples, and organized text sections.
+            <p class="slide-desc">
+              A single-page documentation site using internal navigation, headings, code
+              examples, and organized text sections.
             </p>
-            <a href="https://wjp7fz.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>Internal links</li><li>Headings</li><li>Code examples</li></ul>
+            <a class="slide-link" href="https://wjp7fz.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/layout.jpg" alt="Page Layout" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/page-layout" aria-label="5 of 8">
+          <div class="slide-shot"><img src="images/layout.jpg" alt="Page Layout" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>Page Layout</h3>
-            <p>
-              This page focused on building structured webpage layouts using HTML and
-              CSS. It helped me understand how to arrange content on a page.
+            <p class="slide-desc">
+              This page focused on building structured webpage layouts using HTML and CSS.
+              It helped me understand how to arrange content on a page.
             </p>
-            <a href="https://g95nxn.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>HTML</li><li>CSS</li><li>Layout</li></ul>
+            <a class="slide-link" href="https://g95nxn.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/rwd.jpg" alt="Responsive Web Design" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/responsive-design" aria-label="6 of 8">
+          <div class="slide-shot"><img src="images/rwd.jpg" alt="Responsive Web Design" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>Responsive Web Design</h3>
-            <p>
+            <p class="slide-desc">
               This website introduced responsive web design and media queries, which help
               websites adjust for phones, tablets, and desktop screens.
             </p>
-            <a href="https://qgpygt.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>Media queries</li><li>Responsive</li></ul>
+            <a class="slide-link" href="https://qgpygt.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/grid.jpg" alt="CSS Grid" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/css-grid" aria-label="7 of 8">
+          <div class="slide-shot"><img src="images/grid.jpg" alt="CSS Grid" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>CSS Grid</h3>
-            <p>
+            <p class="slide-desc">
               This page explored CSS Grid and how it can be used to create organized,
               flexible layouts for webpages.
             </p>
-            <a href="https://jvrmjw.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>CSS Grid</li><li>Layout</li></ul>
+            <a class="slide-link" href="https://jvrmjw.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-          <article class="project-tile">
-            <div class="thumb"><img src="images/animations.jpg" alt="CSS Animations and Transitions" loading="lazy"></div>
+        <article class="slide" data-path="~/coursework/animations" aria-label="8 of 8">
+          <div class="slide-shot"><img src="images/animations.jpg" alt="CSS Animations and Transitions" width="1600" height="800" loading="lazy" draggable="false"></div>
+          <div class="slide-info">
+            <p class="slide-status"><span class="dot dot-soon"></span>Coursework</p>
             <h3>CSS Animations &amp; Transitions</h3>
-            <p>
-              This website focused on transitions and animations. I practiced adding
-              movement and hover effects to make webpages feel more interactive.
+            <p class="slide-desc">
+              This website focused on transitions and animations. I practiced adding movement
+              and hover effects to make webpages feel more interactive.
             </p>
-            <a href="https://z67l6s.csb.app/" target="_blank" rel="noopener">View Project</a>
-          </article>
+            <ul class="slide-tags"><li>Transitions</li><li>Animations</li><li>Hover effects</li></ul>
+            <a class="slide-link" href="https://z67l6s.csb.app/" target="_blank" rel="noopener"><span>View project</span><svg class="slide-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </article>
 
-        </div>
       </div>
-    </div>
 
-    <div class="more-toggle-wrap">
-      <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="moreProjects">
-        <span class="more-label">More projects</span>
-        <span class="more-count">6</span>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
+      <div class="showcase-controls">
+        <button type="button" class="showcase-arrow showcase-prev" aria-label="Previous project">&larr;</button>
+        <div class="showcase-pips"></div>
+        <button type="button" class="showcase-arrow showcase-next" aria-label="Next project">&rarr;</button>
+      </div>
+
     </div>
   </section>
 
@@ -386,42 +431,68 @@
       <h2>About My Path Into Development</h2>
     </div>
 
-    <div class="about-grid">
+    <div class="showcase showcase-text" data-cycle="13000" role="region" aria-roledescription="carousel" aria-label="About me">
 
-      <div class="about-block">
-        <h3>Where I'm Coming From</h3>
-        <p>
-          I hold a BM in Music Education from CSULB and have spent years teaching
-          and writing music professionally. That background shapes how I approach
-          code: break a big, unfamiliar system into parts, understand each one, and
-          rebuild it into something that works reliably — the same process as
-          arranging a song or planning a lesson.
-        </p>
+      <div class="showcase-bar" aria-hidden="true">
+        <span class="showcase-lights"><i></i><i></i><i></i></span>
+        <span class="showcase-path">~/about/where-im-coming-from</span>
+        <span class="showcase-count">01 / 03</span>
       </div>
 
-      <div class="about-block">
-        <h3>What I've Learned</h3>
-        <p>
-          Through self-directed study (including the 100Devs program) and formal
-          coursework, I've worked from page structure and CSS layout through
-          responsive design, CSS Grid, and animation, and into building a
-          full architecture-driven application in Unity and C#. I'm continuing
-          into JavaScript and full-stack development next.
-        </p>
+      <div class="showcase-viewport">
+
+        <article class="slide slide-text is-active" data-path="~/about/where-im-coming-from" aria-label="1 of 3">
+          <p class="slide-num" aria-hidden="true">01</p>
+          <div class="slide-info">
+            <h3>Where I'm Coming From</h3>
+            <p class="slide-desc">
+              I hold a BM in Music Education from CSULB and have spent years teaching
+              and writing music professionally. That background shapes how I approach
+              code: break a big, unfamiliar system into parts, understand each one, and
+              rebuild it into something that works reliably — the same process as
+              arranging a song or planning a lesson.
+            </p>
+          </div>
+        </article>
+
+        <article class="slide slide-text" data-path="~/about/what-ive-learned" aria-label="2 of 3">
+          <p class="slide-num" aria-hidden="true">02</p>
+          <div class="slide-info">
+            <h3>What I've Learned</h3>
+            <p class="slide-desc">
+              Through self-directed study (including the 100Devs program) and formal
+              coursework, I've worked from page structure and CSS layout through
+              responsive design, CSS Grid, and animation, and into building a
+              full architecture-driven application in Unity and C#. I'm continuing
+              into JavaScript and full-stack development next.
+            </p>
+          </div>
+        </article>
+
+        <article class="slide slide-text" data-path="~/about/what-im-looking-for" aria-label="3 of 3">
+          <p class="slide-num" aria-hidden="true">03</p>
+          <div class="slide-info">
+            <h3>What I'm Looking For</h3>
+            <p class="slide-desc">
+              I'm exploring entry-level front-end and full-stack developer roles.
+              I'm looking for a team where I can keep learning quickly, contribute
+              real work early, and bring the same discipline I've used to ship
+              music and run a game project to shipping software.
+            </p>
+          </div>
+        </article>
+
       </div>
 
-      <div class="about-block">
-        <h3>What I'm Looking For</h3>
-        <p>
-          I'm exploring entry-level front-end and full-stack developer roles.
-          I'm looking for a team where I can keep learning quickly, contribute
-          real work early, and bring the same discipline I've used to ship
-          music and run a game project to shipping software.
-        </p>
+      <div class="showcase-controls">
+        <button type="button" class="showcase-arrow showcase-prev" aria-label="Previous">&larr;</button>
+        <div class="showcase-pips"></div>
+        <button type="button" class="showcase-arrow showcase-next" aria-label="Next">&rarr;</button>
       </div>
 
     </div>
   </section>
+
 
   <section id="contact">
 

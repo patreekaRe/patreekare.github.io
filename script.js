@@ -131,7 +131,7 @@ updateOnScroll();
 // Reveal sections and cards as they scroll into view, staggered within each group
 if (!reduceMotion && 'IntersectionObserver' in window) {
   const targets = document.querySelectorAll(
-    '.section-head, .walkthrough-card, .showcase, .project-tile, .about-block, .contact-card, .resume-card'
+    '.section-head, .walkthrough-card, .showcase, .contact-card, .resume-card'
   );
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -145,7 +145,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
   }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
 
   targets.forEach((el) => {
-    const siblings = [...el.parentElement.children].filter((c) => c.matches('.project-tile, .about-block, .resume-card'));
+    const siblings = [...el.parentElement.children].filter((c) => c.matches('.resume-card'));
     const index = siblings.indexOf(el);
     el.style.setProperty('--d', `${index < 0 ? 0 : (index % 4) * 0.09}s`);
     el.classList.add('reveal');
@@ -155,7 +155,7 @@ if (!reduceMotion && 'IntersectionObserver' in window) {
 
 if (finePointer && !reduceMotion) {
   // Cards tilt toward the cursor and a warm glow follows it
-  document.querySelectorAll('.project-tile').forEach((card) => {
+  document.querySelectorAll('.resume-card').forEach((card) => {
     let frame = 0;
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
@@ -205,16 +205,17 @@ if (finePointer && !reduceMotion) {
   }
 }
 
-// Featured projects: one at a time, cycling on its own until you touch it
-(() => {
-  const root = document.getElementById('showcase');
-  if (!root) return;
-  const viewport = document.getElementById('showcaseViewport');
+// Showcases: one item at a time, cycling on its own until you touch it. Used for featured
+// projects, coursework projects, and the About section. Each .showcase on the page gets its own.
+function initShowcase(root) {
+  const viewport = root.querySelector('.showcase-viewport');
   const slides = [...root.querySelectorAll('.slide')];
-  const pips = document.getElementById('showcasePips');
-  const pathEl = document.getElementById('showcasePath');
-  const countEl = document.getElementById('showcaseCount');
-  const CYCLE = 8000;
+  const pips = root.querySelector('.showcase-pips');
+  const pathEl = root.querySelector('.showcase-path');
+  const countEl = root.querySelector('.showcase-count');
+  const prevBtn = root.querySelector('.showcase-prev');
+  const nextBtn = root.querySelector('.showcase-next');
+  const CYCLE = Number(root.dataset.cycle) || 8000;
   let index = 0;
   let timer = 0;
   let hovering = false;
@@ -225,7 +226,7 @@ if (finePointer && !reduceMotion) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'showcase-pip';
-    b.setAttribute('aria-label', `Show project ${i + 1}: ${slide.querySelector('h3').textContent}`);
+    b.setAttribute('aria-label', `Show ${i + 1}: ${slide.querySelector('h3').textContent}`);
     b.addEventListener('click', () => { stopped = true; show(i); });
     pips.appendChild(b);
     return b;
@@ -252,8 +253,8 @@ if (finePointer && !reduceMotion) {
     });
     index = next;
     pipButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === next)));
-    pathEl.textContent = slides[next].dataset.path;
-    countEl.textContent = `${pad(next + 1)} / ${pad(slides.length)}`;
+    if (pathEl) pathEl.textContent = slides[next].dataset.path;
+    if (countEl) countEl.textContent = `${pad(next + 1)} / ${pad(slides.length)}`;
     restart();
   }
 
@@ -286,15 +287,15 @@ if (finePointer && !reduceMotion) {
     }, { threshold: 0.3 }).observe(root);
   }
 
-  document.getElementById('showcasePrev').addEventListener('click', () => { stopped = true; show(index - 1, -1); });
-  document.getElementById('showcaseNext').addEventListener('click', () => { stopped = true; show(index + 1, 1); });
+  prevBtn.addEventListener('click', () => { stopped = true; show(index - 1, -1); });
+  nextBtn.addEventListener('click', () => { stopped = true; show(index + 1, 1); });
 
   root.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') { stopped = true; show(index - 1, -1); }
     if (e.key === 'ArrowRight') { stopped = true; show(index + 1, 1); }
   });
 
-  // Swipe or drag sideways to change project. A drag never counts as a click on the link.
+  // Swipe or drag sideways to change item. A drag never counts as a click on the link.
   let startX = 0;
   let startY = 0;
   let dragging = false;
@@ -330,22 +331,23 @@ if (finePointer && !reduceMotion) {
   }, true);
 
   show(0, 1);
-})();
+}
 
-// Coursework: two highlights up front, the rest tucked behind a "More projects" button
-const moreToggle = document.getElementById('moreToggle');
-const moreProjects = document.getElementById('moreProjects');
-if (moreToggle && moreProjects) {
-  const moreLabel = moreToggle.querySelector('.more-label');
-  moreToggle.addEventListener('click', () => {
-    const opening = !moreProjects.classList.contains('open');
-    moreProjects.classList.toggle('open', opening);
-    moreToggle.setAttribute('aria-expanded', String(opening));
-    moreLabel.textContent = opening ? 'Show fewer' : 'More projects';
-    // Closing a long list can leave you far down the page, so bring the section back into view
-    if (!opening) {
-      document.getElementById('coursework').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    }
+document.querySelectorAll('.showcase').forEach(initShowcase);
+
+// Music section: tapping a chip shows what that tool is for
+const skillChips = document.getElementById('skillChips');
+if (skillChips) {
+  const detailEl = document.getElementById('skillDetail');
+  const chips = [...skillChips.querySelectorAll('.skill-chip')];
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => {
+        c.classList.toggle('is-active', c === chip);
+        c.setAttribute('aria-pressed', String(c === chip));
+      });
+      detailEl.textContent = chip.dataset.detail;
+    });
   });
 }
 // ---------- Dark / light theme ----------
