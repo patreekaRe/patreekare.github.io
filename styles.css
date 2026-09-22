@@ -17,6 +17,7 @@
   --nav-bg-solid: rgba(40, 54, 24, 0.97);
   --edge: rgba(96, 108, 56, 0.08);
   --plum: #6a5399;
+  --band-strength: 24%;
 
   --font-body: "Poppins", sans-serif;
   --font-head: "Fraunces", "Roboto Slab", serif;
@@ -493,29 +494,30 @@ section {
   border-top: 1px solid var(--edge);
 }
 
-/* Each section gets its own faint wash, mixed from its own theme's *card* color (crisp white in
-   light, warm brown in dark) rather than the page color — mixing into the page's own warm cream
-   compounded the warmth into a muddy peach in light mode, instead of a clean pastel */
+/* Each section gets its own clearly-colored band, alternating warm and cool so the change from
+   one section to the next is obvious rather than subtle. Mixed from the theme's *card* color
+   (crisp white in light, warm brown in dark) rather than the page color — mixing into the page's
+   own warm cream compounded the warmth into a muddy peach in light mode instead of a clean tint. */
 #featured-work::before {
-  background: color-mix(in srgb, var(--rust) 5%, var(--white));
+  background: color-mix(in srgb, var(--rust) var(--band-strength), var(--white));
 }
 
 #music::before {
-  background: color-mix(in srgb, var(--tan) 6%, var(--white));
+  background: color-mix(in srgb, var(--plum) var(--band-strength), var(--white));
 }
 
 #coursework::before {
-  background: color-mix(in srgb, var(--olive) 5%, var(--white));
+  background: color-mix(in srgb, var(--tan) var(--band-strength), var(--white));
 }
 
 #about::before {
-  background: color-mix(in srgb, var(--plum) 6%, var(--white));
+  background: color-mix(in srgb, var(--olive) var(--band-strength), var(--white));
 }
 
 #contact::before {
   background:
-    radial-gradient(600px 280px at 50% 0%, color-mix(in srgb, var(--rust) 10%, transparent), transparent 70%),
-    color-mix(in srgb, var(--rust) 5%, var(--white));
+    radial-gradient(600px 280px at 50% 0%, color-mix(in srgb, var(--rust) 20%, transparent), transparent 70%),
+    color-mix(in srgb, var(--rust) var(--band-strength), var(--white));
 }
 
 .section-head {
@@ -1327,6 +1329,7 @@ html[data-theme="dark"] .record-disc {
     --nav-bg-solid: rgba(14, 10, 7, 0.97);
     --edge: rgba(255, 190, 130, 0.1);
     --plum: #a993d6;
+    --band-strength: 11%;
 
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
