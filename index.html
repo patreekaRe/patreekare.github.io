@@ -21,6 +21,8 @@
     } catch (e) {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+    // Always open at the top instead of wherever the browser last had you scrolled to
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   </script>
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js');</script>
@@ -271,8 +273,8 @@
     <div class="crate-shelf" id="musicShelf" role="list" aria-label="My records"></div>
 
     <div class="music-stage">
-      <div class="music-embed" id="musicEmbed"></div>
       <p class="music-now" id="musicNow">Pick a record, flip it, then choose a song.</p>
+      <div class="music-embed" id="musicEmbed"><div class="music-embed-inner" id="musicEmbedInner"></div></div>
     </div>
 
   </section>

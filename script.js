@@ -1,3 +1,10 @@
+// If the browser resumes this page from its back-forward cache (e.g. reopening a Safari tab
+// that was never actually reloaded), it keeps whatever scroll position the tab had. Snap back
+// to the top instead, matching a fresh visit.
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) window.scrollTo(0, 0);
+});
+
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -397,6 +404,7 @@ const MUSIC_RECORDS = [
 const musicShelf = document.getElementById('musicShelf');
 if (musicShelf) {
   const embedEl = document.getElementById('musicEmbed');
+  const embedInner = document.getElementById('musicEmbedInner');
   const nowEl = document.getElementById('musicNow');
   const cards = [];
   let controller = null;
@@ -465,6 +473,10 @@ if (musicShelf) {
     playing = false;
     markPlaying();
     load(true);
+    // A song has actually been picked now, so reveal the player and let the Spotify widget
+    // itself show the track info instead of duplicating it in the prompt text below
+    embedEl.classList.add('is-active');
+    nowEl.classList.add('is-hidden');
   };
 
   MUSIC_RECORDS.forEach((record, ri) => {
@@ -548,7 +560,7 @@ if (musicShelf) {
     creating = true;
     const first = MUSIC_RECORDS[0].songs[0];
     const mount = document.createElement('div');
-    embedEl.replaceChildren(mount);
+    embedInner.replaceChildren(mount);
     loadedId = first.id;
     api.createController(mount, { width: '100%', height: 152, uri: `spotify:track:${first.id}` }, (ctl) => {
       controller = ctl;
@@ -582,13 +594,13 @@ if (musicShelf) {
     createController();
     // If Spotify's player script is blocked or slow, fall back to a plain embed
     setTimeout(() => {
-      if (controller || creating || embedEl.querySelector('iframe')) return;
+      if (controller || creating || embedInner.querySelector('iframe')) return;
       fallbackFrame = document.createElement('iframe');
       fallbackFrame.title = 'Spotify player';
       fallbackFrame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
       const current = selected ? MUSIC_RECORDS[selected.ri].songs[selected.si] : MUSIC_RECORDS[0].songs[0];
       fallbackFrame.src = `https://open.spotify.com/embed/track/${current.id}?utm_source=generator&theme=0`;
-      embedEl.replaceChildren(fallbackFrame);
+      embedInner.replaceChildren(fallbackFrame);
     }, 5000);
   };
 
