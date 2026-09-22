@@ -1834,8 +1834,8 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
    the prev/next arrows off the edge of a narrow phone screen */
 .showcase-pips {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
-  flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
