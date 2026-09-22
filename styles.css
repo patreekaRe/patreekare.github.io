@@ -1728,7 +1728,9 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
 
 .slide-link {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
+  margin-inline: auto;
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem 1.1rem 0.6rem 1.25rem;
@@ -1740,6 +1742,7 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   text-decoration: none;
   overflow: hidden;
   isolation: isolate;
+  animation: link-pulse 2.6s ease-in-out infinite;
   transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
@@ -1748,14 +1751,20 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.55) 42%, transparent 64%);
-  translate: -130% 0;
-  transition: translate 0.6s var(--ease);
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.6) 42%, transparent 64%);
+  translate: -140% 0;
+  animation: link-shimmer 2.6s ease-in-out infinite;
 }
 
-.slide-link:hover::before,
-.slide-link:focus-visible::before {
-  translate: 130% 0;
+@keyframes link-shimmer {
+  0%, 15% { translate: -140% 0; }
+  55%, 100% { translate: 140% 0; }
+}
+
+@keyframes link-pulse {
+  0%, 15% { box-shadow: 0 4px 14px rgba(227, 165, 91, 0.25); }
+  35% { box-shadow: 0 8px 22px rgba(227, 165, 91, 0.45); }
+  60%, 100% { box-shadow: 0 4px 14px rgba(227, 165, 91, 0.25); }
 }
 
 .slide-link-arrow {
@@ -1767,18 +1776,19 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: transform 0.3s var(--ease);
+  animation: arrow-nudge 2.6s ease-in-out infinite;
 }
 
-.slide-link:hover .slide-link-arrow,
-.slide-link:focus-visible .slide-link-arrow {
-  transform: translateX(3px) rotate(0deg);
+@keyframes arrow-nudge {
+  0%, 15% { transform: translateX(0); }
+  35% { transform: translateX(4px); }
+  60%, 100% { transform: translateX(0); }
 }
 
 .slide-link:hover,
 .slide-link:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(227, 165, 91, 0.35);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 22px rgba(227, 165, 91, 0.45);
 }
 
 .slide-link:focus-visible,
@@ -1881,6 +1891,12 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
     animation: none;
     transform: scaleX(1);
   }
+
+  .slide-link,
+  .slide-link::before,
+  .slide-link-arrow {
+    animation: none;
+  }
 }
 
 /* ================================================================
@@ -1910,9 +1926,6 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   font-size: 0.82rem;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  isolation: isolate;
-  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
 }
 
 /* Fade the chips in slightly after the section heading (classes added by script.js, so
@@ -1933,26 +1946,6 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
 .skill-chip:nth-child(3) { --ci: 3; --chip-accent: var(--tan); }
 .skill-chip:nth-child(4) { --ci: 4; --chip-accent: var(--rust-dark); }
 
-.skill-chip::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--chip-accent) 22%, transparent) 50%, transparent 70%);
-  translate: -140% 0;
-  transition: translate 0.7s var(--ease);
-}
-
-.skill-chip:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--chip-accent);
-}
-
-.skill-chip:hover::before {
-  translate: 140% 0;
-}
-
 .skill-chip-icon {
   display: grid;
   place-items: center;
@@ -1962,11 +1955,6 @@ html[data-theme="dark"] .tonearm .disc circle:first-child {
   border-radius: 50%;
   background: color-mix(in srgb, var(--chip-accent) 16%, transparent);
   color: var(--chip-accent);
-  transition: transform 0.3s var(--ease);
-}
-
-.skill-chip:hover .skill-chip-icon {
-  transform: scale(1.1) rotate(-6deg);
 }
 
 .skill-chip svg {
