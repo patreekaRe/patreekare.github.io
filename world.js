@@ -2981,29 +2981,251 @@ function currentInteractables() {
 
 // ---------- Character ----------
 
+// Patrick as a chunky Animal Crossing-style villager: a big round head with dot eyes, rosy
+// cheeks and a wide grin, swept-up dark hair, and the denim varsity jacket with cream sleeves
+// and striped ribbing over a black tee. Arms and legs hang from pivots so they can swing.
 const character = new THREE.Group();
+const rig = new THREE.Group(); // bobs while walking
+character.add(rig);
 
-const body = new THREE.Mesh(
-  new THREE.CapsuleGeometry(0.55, 0.9, 4, 8),
-  new THREE.MeshLambertMaterial({ color: PALETTE.rust })
+const SKIN = 0xe2b48c;
+const skinMat = lambert(SKIN);
+const hairMat = lambert(0x231b18);
+const denimMat = lambert(0x7189a8);
+const sleeveMat = lambert(0xe8dcc4);
+const ribMat = lambert(0x1f2433);
+const stripeMat = lambert(0xa8483a);
+const teeMat = lambert(0x1c1c1f);
+const pantsMat = lambert(0x2b2f3a);
+const shoeMat = lambert(0xf2eee6);
+const soleMat = lambert(0x9a8f80);
+const snapMat = new THREE.MeshLambertMaterial({ color: 0xd9d4c7, emissive: 0x3a3a3a });
+
+// Legs: short stubby pants with chunky sneakers
+const makeLeg = (x) => {
+  const hip = new THREE.Group();
+  hip.position.set(x, 0.56, 0);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.26, 4, 10), pantsMat);
+  leg.position.y = -0.24;
+  hip.add(leg);
+  const shoe = rbox(0.28, 0.16, 0.4, 0.07, shoeMat);
+  shoe.position.set(0, -0.48, 0.05);
+  hip.add(shoe);
+  const sole = rbox(0.29, 0.05, 0.41, 0.02, soleMat);
+  sole.position.set(0, -0.54, 0.05);
+  hip.add(sole);
+  rig.add(hip);
+  return hip;
+};
+const legL = makeLeg(-0.17);
+const legR = makeLeg(0.17);
+
+// Torso: the denim jacket body, open over a black tee
+const torso = new THREE.Group();
+torso.position.y = 0.9;
+rig.add(torso);
+const jacket = rbox(0.78, 0.66, 0.54, 0.22, denimMat);
+torso.add(jacket);
+const tee = rbox(0.2, 0.58, 0.05, 0.02, teeMat);
+tee.position.set(0, 0.02, 0.26);
+torso.add(tee);
+// Waistband: dark rib with a rust stripe
+const waistRib = rbox(0.8, 0.1, 0.56, 0.05, ribMat);
+waistRib.position.y = -0.3;
+torso.add(waistRib);
+const waistStripe = rbox(0.81, 0.025, 0.57, 0.012, stripeMat);
+waistStripe.position.y = -0.3;
+torso.add(waistStripe);
+// Snap buttons down one side of the opening
+for (let i = 0; i < 3; i++) {
+  const snap = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), snapMat);
+  snap.position.set(-0.13, 0.15 - i * 0.17, 0.275);
+  torso.add(snap);
+}
+// Ribbed varsity collar around the neck
+const collar = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.055, 8, 20), ribMat);
+collar.rotation.x = Math.PI / 2;
+collar.position.y = 0.33;
+torso.add(collar);
+const collarStripe = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.058, 4, 20, Math.PI * 2), stripeMat);
+collarStripe.rotation.x = Math.PI / 2;
+collarStripe.position.y = 0.33;
+collarStripe.scale.set(1, 1, 0.3);
+torso.add(collarStripe);
+
+// Arms: cream varsity sleeves with striped cuffs and little round hands
+const makeArm = (side) => {
+  const shoulder = new THREE.Group();
+  shoulder.position.set(side * 0.42, 1.14, 0);
+  shoulder.rotation.z = side * 0.18;
+  const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.3, 4, 10), sleeveMat);
+  sleeve.position.y = -0.22;
+  shoulder.add(sleeve);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.125, 0.09, 12), ribMat);
+  cuff.position.y = -0.44;
+  shoulder.add(cuff);
+  const cuffStripe = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.022, 12), stripeMat);
+  cuffStripe.position.y = -0.44;
+  shoulder.add(cuffStripe);
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), skinMat);
+  hand.position.y = -0.55;
+  shoulder.add(hand);
+  rig.add(shoulder);
+  return shoulder;
+};
+const armL = makeArm(-1);
+const armR = makeArm(1);
+
+// Head: an oversized ball, slightly wider than tall
+const HEAD_R = 0.56;
+const headGroup = new THREE.Group();
+headGroup.position.y = 1.72;
+headGroup.scale.set(1.06, 0.97, 1);
+rig.add(headGroup);
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.2, 10), skinMat);
+neck.position.y = 1.27;
+rig.add(neck);
+headGroup.add(new THREE.Mesh(new THREE.SphereGeometry(HEAD_R, 32, 24), skinMat));
+
+// Stick a flat feature onto the head's surface, facing outward. yaw turns toward +x (the
+// character's left from the camera), pitch tilts up.
+const faceZ = new THREE.Vector3(0, 0, 1);
+const onHead = (mesh, yaw, pitch, lift = 0.004) => {
+  const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+  mesh.position.copy(dir).multiplyScalar(HEAD_R + lift);
+  mesh.quaternion.setFromUnitVectors(faceZ, dir);
+  headGroup.add(mesh);
+  return mesh;
+};
+const flat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
+
+// Eyes: tall black ovals with a white glint, grouped so they can blink
+const eyeMat = flat(0x1a1411);
+const glintMat = flat(0xffffff);
+const makeEye = (yaw) => {
+  const eye = new THREE.Group();
+  const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.058, 20), eyeMat);
+  pupil.scale.y = 1.35;
+  eye.add(pupil);
+  const glint = new THREE.Mesh(new THREE.CircleGeometry(0.02, 12), glintMat);
+  glint.position.set(0.018, 0.03, 0.002);
+  eye.add(glint);
+  return onHead(eye, yaw, 0.08);
+};
+const eyeL = makeEye(-0.33);
+const eyeR = makeEye(0.33);
+
+// Eyebrows: short soft dark dashes, lifted with the smile
+const makeBrow = (yaw, tilt) => {
+  const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.09, 3, 8), eyeMat);
+  const holder = new THREE.Group();
+  brow.rotation.z = Math.PI / 2 + tilt;
+  holder.add(brow);
+  return onHead(holder, yaw, 0.34, 0.012);
+};
+makeBrow(-0.34, 0.18);
+makeBrow(0.34, -0.18);
+
+// Rosy cheeks
+const cheekMat = flat(0xf08c7a, { transparent: true, opacity: 0.55, depthWrite: false });
+const makeCheek = (yaw) => {
+  const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.075, 20), cheekMat);
+  cheek.scale.y = 0.65;
+  return onHead(cheek, yaw, -0.14, 0.003);
+};
+makeCheek(-0.6);
+makeCheek(0.6);
+
+// Little nose bump
+const charNose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), lambert(0xd49f76));
+charNose.position.set(0, -0.04, HEAD_R - 0.005);
+charNose.scale.set(1.2, 0.9, 0.8);
+headGroup.add(charNose);
+
+// Big open grin: a dark half-moon with a row of teeth along the top
+const mouth = new THREE.Group();
+const mouthShape = new THREE.Mesh(new THREE.CircleGeometry(0.15, 24, Math.PI, Math.PI), flat(0x6b2a24));
+mouthShape.scale.y = 0.75;
+mouth.add(mouthShape);
+const teeth = new THREE.Mesh(new THREE.CircleGeometry(0.135, 24, Math.PI, Math.PI), flat(0xffffff));
+teeth.scale.y = 0.28;
+teeth.position.z = 0.002;
+mouth.add(teeth);
+onHead(mouth, 0, -0.26);
+
+// Ears
+for (const side of [-1, 1]) {
+  const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), skinMat);
+  ear.position.set(side * (HEAD_R - 0.02), -0.02, -0.02);
+  ear.scale.set(0.55, 1, 0.8);
+  headGroup.add(ear);
+}
+
+// Hair: a dark cap over the top and back, tipped back so the forehead shows, then a
+// swept-up quiff leaning to one side and short sideburns
+const hairCap = new THREE.Mesh(
+  new THREE.SphereGeometry(HEAD_R * 1.07, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.46),
+  hairMat
 );
-body.position.y = 1.05;
-character.add(body);
+hairCap.rotation.x = -0.85;
+hairCap.position.y = 0.04;
+headGroup.add(hairCap);
+const hairBack = new THREE.Mesh(new THREE.SphereGeometry(HEAD_R * 1.04, 24, 16), hairMat);
+hairBack.scale.set(1, 0.82, 0.9);
+hairBack.position.set(0, 0.06, -0.1);
+headGroup.add(hairBack);
+const quiffPieces = [
+  { x: -0.22, y: 0.5, z: 0.18, s: [0.2, 0.16, 0.24], rz: 0.55, rx: -0.5 },
+  { x: -0.04, y: 0.58, z: 0.2, s: [0.24, 0.19, 0.26], rz: 0.25, rx: -0.6 },
+  { x: 0.16, y: 0.57, z: 0.17, s: [0.23, 0.18, 0.25], rz: -0.15, rx: -0.6 },
+  { x: 0.33, y: 0.45, z: 0.14, s: [0.17, 0.15, 0.22], rz: -0.55, rx: -0.5 },
+]
+for (const p of quiffPieces) {
+  const tuft = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), hairMat);
+  tuft.position.set(p.x, p.y, p.z);
+  tuft.scale.set(...p.s);
+  tuft.rotation.set(p.rx, 0, p.rz);
+  headGroup.add(tuft);
+}
+for (const side of [-1, 1]) {
+  const burn = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.06, 3, 8), hairMat);
+  burn.position.set(side * 0.54, 0.12, 0.1);
+  burn.rotation.z = side * 0.15;
+  headGroup.add(burn);
+}
 
-const head = new THREE.Mesh(
-  new THREE.SphereGeometry(0.42, 16, 16),
-  new THREE.MeshLambertMaterial({ color: 0xf3d5b5 })
+// Soft round shadow under the feet so he stays grounded
+const charShadow = new THREE.Mesh(
+  new THREE.CircleGeometry(0.55, 24),
+  new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
 );
-head.position.y = 1.95;
-character.add(head);
+charShadow.rotation.x = -Math.PI / 2;
+charShadow.position.y = 0.012;
+character.add(charShadow);
 
-const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
-const eyeMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
-const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-eyeL.position.set(-0.15, 1.98, 0.36);
-const eyeR = eyeL.clone();
-eyeR.position.x = 0.15;
-character.add(eyeL, eyeR);
+// Walk cycle, idle breathing and the occasional blink
+let walkPhase = 0;
+let walkBlend = 0;
+let nextBlink = 2.5;
+function animateCharacter(delta, t, moving, speedFactor) {
+  walkBlend = THREE.MathUtils.damp(walkBlend, moving ? 1 : 0, 12, delta);
+  if (moving) walkPhase += delta * 11 * Math.max(speedFactor, 0.45);
+  const swing = Math.sin(walkPhase) * 0.7 * walkBlend;
+  legL.rotation.x = swing;
+  legR.rotation.x = -swing;
+  armL.rotation.x = -swing * 0.9;
+  armR.rotation.x = swing * 0.9;
+  const breathe = Math.sin(t * 2.2) * 0.012 * (1 - walkBlend);
+  rig.position.y = Math.abs(Math.sin(walkPhase)) * 0.07 * walkBlend + breathe;
+  headGroup.rotation.z = Math.sin(walkPhase) * 0.05 * walkBlend;
+  headGroup.rotation.x = Math.sin(t * 1.1) * 0.03 * (1 - walkBlend);
+
+  nextBlink -= delta;
+  let lid = 1;
+  if (nextBlink < 0.12) lid = Math.max(0.1, Math.abs(nextBlink - 0.06) / 0.06);
+  if (nextBlink < 0) nextBlink = 2 + Math.random() * 3.5;
+  eyeL.scale.y = eyeR.scale.y = lid;
+}
 
 character.position.copy(SPAWN_OUTSIDE);
 scene.add(character);
@@ -3684,11 +3906,8 @@ function animate() {
     let angleDiff = targetAngle - character.rotation.y;
     angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
     character.rotation.y += angleDiff * Math.min(delta * 10, 1);
-
-    body.position.y = 1.05 + Math.abs(Math.sin(t * 10)) * 0.06;
-  } else {
-    body.position.y = 1.05;
   }
+  animateCharacter(delta, t, moveDir.lengthSq() > 0.0001, speedFactor);
 
   if (area === "inside") {
     updateHenry(delta, t);
