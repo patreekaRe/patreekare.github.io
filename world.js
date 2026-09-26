@@ -3016,69 +3016,81 @@ const lathe = (points, material, phiStart = 0, phiLength = Math.PI * 2) =>
 // Legs: short stubs in dark pants with chunky rounded sneakers
 const makeLeg = (x) => {
   const hip = new THREE.Group();
-  hip.position.set(x, 0.46, 0);
-  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.16, 4, 12), pantsMat);
-  leg.position.y = -0.17;
+  hip.position.set(x, 0.62, 0);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.3, 4, 12), pantsMat);
+  leg.position.y = -0.27;
   hip.add(leg);
   const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), shoeMat);
   shoe.scale.set(0.95, 0.62, 1.3);
-  shoe.position.set(0, -0.36, 0.05);
+  shoe.position.set(0, -0.52, 0.05);
   hip.add(shoe);
   const sole = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.165, 0.05, 16), soleMat);
   sole.scale.set(0.95, 1, 1.3);
-  sole.position.set(0, -0.42, 0.05);
+  sole.position.set(0, -0.58, 0.05);
   hip.add(sole);
   rig.add(hip);
   return hip;
 };
 const legL = makeLeg(-0.15);
 const legR = makeLeg(0.15);
+// Seat of the pants, filling in between the legs under the jacket
+const seat = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 12), pantsMat);
+seat.scale.set(1, 0.55, 0.8);
+seat.position.y = 0.62;
+rig.add(seat);
 
-// Torso: a bell-shaped jacket, flared at the hem and rounded into the shoulders
+// Torso: a cropped varsity jacket, roomy through the body and pulled in at a ribbed waistband
+// that sits on the hips, then rounded into the shoulders
 const torso = new THREE.Group();
-torso.position.y = 0.42;
+torso.position.y = 0.56;
 torso.scale.z = 0.82;
 rig.add(torso);
 const torsoProfile = [
-  [0.0, 0.0], [0.4, 0.0], [0.43, 0.05], [0.42, 0.2], [0.38, 0.42], [0.33, 0.58], [0.24, 0.68], [0.12, 0.72], [0.0, 0.72],
+  [0.0, 0.0], [0.33, 0.0], [0.36, 0.06], [0.4, 0.16], [0.405, 0.28], [0.38, 0.42], [0.32, 0.52], [0.2, 0.58], [0.1, 0.6], [0.0, 0.6],
 ];
 torso.add(lathe(torsoProfile, denimMat));
+const radiusAt = (h) => {
+  for (let i = 1; i < torsoProfile.length; i++) {
+    const [r0, y0] = torsoProfile[i - 1];
+    const [r1, y1] = torsoProfile[i];
+    if (h >= y0 && h <= y1 && y1 > y0) return r0 + ((h - y0) / (y1 - y0)) * (r1 - r0);
+  }
+  return torsoProfile[1][0];
+};
 // Black tee showing through the open front
 const grow = (pts, d) => pts.map(([r, y]) => [r + d, y]);
-const teePanel = lathe(grow(torsoProfile.slice(1, 7), 0.006), teeMat, -0.2, 0.4);
-torso.add(teePanel);
+const frontProfile = torsoProfile.slice(2, 8);
+torso.add(lathe(grow(frontProfile, 0.006), teeMat, -0.2, 0.4));
 // Darker placket edges either side of the opening
-for (const phi of [-0.24, 0.2]) torso.add(lathe(grow(torsoProfile.slice(1, 7), 0.008), denimDarkMat, phi, 0.04));
+for (const phi of [-0.24, 0.2]) torso.add(lathe(grow(frontProfile, 0.008), denimDarkMat, phi, 0.04));
 // Snap buttons down the placket
 for (let i = 0; i < 3; i++) {
-  const h = 0.52 - i * 0.16;
-  const r = 0.43 - Math.max(0, h - 0.2) * 0.25 + 0.01;
+  const h = 0.45 - i * 0.14;
+  const r = radiusAt(h) + 0.012;
   const snap = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), metalMat);
   snap.position.set(Math.sin(-0.3) * r, h, Math.cos(-0.3) * r);
   torso.add(snap);
 }
-// Ribbed waistband with a rust stripe
-const hem = lathe([[0.44, 0.0], [0.45, 0.04], [0.45, 0.1], [0.43, 0.13]], ribMat);
-hem.position.y = -0.02;
+// Snug ribbed waistband with a rust stripe
+const hem = lathe([[0.3, -0.02], [0.335, -0.01], [0.345, 0.04], [0.35, 0.09], [0.37, 0.11]], ribMat);
 torso.add(hem);
-const hemStripe = lathe([[0.455, 0.05], [0.455, 0.075]], stripeMat);
-hemStripe.position.y = -0.02;
+const hemStripe = lathe([[0.348, 0.035], [0.35, 0.06]], stripeMat);
 torso.add(hemStripe);
 // Striped varsity collar hugging the neck
 const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.06, 10, 24), ribMat);
 collar.rotation.x = Math.PI / 2;
-collar.position.y = 0.7;
+collar.position.y = 0.58;
 torso.add(collar);
 const collarStripe = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.062, 10, 24), stripeMat);
 collarStripe.rotation.x = Math.PI / 2;
-collarStripe.position.y = 0.7;
+collarStripe.position.y = 0.58;
 collarStripe.scale.z = 0.25;
 torso.add(collarStripe);
 
 // Arms: stubby cream sleeves with striped cuffs and round nub hands; a watch on the left wrist
 const makeArm = (side) => {
   const shoulder = new THREE.Group();
-  shoulder.position.set(side * 0.34, 0.96, 0);
+  shoulder.position.set(side * 0.35, 1.02, 0);
   const arm = new THREE.Group();
   arm.rotation.z = side * 0.32;
   shoulder.add(arm);
