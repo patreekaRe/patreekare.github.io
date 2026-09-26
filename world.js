@@ -3013,72 +3013,115 @@ const lathe = (points, material, phiStart = 0, phiLength = Math.PI * 2) =>
     material
   );
 
-// Legs: short stubs in dark pants with chunky rounded sneakers
+// Swoosh for the sneakers: a crescent that's fattest at the belly and tapers to a point at the
+// heel, bent to hug the shoe's curved side. u runs toward the toe, v up.
+const SHOE_R = [0.17 * 0.95, 0.17 * 0.62, 0.17 * 1.3];
+const swooshShape = new THREE.Shape();
+swooshShape.moveTo(0.075, 0.018);
+swooshShape.quadraticCurveTo(0.045, -0.05, -0.01, -0.028);
+swooshShape.lineTo(-0.105, 0.028);
+swooshShape.quadraticCurveTo(-0.01, -0.006, 0.03, -0.012);
+swooshShape.quadraticCurveTo(0.058, -0.014, 0.075, 0.018);
+const swooshGeo = new THREE.ShapeGeometry(swooshShape, 8);
+swooshGeo.scale(1.5, 1.5, 1);
+swooshGeo.translate(-0.015, 0.025, 0);
+{
+  const pos = swooshGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const u = pos.getX(i);
+    const v = pos.getY(i);
+    const k = Math.max(0, 1 - (u / SHOE_R[2]) ** 2 - (v / SHOE_R[1]) ** 2);
+    pos.setZ(i, SHOE_R[0] * Math.sqrt(k) + 0.006);
+  }
+}
+const swooshMat = flat(0x1b1b1f, { side: THREE.DoubleSide });
+
+// Legs: dark pants with chunky rounded sneakers
 const makeLeg = (x) => {
   const hip = new THREE.Group();
-  hip.position.set(x, 0.46, 0);
-  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.16, 4, 12), pantsMat);
-  leg.position.y = -0.17;
+  hip.position.set(x, 0.62, 0);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.3, 4, 12), pantsMat);
+  leg.position.y = -0.27;
   hip.add(leg);
   const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), shoeMat);
   shoe.scale.set(0.95, 0.62, 1.3);
-  shoe.position.set(0, -0.36, 0.05);
+  shoe.position.set(0, -0.52, 0.05);
   hip.add(shoe);
   const sole = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.165, 0.05, 16), soleMat);
   sole.scale.set(0.95, 1, 1.3);
-  sole.position.set(0, -0.42, 0.05);
+  sole.position.set(0, -0.58, 0.05);
   hip.add(sole);
+  // A swoosh on each side of the shoe, with the tail pointing back toward the heel
+  for (const side of [-1, 1]) {
+    const swoosh = new THREE.Mesh(swooshGeo, swooshMat);
+    swoosh.position.set(0, -0.515, 0.05);
+    swoosh.rotation.y = -side * Math.PI / 2;
+    if (side < 0) swoosh.scale.x = -1;
+    hip.add(swoosh);
+  }
   rig.add(hip);
   return hip;
 };
 const legL = makeLeg(-0.15);
 const legR = makeLeg(0.15);
+// Seat of the pants, filling in between the legs under the jacket
+const seat = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 12), pantsMat);
+seat.scale.set(1, 0.55, 0.8);
+seat.position.y = 0.62;
+rig.add(seat);
 
-// Torso: a bell-shaped jacket, flared at the hem and rounded into the shoulders
+// Torso: a cropped varsity jacket, roomy through the body and pulled in at a ribbed waistband
+// that sits on the hips, then rounded into the shoulders
 const torso = new THREE.Group();
-torso.position.y = 0.42;
+torso.position.y = 0.56;
 torso.scale.z = 0.82;
 rig.add(torso);
 const torsoProfile = [
-  [0.0, 0.0], [0.4, 0.0], [0.43, 0.05], [0.42, 0.2], [0.38, 0.42], [0.33, 0.58], [0.24, 0.68], [0.12, 0.72], [0.0, 0.72],
+  [0.0, 0.0], [0.33, 0.0], [0.36, 0.06], [0.4, 0.16], [0.405, 0.28], [0.38, 0.42], [0.32, 0.52], [0.2, 0.58], [0.1, 0.6], [0.0, 0.6],
 ];
 torso.add(lathe(torsoProfile, denimMat));
+const radiusAt = (h) => {
+  for (let i = 1; i < torsoProfile.length; i++) {
+    const [r0, y0] = torsoProfile[i - 1];
+    const [r1, y1] = torsoProfile[i];
+    if (h >= y0 && h <= y1 && y1 > y0) return r0 + ((h - y0) / (y1 - y0)) * (r1 - r0);
+  }
+  return torsoProfile[1][0];
+};
 // Black tee showing through the open front
 const grow = (pts, d) => pts.map(([r, y]) => [r + d, y]);
-const teePanel = lathe(grow(torsoProfile.slice(1, 7), 0.006), teeMat, -0.2, 0.4);
-torso.add(teePanel);
+const frontProfile = torsoProfile.slice(2, 8);
+torso.add(lathe(grow(frontProfile, 0.006), teeMat, -0.2, 0.4));
 // Darker placket edges either side of the opening
-for (const phi of [-0.24, 0.2]) torso.add(lathe(grow(torsoProfile.slice(1, 7), 0.008), denimDarkMat, phi, 0.04));
+for (const phi of [-0.24, 0.2]) torso.add(lathe(grow(frontProfile, 0.008), denimDarkMat, phi, 0.04));
 // Snap buttons down the placket
 for (let i = 0; i < 3; i++) {
-  const h = 0.52 - i * 0.16;
-  const r = 0.43 - Math.max(0, h - 0.2) * 0.25 + 0.01;
+  const h = 0.45 - i * 0.14;
+  const r = radiusAt(h) + 0.012;
   const snap = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), metalMat);
   snap.position.set(Math.sin(-0.3) * r, h, Math.cos(-0.3) * r);
   torso.add(snap);
 }
-// Ribbed waistband with a rust stripe
-const hem = lathe([[0.44, 0.0], [0.45, 0.04], [0.45, 0.1], [0.43, 0.13]], ribMat);
-hem.position.y = -0.02;
+// Snug ribbed waistband with a rust stripe
+const hem = lathe([[0.3, -0.02], [0.335, -0.01], [0.345, 0.04], [0.35, 0.09], [0.37, 0.11]], ribMat);
 torso.add(hem);
-const hemStripe = lathe([[0.455, 0.05], [0.455, 0.075]], stripeMat);
-hemStripe.position.y = -0.02;
+const hemStripe = lathe([[0.348, 0.035], [0.35, 0.06]], stripeMat);
 torso.add(hemStripe);
 // Striped varsity collar hugging the neck
 const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.06, 10, 24), ribMat);
 collar.rotation.x = Math.PI / 2;
-collar.position.y = 0.7;
+collar.position.y = 0.58;
 torso.add(collar);
 const collarStripe = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.062, 10, 24), stripeMat);
 collarStripe.rotation.x = Math.PI / 2;
-collarStripe.position.y = 0.7;
+collarStripe.position.y = 0.58;
 collarStripe.scale.z = 0.25;
 torso.add(collarStripe);
 
 // Arms: stubby cream sleeves with striped cuffs and round nub hands; a watch on the left wrist
 const makeArm = (side) => {
   const shoulder = new THREE.Group();
-  shoulder.position.set(side * 0.34, 0.96, 0);
+  shoulder.position.set(side * 0.35, 1.02, 0);
   const arm = new THREE.Group();
   arm.rotation.z = side * 0.32;
   shoulder.add(arm);
@@ -3198,7 +3241,8 @@ for (const side of [-1, 1]) {
 }
 
 // Hair: a sculpted shell over the top and back, tipped back so the forehead shows, a fuller
-// back, swept-up chunks at the front leaning to one side, and a soft shine across the top
+// back, then a subtle middle part: two curtain swoops falling away from a center part line,
+// with soft tips framing the forehead and a shine on each side
 const hairShell = new THREE.Mesh(
   new THREE.SphereGeometry(HEAD_R * 1.06, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5),
   hairMat
@@ -3210,19 +3254,38 @@ const hairBack = new THREE.Mesh(new THREE.SphereGeometry(HEAD_R * 1.03, 32, 20),
 hairBack.scale.set(1, 0.78, 0.86);
 hairBack.position.set(0, 0.07, -0.12);
 headGroup.add(hairBack);
-// Front quiff: two rounded swoops rising off the forehead, the bigger one swept to one side
-// with a part line between them
-const quiffs = [
-  { p: [0.1, 0.53, 0.2], s: [0.44, 0.28, 0.36], r: [0.45, 0, -0.28] },
-  { p: [-0.27, 0.47, 0.19], s: [0.28, 0.23, 0.3], r: [0.4, 0, 0.35] },
-];
-for (const q of quiffs) {
-  const lobe = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), hairMat);
-  lobe.position.set(...q.p);
-  lobe.scale.set(...q.s);
-  lobe.rotation.set(...q.r);
+const lobeGeo = new THREE.SphereGeometry(1, 28, 20);
+const tipGeo = new THREE.SphereGeometry(1, 16, 12);
+tipGeo.translate(0, 1, 0);
+const shineMat = flat(0x75625a, { transparent: true, opacity: 0.85 });
+for (const side of [-1, 1]) {
+  // Curtain swoop: rises from the part, then rolls down and out toward the temple
+  const lobe = new THREE.Mesh(lobeGeo, hairMat);
+  lobe.position.set(side * 0.23, 0.5, 0.2);
+  lobe.scale.set(0.29, 0.24, 0.34);
+  lobe.rotation.set(0.45, 0, side * -0.42);
   headGroup.add(lobe);
+  // Tapered tips curling down over the edges of the forehead
+  for (const [x, y, z, len, tilt] of [[0.12, 0.46, 0.4, 0.13, 0.35], [0.3, 0.4, 0.36, 0.15, 0.7]]) {
+    const tip = new THREE.Mesh(tipGeo, hairMat);
+    tip.position.set(side * x, y, z);
+    tip.scale.set(0.075, len, 0.07);
+    tip.rotation.set(-0.5, 0, Math.PI + side * -tilt);
+    headGroup.add(tip);
+  }
+  const shine = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.017, 6, 24, 1.1), shineMat);
+  shine.position.set(side * 0.2, 0.53, 0.2);
+  shine.rotation.set(-0.5, 0, side > 0 ? 0.35 : Math.PI - 0.35 - 1.1);
+  headGroup.add(shine);
 }
+// The part itself: a thin line of scalp running back from the hairline
+const partLine = new THREE.Mesh(
+  new THREE.TorusGeometry(HEAD_R * 1.055, 0.011, 6, 20, 0.55),
+  toy(0x9b7358, 0.15)
+);
+partLine.position.y = 0.04;
+partLine.rotation.set(0, Math.PI / 2, Math.PI - 1.35);
+headGroup.add(partLine);
 // Short neat sides above the ears
 for (const side of [-1, 1]) {
   const side_ = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), hairMat);
@@ -3230,13 +3293,6 @@ for (const side of [-1, 1]) {
   side_.scale.set(0.5, 0.9, 1.2);
   headGroup.add(side_);
 }
-const shine = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.02, 6, 28, 1.3),
-  flat(0x75625a, { transparent: true, opacity: 0.85 })
-);
-shine.position.set(0.12, 0.56, 0.23);
-shine.rotation.set(-0.5, 0, 0.5);
-headGroup.add(shine);
 
 // Soft round shadow under the feet so he stays grounded
 const charShadow = new THREE.Mesh(
