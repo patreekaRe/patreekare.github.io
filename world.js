@@ -2981,32 +2981,367 @@ function currentInteractables() {
 
 // ---------- Character ----------
 
+// Patrick as an Animal Crossing-style villager: an oversized round head with glossy dot eyes,
+// rosy cheeks and a big grin, sculpted swept-up dark hair with a shine, and a little bell-shaped
+// body in the denim varsity jacket (cream sleeves, striped ribbing) over a black tee. Arms and
+// legs hang from pivots so they can swing, and the whole rig bobs, waves and kicks up dust.
 const character = new THREE.Group();
+const rig = new THREE.Group();
+character.add(rig);
 
-const body = new THREE.Mesh(
-  new THREE.CapsuleGeometry(0.55, 0.9, 4, 8),
-  new THREE.MeshLambertMaterial({ color: PALETTE.rust })
+// Soft, bright shading: a touch of self-glow keeps the shadowed side from going muddy
+const toy = (color, glow = 0.22) => new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: glow });
+const flat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
+
+const skinMat = toy(0xe8b990);
+const hairMat = toy(0x2a201c, 0.1);
+const denimMat = toy(0x7a92b2);
+const denimDarkMat = toy(0x5f7593);
+const sleeveMat = toy(0xeee3cc);
+const ribMat = toy(0x232838, 0.12);
+const stripeMat = toy(0xb4503e);
+const teeMat = toy(0x1d1d21, 0.08);
+const pantsMat = toy(0x333845, 0.12);
+const shoeMat = toy(0xf6f2ea, 0.3);
+const soleMat = toy(0xc9bfae);
+const metalMat = new THREE.MeshLambertMaterial({ color: 0xe4e2dc, emissive: 0x555555 });
+
+// Smooth solid of revolution from a list of [radius, height] points (front faces +z)
+const lathe = (points, material, phiStart = 0, phiLength = Math.PI * 2) =>
+  new THREE.Mesh(
+    new THREE.LatheGeometry(points.map(([r, y]) => new THREE.Vector2(r, y)), 28, phiStart, phiLength),
+    material
+  );
+
+// Legs: short stubs in dark pants with chunky rounded sneakers
+const makeLeg = (x) => {
+  const hip = new THREE.Group();
+  hip.position.set(x, 0.46, 0);
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.16, 4, 12), pantsMat);
+  leg.position.y = -0.17;
+  hip.add(leg);
+  const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), shoeMat);
+  shoe.scale.set(0.95, 0.62, 1.3);
+  shoe.position.set(0, -0.36, 0.05);
+  hip.add(shoe);
+  const sole = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.165, 0.05, 16), soleMat);
+  sole.scale.set(0.95, 1, 1.3);
+  sole.position.set(0, -0.42, 0.05);
+  hip.add(sole);
+  rig.add(hip);
+  return hip;
+};
+const legL = makeLeg(-0.15);
+const legR = makeLeg(0.15);
+
+// Torso: a bell-shaped jacket, flared at the hem and rounded into the shoulders
+const torso = new THREE.Group();
+torso.position.y = 0.42;
+torso.scale.z = 0.82;
+rig.add(torso);
+const torsoProfile = [
+  [0.0, 0.0], [0.4, 0.0], [0.43, 0.05], [0.42, 0.2], [0.38, 0.42], [0.33, 0.58], [0.24, 0.68], [0.12, 0.72], [0.0, 0.72],
+];
+torso.add(lathe(torsoProfile, denimMat));
+// Black tee showing through the open front
+const grow = (pts, d) => pts.map(([r, y]) => [r + d, y]);
+const teePanel = lathe(grow(torsoProfile.slice(1, 7), 0.006), teeMat, -0.2, 0.4);
+torso.add(teePanel);
+// Darker placket edges either side of the opening
+for (const phi of [-0.24, 0.2]) torso.add(lathe(grow(torsoProfile.slice(1, 7), 0.008), denimDarkMat, phi, 0.04));
+// Snap buttons down the placket
+for (let i = 0; i < 3; i++) {
+  const h = 0.52 - i * 0.16;
+  const r = 0.43 - Math.max(0, h - 0.2) * 0.25 + 0.01;
+  const snap = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), metalMat);
+  snap.position.set(Math.sin(-0.3) * r, h, Math.cos(-0.3) * r);
+  torso.add(snap);
+}
+// Ribbed waistband with a rust stripe
+const hem = lathe([[0.44, 0.0], [0.45, 0.04], [0.45, 0.1], [0.43, 0.13]], ribMat);
+hem.position.y = -0.02;
+torso.add(hem);
+const hemStripe = lathe([[0.455, 0.05], [0.455, 0.075]], stripeMat);
+hemStripe.position.y = -0.02;
+torso.add(hemStripe);
+// Striped varsity collar hugging the neck
+const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.06, 10, 24), ribMat);
+collar.rotation.x = Math.PI / 2;
+collar.position.y = 0.7;
+torso.add(collar);
+const collarStripe = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.062, 10, 24), stripeMat);
+collarStripe.rotation.x = Math.PI / 2;
+collarStripe.position.y = 0.7;
+collarStripe.scale.z = 0.25;
+torso.add(collarStripe);
+
+// Arms: stubby cream sleeves with striped cuffs and round nub hands; a watch on the left wrist
+const makeArm = (side) => {
+  const shoulder = new THREE.Group();
+  shoulder.position.set(side * 0.34, 0.96, 0);
+  const arm = new THREE.Group();
+  arm.rotation.z = side * 0.32;
+  shoulder.add(arm);
+  const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.22, 4, 12), sleeveMat);
+  sleeve.position.y = -0.16;
+  arm.add(sleeve);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.112, 0.08, 14), ribMat);
+  cuff.position.y = -0.34;
+  arm.add(cuff);
+  const cuffStripe = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.02, 14), stripeMat);
+  cuffStripe.position.y = -0.34;
+  arm.add(cuffStripe);
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 12), skinMat);
+  hand.position.y = -0.44;
+  arm.add(hand);
+  if (side < 0) {
+    const watch = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.018, 6, 16), metalMat);
+    watch.rotation.x = Math.PI / 2;
+    watch.position.y = -0.4;
+    arm.add(watch);
+  }
+  rig.add(shoulder);
+  return { shoulder, arm };
+};
+const armL = makeArm(-1);
+const armR = makeArm(1);
+
+// Head: oversized, a little wider than tall, sitting right on the collar
+const HEAD_R = 0.6;
+const headGroup = new THREE.Group();
+headGroup.position.y = 1.64;
+headGroup.scale.set(1.07, 0.96, 1);
+rig.add(headGroup);
+headGroup.add(new THREE.Mesh(new THREE.SphereGeometry(HEAD_R, 40, 30), skinMat));
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.16, 12), skinMat);
+neck.position.y = 1.14;
+rig.add(neck);
+
+// Stick a flat feature onto the head's surface, facing outward. yaw turns toward +x, pitch tilts up.
+const faceZ = new THREE.Vector3(0, 0, 1);
+const onHead = (mesh, yaw, pitch, lift = 0.004) => {
+  const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+  mesh.position.copy(dir).multiplyScalar(HEAD_R + lift);
+  mesh.quaternion.setFromUnitVectors(faceZ, dir);
+  headGroup.add(mesh);
+  return mesh;
+};
+
+// Eyes: glossy tall ovals with a big and a small glint, grouped so they can blink
+const inkMat = flat(0x1b1412);
+const glintMat = flat(0xffffff);
+const makeEye = (yaw) => {
+  const eye = new THREE.Group();
+  const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.062, 24), inkMat);
+  pupil.scale.y = 1.4;
+  eye.add(pupil);
+  const glint = new THREE.Mesh(new THREE.CircleGeometry(0.024, 14), glintMat);
+  glint.position.set(0.02, 0.035, 0.002);
+  eye.add(glint);
+  const glint2 = new THREE.Mesh(new THREE.CircleGeometry(0.01, 10), glintMat);
+  glint2.position.set(-0.02, -0.035, 0.002);
+  eye.add(glint2);
+  return onHead(eye, yaw, 0.02);
+};
+const eyeL = makeEye(-0.3);
+const eyeR = makeEye(0.3);
+
+// Eyebrows: soft dashes, raised and slightly arched with the smile
+const makeBrow = (yaw, tilt) => {
+  const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.085, 3, 8), inkMat);
+  const holder = new THREE.Group();
+  brow.rotation.z = Math.PI / 2 + tilt;
+  holder.add(brow);
+  return onHead(holder, yaw, 0.27, 0.014);
+};
+makeBrow(-0.3, 0.16);
+makeBrow(0.3, -0.16);
+
+// Rosy cheeks
+const cheekMat = flat(0xf29a88, { transparent: true, opacity: 0.6, depthWrite: false });
+const makeCheek = (yaw) => {
+  const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.08, 24), cheekMat);
+  cheek.scale.y = 0.62;
+  return onHead(cheek, yaw, -0.16, 0.003);
+};
+makeCheek(-0.58);
+makeCheek(0.58);
+
+// Tiny button nose
+const charNose = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 10), toy(0xdda47c));
+charNose.position.set(0, -0.08, HEAD_R - 0.01);
+charNose.scale.set(1.25, 0.85, 0.8);
+headGroup.add(charNose);
+
+// Big open grin: a dark half-moon with teeth along the top and a hint of tongue
+const mouth = new THREE.Group();
+const mouthShape = new THREE.Mesh(new THREE.CircleGeometry(0.14, 28, Math.PI, Math.PI), flat(0x5e2320));
+mouthShape.scale.y = 0.8;
+mouth.add(mouthShape);
+const tongue = new THREE.Mesh(new THREE.CircleGeometry(0.07, 20, Math.PI, Math.PI), flat(0xd8665e));
+tongue.scale.y = 0.55;
+tongue.position.set(0, -0.058, 0.001);
+tongue.rotation.z = Math.PI;
+mouth.add(tongue);
+const teeth = new THREE.Mesh(new THREE.CircleGeometry(0.125, 28, Math.PI, Math.PI), flat(0xffffff));
+teeth.scale.y = 0.26;
+teeth.position.z = 0.002;
+mouth.add(teeth);
+onHead(mouth, 0, -0.27);
+
+// Ears
+for (const side of [-1, 1]) {
+  const ear = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), skinMat);
+  ear.position.set(side * (HEAD_R - 0.03), -0.04, -0.02);
+  ear.scale.set(0.5, 1, 0.8);
+  headGroup.add(ear);
+}
+
+// Hair: a sculpted shell over the top and back, tipped back so the forehead shows, a fuller
+// back, swept-up chunks at the front leaning to one side, and a soft shine across the top
+const hairShell = new THREE.Mesh(
+  new THREE.SphereGeometry(HEAD_R * 1.06, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5),
+  hairMat
 );
-body.position.y = 1.05;
-character.add(body);
-
-const head = new THREE.Mesh(
-  new THREE.SphereGeometry(0.42, 16, 16),
-  new THREE.MeshLambertMaterial({ color: 0xf3d5b5 })
+hairShell.rotation.x = -0.9;
+hairShell.position.y = 0.04;
+headGroup.add(hairShell);
+const hairBack = new THREE.Mesh(new THREE.SphereGeometry(HEAD_R * 1.03, 32, 20), hairMat);
+hairBack.scale.set(1, 0.78, 0.86);
+hairBack.position.set(0, 0.07, -0.12);
+headGroup.add(hairBack);
+// Front quiff: two rounded swoops rising off the forehead, the bigger one swept to one side
+// with a part line between them
+const quiffs = [
+  { p: [0.1, 0.53, 0.2], s: [0.44, 0.28, 0.36], r: [0.45, 0, -0.28] },
+  { p: [-0.27, 0.47, 0.19], s: [0.28, 0.23, 0.3], r: [0.4, 0, 0.35] },
+];
+for (const q of quiffs) {
+  const lobe = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), hairMat);
+  lobe.position.set(...q.p);
+  lobe.scale.set(...q.s);
+  lobe.rotation.set(...q.r);
+  headGroup.add(lobe);
+}
+// Short neat sides above the ears
+for (const side of [-1, 1]) {
+  const side_ = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), hairMat);
+  side_.position.set(side * 0.47, 0.2, -0.02);
+  side_.scale.set(0.5, 0.9, 1.2);
+  headGroup.add(side_);
+}
+const shine = new THREE.Mesh(
+  new THREE.TorusGeometry(0.3, 0.02, 6, 28, 1.3),
+  flat(0x75625a, { transparent: true, opacity: 0.85 })
 );
-head.position.y = 1.95;
-character.add(head);
+shine.position.set(0.12, 0.56, 0.23);
+shine.rotation.set(-0.5, 0, 0.5);
+headGroup.add(shine);
 
-const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
-const eyeMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
-const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-eyeL.position.set(-0.15, 1.98, 0.36);
-const eyeR = eyeL.clone();
-eyeR.position.x = 0.15;
-character.add(eyeL, eyeR);
+// Soft round shadow under the feet so he stays grounded
+const charShadow = new THREE.Mesh(
+  new THREE.CircleGeometry(0.55, 28),
+  flat(0x000000, { transparent: true, opacity: 0.16, depthWrite: false })
+);
+charShadow.rotation.x = -Math.PI / 2;
+charShadow.position.y = 0.012;
+character.add(charShadow);
 
 character.position.copy(SPAWN_OUTSIDE);
 scene.add(character);
+
+// Little dust puffs kicked up by each step, pooled and reused
+const puffMat = new THREE.MeshLambertMaterial({ color: 0xf4ecdc, emissive: 0xf4ecdc, emissiveIntensity: 0.4, transparent: true });
+const puffGeo = new THREE.SphereGeometry(0.1, 10, 8);
+const puffs = Array.from({ length: 10 }, () => {
+  const mesh = new THREE.Mesh(puffGeo, puffMat.clone());
+  mesh.visible = false;
+  scene.add(mesh);
+  return { mesh, life: 0 };
+});
+let puffCursor = 0;
+const footWorld = new THREE.Vector3();
+function kickPuff(leg) {
+  const p = puffs[puffCursor];
+  puffCursor = (puffCursor + 1) % puffs.length;
+  leg.getWorldPosition(footWorld);
+  p.mesh.position.set(footWorld.x, 0.08, footWorld.z);
+  p.mesh.visible = true;
+  p.life = 1;
+}
+function updatePuffs(delta) {
+  for (const p of puffs) {
+    if (p.life <= 0) continue;
+    p.life -= delta * 2.2;
+    if (p.life <= 0) {
+      p.mesh.visible = false;
+      continue;
+    }
+    const age = 1 - p.life;
+    p.mesh.scale.setScalar(0.6 + age * 1.4);
+    p.mesh.position.y += delta * 0.35;
+    p.mesh.material.opacity = 0.75 * p.life;
+  }
+}
+
+// Walk cycle, idle breathing, blinking, and a happy wave after standing still for a bit
+let walkPhase = 0;
+let walkBlend = 0;
+let nextBlink = 2.5;
+let idleTime = 0;
+let waveTime = -1;
+let lastStepSign = 1;
+function animateCharacter(delta, t, moving, speedFactor) {
+  walkBlend = THREE.MathUtils.damp(walkBlend, moving ? 1 : 0, 12, delta);
+  if (moving) walkPhase += delta * 12 * Math.max(speedFactor, 0.45);
+  const s = Math.sin(walkPhase);
+  const swing = s * 0.8 * walkBlend;
+  legL.rotation.x = swing;
+  legR.rotation.x = -swing;
+  armL.shoulder.rotation.x = -swing * 0.9;
+  armR.shoulder.rotation.x = swing * 0.9;
+
+  // A puff each time a foot plants
+  const stepSign = Math.sign(Math.cos(walkPhase));
+  if (moving && stepSign !== lastStepSign && character.visible) kickPuff(stepSign > 0 ? legL : legR);
+  lastStepSign = stepSign;
+  updatePuffs(delta);
+
+  // Bounce with a bit of squash and stretch; lean into the walk
+  const bounce = Math.abs(s);
+  const breathe = Math.sin(t * 2.2) * (1 - walkBlend);
+  rig.position.y = bounce * 0.09 * walkBlend + breathe * 0.01;
+  rig.scale.set(1 + (1 - bounce) * 0.03 * walkBlend, 1 - (1 - bounce) * 0.04 * walkBlend + breathe * 0.008, 1);
+  rig.rotation.x = 0.08 * walkBlend;
+  headGroup.rotation.z = s * 0.06 * walkBlend;
+  headGroup.rotation.x = Math.sin(t * 1.1) * 0.03 * (1 - walkBlend);
+
+  // Wave hello after a few seconds of standing still
+  idleTime = moving ? 0 : idleTime + delta;
+  if (moving) waveTime = -1;
+  else if (waveTime < 0 && idleTime > 5) waveTime = 0;
+  let raise = 0;
+  let wag = 0;
+  if (waveTime >= 0) {
+    waveTime += delta;
+    const WAVE_LEN = 1.8;
+    raise = Math.min(1, waveTime / 0.25, (WAVE_LEN - waveTime) / 0.25);
+    wag = Math.sin(waveTime * 14) * 0.35;
+    if (waveTime > WAVE_LEN) {
+      waveTime = -1;
+      idleTime = -6 - Math.random() * 6; // wait a while before waving again
+      raise = 0;
+    }
+  }
+  armR.arm.rotation.z = 0.32 + raise * (2.3 + wag);
+  headGroup.rotation.z += raise * -0.08;
+
+  nextBlink -= delta;
+  let lid = 1;
+  if (nextBlink < 0.12) lid = Math.max(0.1, Math.abs(nextBlink - 0.06) / 0.06);
+  if (nextBlink < 0) nextBlink = 2 + Math.random() * 3.5;
+  eyeL.scale.y = eyeR.scale.y = lid;
+}
 
 // ---------- Area transitions ----------
 
@@ -3684,11 +4019,8 @@ function animate() {
     let angleDiff = targetAngle - character.rotation.y;
     angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
     character.rotation.y += angleDiff * Math.min(delta * 10, 1);
-
-    body.position.y = 1.05 + Math.abs(Math.sin(t * 10)) * 0.06;
-  } else {
-    body.position.y = 1.05;
   }
+  animateCharacter(delta, t, moveDir.lengthSq() > 0.0001, speedFactor);
 
   if (area === "inside") {
     updateHenry(delta, t);
